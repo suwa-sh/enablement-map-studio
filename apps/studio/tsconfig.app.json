@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "types": ["vite/client"]
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/dsl" },
+    { "path": "../../packages/store" },
+    { "path": "../../packages/ui" },
+    { "path": "../../packages/editor-cjm" },
+    { "path": "../../packages/editor-sbp" },
+    { "path": "../../packages/editor-outcome" },
+    { "path": "../../packages/editor-em" }
+  ]
+}

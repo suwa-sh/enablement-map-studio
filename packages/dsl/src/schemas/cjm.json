@@ -1,0 +1,48 @@
+{
+  "$id": "https://example.com/schemas/cjm.json",
+  "title": "Customer Journey Map DSL",
+  "description": "Schema for the CJM DSL format.",
+  "type": "object",
+  "properties": {
+    "kind": { "const": "cjm" },
+    "version": { "type": "string" },
+    "id": { "type": "string" },
+    "persona": { "$ref": "#/$defs/persona" },
+    "phases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/phase" }
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" }
+    }
+  },
+  "required": ["kind", "version", "id", "phases", "actions"],
+  "$defs": {
+    "persona": {
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "required": ["name"]
+    },
+    "phase": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phase": { "type": "string" },
+        "touchpoints": { "type": "array", "items": { "type": "string" } },
+        "thoughts_feelings": { "type": "array", "items": { "type": "string" } },
+        "emotion_score": { "type": "integer", "minimum": -2, "maximum": 2 }
+      },
+      "required": ["id", "name", "phase", "emotion_score"]
+    }
+  }
+}

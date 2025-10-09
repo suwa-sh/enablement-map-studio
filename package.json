@@ -1,0 +1,36 @@
+{
+  "name": "enablement-map-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A unified web application for designing end-to-end processes from customer experience to outcome creation",
+  "keywords": [
+    "enablement",
+    "customer-journey-map",
+    "service-blueprint",
+    "visualization",
+    "react",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suwa-sh/enablement-map-studio"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "pnpm --filter studio dev",
+    "build": "pnpm -r build",
+    "lint": "qlty check",
+    "format": "qlty fmt",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

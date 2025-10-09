@@ -1,0 +1,47 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.com/schemas/sbp.json",
+    "title": "Service Blueprint DSL",
+    "description": "Schema for the SBP DSL format.",
+    "type": "object",
+    "properties": {
+        "kind": { "const": "sbp" },
+        "version": { "type": "string" },
+        "id": { "type": "string" },
+        "lanes": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/lane" }
+        },
+        "tasks": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/task" }
+        }
+    },
+    "required": ["kind", "version", "id", "lanes", "tasks"],
+    "$defs": {
+        "lane": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "kind": { "enum": ["cjm", "human", "team", "system"] }
+            },
+            "required": ["id", "name", "kind"]
+        },
+        "task": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "lane": { "type": "string" },
+                "name": { "type": "string" },
+                "source_id": { "type": "string" },
+                "link_to": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
+                "readonly": { "type": "boolean" }
+            },
+            "required": ["id", "lane", "name"]
+        }
+    }
+}

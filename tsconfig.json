@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path mapping for monorepo */
+    "baseUrl": ".",
+    "paths": {
+      "@enablement-map-studio/dsl": ["./packages/dsl/src"],
+      "@enablement-map-studio/store": ["./packages/store/src"],
+      "@enablement-map-studio/ui": ["./packages/ui/src"],
+      "@enablement-map-studio/editor-cjm": ["./packages/editor-cjm/src"],
+      "@enablement-map-studio/editor-sbp": ["./packages/editor-sbp/src"],
+      "@enablement-map-studio/editor-outcome": ["./packages/editor-outcome/src"],
+      "@enablement-map-studio/editor-em": ["./packages/editor-em/src"]
+    }
+  },
+  "include": [],
+  "references": [
+    { "path": "./apps/studio" },
+    { "path": "./packages/dsl" },
+    { "path": "./packages/store" },
+    { "path": "./packages/ui" }
+  ]
+}

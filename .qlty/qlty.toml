@@ -1,0 +1,13 @@
+[plugins.enabled]
+biome = "latest"
+prettier = "latest"
+eslint = "latest"
+
+[plugins.definitions.biome]
+enabled = true
+
+[plugins.definitions.prettier]
+enabled = true
+
+[plugins.definitions.eslint]
+enabled = true

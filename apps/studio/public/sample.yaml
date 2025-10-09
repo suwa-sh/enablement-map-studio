@@ -1,0 +1,197 @@
+kind: cjm
+version: "1.0"
+id: cjm:example:001
+persona:
+  name: "Web申込者"
+phases:
+  - id: cjm:phase:awareness
+    name: "認知"
+  - id: cjm:phase:consideration
+    name: "検討"
+  - id: cjm:phase:application
+    name: "申込"
+  - id: cjm:phase:usage
+    name: "利用"
+actions:
+  - id: cjm:action:search
+    name: "サービス検索"
+    phase: cjm:phase:awareness
+    touchpoints:
+      - "検索エンジン"
+      - "SNS広告"
+    thoughts_feelings:
+      - "他社と比較したい"
+      - "信頼できるサービスか確認したい"
+    emotion_score: 0
+  - id: cjm:action:compare
+    name: "サービス比較"
+    phase: cjm:phase:consideration
+    touchpoints:
+      - "公式サイト"
+      - "口コミサイト"
+    thoughts_feelings:
+      - "料金は適正か"
+      - "本当に自分に合っているか"
+    emotion_score: -1
+  - id: cjm:action:apply
+    name: "申込手続き"
+    phase: cjm:phase:application
+    touchpoints:
+      - "申込フォーム"
+      - "本人確認"
+    thoughts_feelings:
+      - "手続きは簡単か"
+      - "個人情報は安全か"
+    emotion_score: -1
+  - id: cjm:action:use-service
+    name: "サービス利用"
+    phase: cjm:phase:usage
+    touchpoints:
+      - "マイページ"
+      - "サポート窓口"
+    thoughts_feelings:
+      - "使いやすい"
+      - "期待通りの価値を得られている"
+    emotion_score: 1
+
+---
+kind: sbp
+version: "1.0"
+id: sbp:example:001
+lanes:
+  - id: sbp:lane:customer
+    name: "顧客"
+    kind: cjm
+  - id: sbp:lane:frontend
+    name: "フロントエンド"
+    kind: team
+  - id: sbp:lane:backend
+    name: "バックエンド"
+    kind: system
+  - id: sbp:lane:support
+    name: "サポート"
+    kind: human
+tasks:
+  - id: sbp:task:search-action
+    lane: sbp:lane:customer
+    name: "サービス検索"
+    source_id: cjm:action:search
+    readonly: true
+  - id: sbp:task:display-search
+    lane: sbp:lane:frontend
+    name: "検索結果表示"
+    link_to:
+      - sbp:task:search-action
+  - id: sbp:task:fetch-data
+    lane: sbp:lane:backend
+    name: "データ取得"
+    link_to:
+      - sbp:task:display-search
+  - id: sbp:task:compare-action
+    lane: sbp:lane:customer
+    name: "サービス比較"
+    source_id: cjm:action:compare
+    readonly: true
+  - id: sbp:task:show-comparison
+    lane: sbp:lane:frontend
+    name: "比較表示"
+    link_to:
+      - sbp:task:compare-action
+  - id: sbp:task:apply-action
+    lane: sbp:lane:customer
+    name: "申込手続き"
+    source_id: cjm:action:apply
+    readonly: true
+  - id: sbp:task:validate-form
+    lane: sbp:lane:frontend
+    name: "入力検証"
+    link_to:
+      - sbp:task:apply-action
+  - id: sbp:task:process-application
+    lane: sbp:lane:backend
+    name: "申込処理"
+    link_to:
+      - sbp:task:validate-form
+  - id: sbp:task:verify-identity
+    lane: sbp:lane:backend
+    name: "本人確認"
+    link_to:
+      - sbp:task:process-application
+  - id: sbp:task:use-action
+    lane: sbp:lane:customer
+    name: "サービス利用"
+    source_id: cjm:action:use-service
+    readonly: true
+  - id: sbp:task:provide-support
+    lane: sbp:lane:support
+    name: "サポート提供"
+    link_to:
+      - sbp:task:use-action
+
+---
+kind: outcome
+version: "1.0"
+id: outcome:example:001
+kgi:
+  id: outcome:kgi:001
+  name: "サービス利用率向上"
+primary_csf:
+  id: outcome:csf:001
+  kgi_id: outcome:kgi:001
+  source_id: sbp:task:validate-form
+  rationale: "入力項目の最適化とエラーメッセージの改善により、離脱を防ぐ"
+primary_kpi:
+  id: outcome:kpi:conversion
+  csf_id: outcome:csf:001
+  name: "申込完了率"
+  definition: "申込開始から完了までの達成率"
+  unit: "%"
+  target: 75
+
+---
+kind: em
+version: "1.0"
+id: em:example:001
+outcomes:
+  - id: em:outcome:conversion
+    source_id: outcome:kpi:conversion
+actions:
+  - id: em:action:validate
+    name: "入力検証の実装"
+    source_id: sbp:task:validate-form
+  - id: em:action:support
+    name: "サポート対応"
+    source_id: sbp:task:provide-support
+skills:
+  - id: em:skill:validation
+    name: "フロントエンド検証スキル"
+    action_id: em:action:validate
+    learnings:
+      - title: "React Hook Form入門"
+        url: "https://react-hook-form.com/get-started"
+      - title: "Zodバリデーション"
+        url: "https://zod.dev/"
+  - id: em:skill:support
+    name: "カスタマーサポートスキル"
+    action_id: em:action:support
+    learnings:
+      - title: "効果的なサポート対応"
+        url: "https://example.com/support-training"
+knowledge:
+  - id: em:knowledge:ux
+    name: "UXデザイン原則"
+    action_id: em:action:validate
+    url: "https://www.nngroup.com/articles/"
+  - id: em:knowledge:crm
+    name: "CRM運用ガイド"
+    action_id: em:action:support
+    url: "https://example.com/crm-guide"
+tools:
+  - id: em:tool:formik
+    name: "React Hook Form"
+    action_id: em:action:validate
+    url: "https://react-hook-form.com/"
+  - id: em:tool:zendesk
+    name: "Zendesk"
+    action_id: em:action:support
+    url: "https://www.zendesk.com/"

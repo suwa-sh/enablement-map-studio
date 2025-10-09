@@ -1,0 +1,48 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.com/schemas/outcome.json",
+    "title": "Outcome DSL",
+    "description": "Schema for the Outcome DSL format.",
+    "type": "object",
+    "properties": {
+        "kind": { "const": "outcome" },
+        "version": { "type": "string" },
+        "id": { "type": "string" },
+        "kgi": { "$ref": "#/$defs/kgi" },
+        "primary_csf": { "$ref": "#/$defs/csf" },
+        "primary_kpi": { "$ref": "#/$defs/kpi" }
+    },
+    "required": ["kind", "id", "kgi", "primary_csf", "primary_kpi"],
+    "$defs": {
+        "kgi": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" }
+            },
+            "required": ["id", "name"]
+        },
+        "csf": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "kgi_id": { "type": "string" },
+                "source_id": { "type": "string" },
+                "rationale": { "type": "string" }
+            },
+            "required": ["id", "kgi_id", "source_id", "rationale"]
+        },
+        "kpi": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "csf_id": { "type": "string" },
+                "name": { "type": "string" },
+                "definition": { "type": "string" },
+                "unit": { "type": "string" },
+                "target": { "type": "number" }
+            },
+            "required": ["id", "csf_id", "name", "target"]
+        }
+    }
+}

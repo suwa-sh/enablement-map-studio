@@ -1,0 +1,19 @@
+{
+  "name": "@enablement-map-studio/store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@enablement-map-studio/dsl": "workspace:*",
+    "zustand": "^4.4.7"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  }
+}
