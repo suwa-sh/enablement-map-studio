@@ -152,28 +152,18 @@ export function PropertyPanel({
               </Alert>
             )}
 
-            <TextField
-              label="ソースID (CJMアクション)"
-              fullWidth
-              value={editedTask.source_id || ''}
-              onChange={(e) =>
-                setEditedTask({ ...editedTask, source_id: e.target.value || undefined })
-              }
-              placeholder="任意"
-            />
-
-            <TextField
-              label="接続先タスク"
-              fullWidth
-              multiline
-              rows={2}
-              value={editedTask.link_to?.join('\n') || ''}
-              placeholder="接続は矢印で表示されます"
-              helperText="接続関係はキャンバス上の矢印で管理されます（読み取り専用）"
-              InputProps={{
-                readOnly: true,
-              }}
-            />
+            {!editedTask.readonly && (
+              <TextField
+                label="ソースID (CJMアクション)"
+                fullWidth
+                value={editedTask.source_id || ''}
+                onChange={(e) =>
+                  setEditedTask({ ...editedTask, source_id: e.target.value || undefined })
+                }
+                placeholder="任意"
+                helperText="CJMアクションと連携する場合、アクションIDを指定"
+              />
+            )}
 
             <Stack direction="row" spacing={1}>
               <Button

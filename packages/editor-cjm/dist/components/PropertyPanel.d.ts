@@ -8,5 +8,5 @@ interface PropertyPanelProps {
     onPhaseDelete: (phaseId: string) => void;
     onClose: () => void;
 }
-export declare function PropertyPanel({ selectedAction, selectedPhase, onActionUpdate, onPhaseUpdate, onActionDelete, onPhaseDelete, onClose, }: PropertyPanelProps): import("react/jsx-runtime").JSX.Element | null;
+export declare function PropertyPanel({ selectedAction, selectedPhase, onActionUpdate, onPhaseUpdate, onActionDelete, onPhaseDelete, onClose, }: PropertyPanelProps): import("react/jsx-runtime").JSX.Element;
 export {};

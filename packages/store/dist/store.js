@@ -61,10 +61,12 @@ export const useAppStore = create()(persist(temporal((set, get) => ({
 }), {
     limit: 50,
     equality: (a, b) => JSON.stringify(a) === JSON.stringify(b),
-    partialize: (state) => {
-        const { cjm, sbp, outcome, em } = state;
-        return { cjm, sbp, outcome, em };
-    },
+    partialize: (state) => ({
+        cjm: state.cjm,
+        sbp: state.sbp,
+        outcome: state.outcome,
+        em: state.em,
+    }),
 }), {
     name: 'enablement-map-studio-storage',
 }));

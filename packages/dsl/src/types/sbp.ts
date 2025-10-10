@@ -4,6 +4,7 @@ export interface SbpDsl {
   id: string;
   lanes: SbpLane[];
   tasks: SbpTask[];
+  connections: SbpConnection[];
 }
 
 export interface SbpLane {
@@ -16,7 +17,14 @@ export interface SbpTask {
   id: string;
   lane: string; // lane_id
   name: string;
-  source_id?: string; // CJM Action ID or other SBP Task ID
-  link_to?: string[]; // Task IDs this task links to
+  source_id?: string; // CJM Action ID
+  position?: { x: number; y: number }; // Task position in canvas
   readonly?: boolean;
+}
+
+export interface SbpConnection {
+  source: string; // source task ID
+  target: string; // target task ID
+  sourceHandle: 'top' | 'right' | 'bottom' | 'left'; // handle position
+  targetHandle: 'top' | 'right' | 'bottom' | 'left'; // handle position
 }

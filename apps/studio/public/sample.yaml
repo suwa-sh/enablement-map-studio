@@ -1,197 +1,276 @@
 kind: cjm
-version: "1.0"
+version: '1.0'
 id: cjm:example:001
 persona:
-  name: "Web申込者"
+  name: Web申込者
 phases:
   - id: cjm:phase:awareness
-    name: "認知"
+    name: 認知
   - id: cjm:phase:consideration
-    name: "検討"
+    name: 検討
   - id: cjm:phase:application
-    name: "申込"
+    name: 申込
   - id: cjm:phase:usage
-    name: "利用"
+    name: 利用
 actions:
   - id: cjm:action:search
-    name: "サービス検索"
+    name: サービス検索
     phase: cjm:phase:awareness
     touchpoints:
-      - "検索エンジン"
-      - "SNS広告"
+      - 検索エンジン
+      - SNS広告
     thoughts_feelings:
-      - "他社と比較したい"
-      - "信頼できるサービスか確認したい"
+      - 他社と比較したい
+      - 信頼できるサービスか確認したい
     emotion_score: 0
   - id: cjm:action:compare
-    name: "サービス比較"
+    name: サービス比較
     phase: cjm:phase:consideration
     touchpoints:
-      - "公式サイト"
-      - "口コミサイト"
+      - 公式サイト
+      - 口コミサイト
     thoughts_feelings:
-      - "料金は適正か"
-      - "本当に自分に合っているか"
+      - 料金は適正か
+      - 本当に自分に合っているか
     emotion_score: -1
   - id: cjm:action:apply
-    name: "申込手続き"
+    name: 申込手続き
     phase: cjm:phase:application
     touchpoints:
-      - "申込フォーム"
-      - "本人確認"
+      - 申込フォーム
+      - 本人確認
     thoughts_feelings:
-      - "手続きは簡単か"
-      - "個人情報は安全か"
+      - 手続きは簡単か
+      - 個人情報は安全か
     emotion_score: -1
   - id: cjm:action:use-service
-    name: "サービス利用"
+    name: サービス利用開始
     phase: cjm:phase:usage
     touchpoints:
-      - "マイページ"
-      - "サポート窓口"
+      - マイページ
+      - サポート窓口
     thoughts_feelings:
-      - "使いやすい"
-      - "期待通りの価値を得られている"
+      - 使いやすい
+      - 期待通りの価値を得られている
     emotion_score: 1
-
+  - id: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
+    name: サービス活用
+    phase: cjm:phase:usage
+    emotion_score: 2
+    touchpoints:
+      - カスタマーサクセス
+      - チャット
+    thoughts_feelings:
+      - 伴走してくれる
+      - 反応が早い
 ---
 kind: sbp
-version: "1.0"
+version: '1.0'
 id: sbp:example:001
 lanes:
   - id: sbp:lane:customer
-    name: "顧客"
+    name: 顧客
     kind: cjm
   - id: sbp:lane:frontend
-    name: "フロントエンド"
-    kind: team
+    name: フロントエンド
+    kind: system
   - id: sbp:lane:backend
-    name: "バックエンド"
+    name: バックエンド
     kind: system
   - id: sbp:lane:support
-    name: "サポート"
-    kind: human
+    name: カスタマーサクセス
+    kind: team
 tasks:
-  - id: sbp:task:search-action
-    lane: sbp:lane:customer
-    name: "サービス検索"
-    source_id: cjm:action:search
-    readonly: true
   - id: sbp:task:display-search
     lane: sbp:lane:frontend
-    name: "検索結果表示"
-    link_to:
-      - sbp:task:search-action
+    name: 検索結果表示
+    position:
+      x: 100
+      'y': 50
+    source_id: cjm:action:search
   - id: sbp:task:fetch-data
     lane: sbp:lane:backend
-    name: "データ取得"
-    link_to:
-      - sbp:task:display-search
-  - id: sbp:task:compare-action
-    lane: sbp:lane:customer
-    name: "サービス比較"
-    source_id: cjm:action:compare
-    readonly: true
+    name: データ取得
+    position:
+      x: 100
+      'y': 50
   - id: sbp:task:show-comparison
     lane: sbp:lane:frontend
-    name: "比較表示"
-    link_to:
-      - sbp:task:compare-action
-  - id: sbp:task:apply-action
-    lane: sbp:lane:customer
-    name: "申込手続き"
-    source_id: cjm:action:apply
-    readonly: true
+    name: 比較表示
+    position:
+      x: 320
+      'y': 50
+    source_id: cjm:action:compare
   - id: sbp:task:validate-form
     lane: sbp:lane:frontend
-    name: "入力検証"
-    link_to:
-      - sbp:task:apply-action
+    name: 入力検証
+    position:
+      x: 540
+      'y': 50
+    source_id: cjm:action:apply
   - id: sbp:task:process-application
     lane: sbp:lane:backend
-    name: "申込処理"
-    link_to:
-      - sbp:task:validate-form
+    name: 申込処理
+    position:
+      x: 540
+      'y': 50
   - id: sbp:task:verify-identity
     lane: sbp:lane:backend
-    name: "本人確認"
-    link_to:
-      - sbp:task:process-application
-  - id: sbp:task:use-action
-    lane: sbp:lane:customer
-    name: "サービス利用"
+    name: 本人確認
+    position:
+      x: 781.1111111111111
+      'y': 50
     source_id: cjm:action:use-service
-    readonly: true
   - id: sbp:task:provide-support
     lane: sbp:lane:support
-    name: "サポート提供"
-    link_to:
-      - sbp:task:use-action
-
+    name: サポート提供
+    position:
+      x: 970.9722222222222
+      'y': 64.55555555555554
+    source_id: cjm:action:use-service
+  - id: sbp:task:427720f8-ae87-4a3f-9662-e8b35a47cafa
+    name: チャット
+    lane: sbp:lane:frontend
+    connections: []
+    position:
+      x: 1189.861111111111
+      'y': 50
+    source_id: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
+  - id: cjm:action:search
+    lane: sbp:lane:customer
+    name: サービス検索
+    readonly: true
+    position:
+      x: 100
+      'y': 55.55555555555554
+  - id: cjm:action:compare
+    lane: sbp:lane:customer
+    name: サービス比較
+    readonly: true
+    position:
+      x: 320
+      'y': 55.55555555555554
+  - id: cjm:action:apply
+    lane: sbp:lane:customer
+    name: 申込手続き
+    readonly: true
+    position:
+      x: 540
+      'y': 55.55555555555554
+  - id: cjm:action:use-service
+    lane: sbp:lane:customer
+    name: サービス利用開始
+    readonly: true
+    position:
+      x: 970.9722222222222
+      'y': 55.55555555555554
+  - id: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
+    lane: sbp:lane:customer
+    name: サービス活用
+    readonly: true
+    position:
+      x: 1189.861111111111
+      'y': 55.55555555555554
+connections:
+  - source: sbp:task:display-search
+    target: sbp:task:fetch-data
+    sourceHandle: bottom
+    targetHandle: top
+  - source: sbp:task:validate-form
+    target: sbp:task:process-application
+    sourceHandle: bottom
+    targetHandle: top
+  - source: sbp:task:process-application
+    target: sbp:task:verify-identity
+    sourceHandle: right
+    targetHandle: left
+  - source: cjm:action:apply
+    target: sbp:task:validate-form
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:compare
+    target: sbp:task:show-comparison
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:search
+    target: sbp:task:display-search
+    sourceHandle: bottom
+    targetHandle: top
+  - source: sbp:task:verify-identity
+    target: cjm:action:use-service
+    sourceHandle: top
+    targetHandle: left
+  - source: cjm:action:use-service
+    target: sbp:task:provide-support
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
+    target: sbp:task:427720f8-ae87-4a3f-9662-e8b35a47cafa
+    sourceHandle: bottom
+    targetHandle: top
 ---
 kind: outcome
-version: "1.0"
+version: '1.0'
 id: outcome:example:001
 kgi:
   id: outcome:kgi:001
-  name: "サービス利用率向上"
+  name: サービス利用率向上
 primary_csf:
   id: outcome:csf:001
   kgi_id: outcome:kgi:001
   source_id: sbp:task:validate-form
-  rationale: "入力項目の最適化とエラーメッセージの改善により、離脱を防ぐ"
+  rationale: 入力項目の最適化とエラーメッセージの改善により、離脱を防ぐ
 primary_kpi:
   id: outcome:kpi:conversion
   csf_id: outcome:csf:001
-  name: "申込完了率"
-  definition: "申込開始から完了までの達成率"
-  unit: "%"
+  name: 申込完了率
+  definition: 申込開始から完了までの達成率
+  unit: '%'
   target: 75
-
 ---
 kind: em
-version: "1.0"
+version: '1.0'
 id: em:example:001
 outcomes:
   - id: em:outcome:conversion
     source_id: outcome:kpi:conversion
 actions:
   - id: em:action:validate
-    name: "入力検証の実装"
+    name: 入力検証の実装
     source_id: sbp:task:validate-form
   - id: em:action:support
-    name: "サポート対応"
+    name: サポート対応
     source_id: sbp:task:provide-support
 skills:
   - id: em:skill:validation
-    name: "フロントエンド検証スキル"
+    name: フロントエンド検証スキル
     action_id: em:action:validate
     learnings:
-      - title: "React Hook Form入門"
-        url: "https://react-hook-form.com/get-started"
-      - title: "Zodバリデーション"
-        url: "https://zod.dev/"
+      - title: React Hook Form入門
+        url: https://react-hook-form.com/get-started
+      - title: Zodバリデーション
+        url: https://zod.dev/
   - id: em:skill:support
-    name: "カスタマーサポートスキル"
+    name: カスタマーサポートスキル
     action_id: em:action:support
     learnings:
-      - title: "効果的なサポート対応"
-        url: "https://example.com/support-training"
+      - title: 効果的なサポート対応
+        url: https://example.com/support-training
 knowledge:
   - id: em:knowledge:ux
-    name: "UXデザイン原則"
+    name: UXデザイン原則
     action_id: em:action:validate
-    url: "https://www.nngroup.com/articles/"
+    url: https://www.nngroup.com/articles/
   - id: em:knowledge:crm
-    name: "CRM運用ガイド"
+    name: CRM運用ガイド
     action_id: em:action:support
-    url: "https://example.com/crm-guide"
+    url: https://example.com/crm-guide
 tools:
   - id: em:tool:formik
-    name: "React Hook Form"
+    name: React Hook Form
     action_id: em:action:validate
-    url: "https://react-hook-form.com/"
+    url: https://react-hook-form.com/
   - id: em:tool:zendesk
-    name: "Zendesk"
+    name: Zendesk
     action_id: em:action:support
-    url: "https://www.zendesk.com/"
+    url: https://www.zendesk.com/

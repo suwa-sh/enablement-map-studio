@@ -4,6 +4,7 @@ export interface SbpDsl {
     id: string;
     lanes: SbpLane[];
     tasks: SbpTask[];
+    connections: SbpConnection[];
 }
 export interface SbpLane {
     id: string;
@@ -15,7 +16,16 @@ export interface SbpTask {
     lane: string;
     name: string;
     source_id?: string;
-    link_to?: string[];
+    position?: {
+        x: number;
+        y: number;
+    };
     readonly?: boolean;
+}
+export interface SbpConnection {
+    source: string;
+    target: string;
+    sourceHandle: 'top' | 'right' | 'bottom' | 'left';
+    targetHandle: 'top' | 'right' | 'bottom' | 'left';
 }
 //# sourceMappingURL=sbp.d.ts.map

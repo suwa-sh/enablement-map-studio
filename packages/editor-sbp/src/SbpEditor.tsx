@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Stack, Button } from '@mui/material';
+import { Add } from '@mui/icons-material';
 import { useAppStore } from '@enablement-map-studio/store';
 import { generateId } from '@enablement-map-studio/dsl';
-import type { SbpTask, SbpLane } from '@enablement-map-studio/dsl';
+import type { SbpTask, SbpLane, SbpDsl } from '@enablement-map-studio/dsl';
 import { SbpCanvas } from './components/SbpCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 
@@ -15,17 +16,28 @@ export function SbpEditor() {
   const [selectedLaneId, setSelectedLaneId] = useState<string | null>(null);
 
   // Always get the latest lane data from the store
-  const selectedLane = selectedLaneId ? sbp.lanes.find(lane => lane.id === selectedLaneId) || null : null;
+  const selectedLane = selectedLaneId && sbp ? sbp.lanes.find(lane => lane.id === selectedLaneId) || null : null;
 
-  if (!sbp) {
-    return (
-      <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography color="text.secondary">No SBP data loaded. Please load a YAML file.</Typography>
-      </Box>
-    );
-  }
+  // CJMが存在する場合は自動的にCJMレーンを含むSBPを初期化
+  useEffect(() => {
+    if (!sbp && cjm) {
+      const cjmLane: SbpLane = {
+        id: generateId('sbp', 'lane'),
+        name: 'Customer Journey',
+        kind: 'cjm',
+      };
+      updateSbp({
+        kind: 'sbp',
+        version: '1.0',
+        lanes: [cjmLane],
+        tasks: [],
+        connections: [],
+      });
+    }
+  }, [sbp, cjm, updateSbp]);
 
   const handleTaskUpdate = (updatedTask: SbpTask) => {
+    if (!sbp) return;
     const updatedTasks = sbp.tasks.map((task) =>
       task.id === updatedTask.id ? updatedTask : task
     );
@@ -34,6 +46,7 @@ export function SbpEditor() {
   };
 
   const handleLaneUpdate = (updatedLane: SbpLane) => {
+    if (!sbp) return;
     const updatedLanes = sbp.lanes.map((lane) =>
       lane.id === updatedLane.id ? updatedLane : lane
     );
@@ -42,30 +55,28 @@ export function SbpEditor() {
   };
 
   const handleTaskDelete = (taskId: string) => {
+    if (!sbp) return;
     // Remove task and all connections to it
-    const updatedTasks = sbp.tasks
-      .filter((task) => task.id !== taskId)
-      .map((task) => ({
-        ...task,
-        link_to: task.link_to?.filter((id) => id !== taskId),
-      }));
-    updateSbp({ ...sbp, tasks: updatedTasks });
+    const updatedTasks = sbp.tasks.filter((task) => task.id !== taskId);
+    const updatedConnections = sbp.connections.filter(
+      (conn) => conn.source !== taskId && conn.target !== taskId
+    );
+    updateSbp({ ...sbp, tasks: updatedTasks, connections: updatedConnections });
     setSelectedTask(null);
   };
 
   const handleLaneDelete = (laneId: string) => {
+    if (!sbp) return;
     // Delete lane and all its tasks
     const updatedLanes = sbp.lanes.filter((lane) => lane.id !== laneId);
     const deletedTaskIds = sbp.tasks
       .filter((task) => task.lane === laneId)
       .map((task) => task.id);
-    const updatedTasks = sbp.tasks
-      .filter((task) => task.lane !== laneId)
-      .map((task) => ({
-        ...task,
-        link_to: task.link_to?.filter((id) => !deletedTaskIds.includes(id)),
-      }));
-    updateSbp({ ...sbp, lanes: updatedLanes, tasks: updatedTasks });
+    const updatedTasks = sbp.tasks.filter((task) => task.lane !== laneId);
+    const updatedConnections = sbp.connections.filter(
+      (conn) => !deletedTaskIds.includes(conn.source) && !deletedTaskIds.includes(conn.target)
+    );
+    updateSbp({ ...sbp, lanes: updatedLanes, tasks: updatedTasks, connections: updatedConnections });
     setSelectedLaneId(null);
   };
 
@@ -80,13 +91,66 @@ export function SbpEditor() {
       name: '新しいレーン',
       kind: 'team',
     };
-    updateSbp({ ...sbp, lanes: [...sbp.lanes, newLane] });
+
+    // sbpがnullの場合は初期化してから追加
+    if (!sbp) {
+      updateSbp({
+        kind: 'sbp',
+        version: '1.0',
+        lanes: [newLane],
+        tasks: [],
+        connections: [],
+      });
+    } else {
+      updateSbp({ ...sbp, lanes: [...sbp.lanes, newLane] });
+    }
     setSelectedLaneId(newLane.id);
   };
 
   const handleLaneReorder = (reorderedLanes: SbpLane[]) => {
+    if (!sbp) return;
     updateSbp({ ...sbp, lanes: reorderedLanes });
   };
+
+  const handleTaskAdd = (laneId: string, taskName: string) => {
+    if (!sbp) return;
+    const newTask: SbpTask = {
+      id: generateId('sbp', 'task'),
+      name: taskName,
+      lane: laneId,
+      connections: [],
+      position: { x: 100, y: 100 },
+    };
+    updateSbp({ ...sbp, tasks: [...sbp.tasks, newTask] });
+    setSelectedTask(newTask);
+  };
+
+  // 空状態の表示（SBPが存在しない場合）
+  if (!sbp) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 3 }}>
+        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleLaneAdd}
+          >
+            レーン追加
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            disabled
+          >
+            タスク追加
+          </Button>
+        </Stack>
+        <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Typography color="text.secondary">CJMを作成する か YAML をロードしてください</Typography>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', height: '100%' }}>
@@ -101,6 +165,7 @@ export function SbpEditor() {
           onTaskUpdate={handleTaskUpdate}
           onLaneUpdate={handleLaneUpdate}
           onLaneAdd={handleLaneAdd}
+          onTaskAdd={handleTaskAdd}
           onLaneReorder={handleLaneReorder}
           onSbpUpdate={handleSbpUpdate}
         />

@@ -13,14 +13,40 @@ A unified web application for designing end-to-end processes from customer exper
 - **Outcome Editor**: ビジネス成果の定義（CSF/KPI）
 - **EM Editor**: イネーブルメントマップ（行動、スキル、ナレッジ、ツール）
 
+## 主な機能
+
+### CJM Editor
+- フェーズとアクションのドラッグ&ドロップによる並び替え
+- 感情スコア (-2 ~ +2) による感情曲線の可視化
+- タッチポイント・思考感情の複数行入力対応
+- 空状態からの直接作成（ボタン常時表示）
+
+### SBP Editor
+- React Flowベースのフローダイアグラム
+- CJM連動（CJMアクションを自動的にreadonly タスクとして表示）
+- レーン種別（CJM, Human, Team, System）対応
+- タスク追加ダイアログ（レーン選択 + 名前入力）
+- 4方向接続ハンドル + アライメントガイド
+- ドラッグ&ドロップによるタスク接続とCJM `source_id` 自動設定
+
+### 共通機能
+- localStorageによる永続化
+- YAML形式でのインポート/エクスポート
+- サンプルデータのロード
+- Clear Canvasボタン（データクリア）
+- Undo/Redo機能（実装予定）
+
 ## 技術スタック
 
 - **言語**: TypeScript
 - **フレームワーク**: React 18+
 - **ビルドツール**: Vite
-- **状態管理**: Zustand
+- **状態管理**: Zustand (with persist middleware)
 - **ルーティング**: React Router v6
-- **スタイリング**: Tailwind CSS
+- **スタイリング**: Material-UI (MUI) v7 + Tailwind CSS
+- **エディタUI**:
+  - CJM: MUIテーブル + Recharts + @dnd-kit (ドラッグ&ドロップ)
+  - SBP: @xyflow/react (フローダイアグラム)
 - **DSL処理**: js-yaml, ajv
 - **Linter/Formatter**: qlty (biome, prettier, eslint)
 - **パッケージ管理**: pnpm workspaces
@@ -101,6 +127,5 @@ MIT License
 
 ## 関連リンク
 
-- [詳細仕様書](./tmp/em_studio.md)
-- [開発計画](./tmp/todo.md)
-- [Claude Code用ガイド](./CLAUDE.md)
+- [仕様書](./REQUIREMENTS.md)
+- [実装ガイド](./CLAUDE.md)

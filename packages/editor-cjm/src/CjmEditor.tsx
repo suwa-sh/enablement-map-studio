@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Stack, Button } from '@mui/material';
+import { Add } from '@mui/icons-material';
 import { useAppStore } from '@enablement-map-studio/store';
 import { generateId } from '@enablement-map-studio/dsl';
-import type { CjmAction, CjmPhase } from '@enablement-map-studio/dsl';
+import type { CjmAction, CjmPhase, CjmDsl } from '@enablement-map-studio/dsl';
 import { CjmCanvas } from './components/CjmCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 
@@ -13,15 +14,8 @@ export function CjmEditor() {
   const [selectedAction, setSelectedAction] = useState<CjmAction | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<CjmPhase | null>(null);
 
-  if (!cjm) {
-    return (
-      <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography color="text.secondary">No CJM data loaded. Please load a YAML file.</Typography>
-      </Box>
-    );
-  }
-
   const handleActionUpdate = (updatedAction: CjmAction) => {
+    if (!cjm) return;
     const updatedActions = cjm.actions.map((action) =>
       action.id === updatedAction.id ? updatedAction : action
     );
@@ -30,6 +24,7 @@ export function CjmEditor() {
   };
 
   const handlePhaseUpdate = (updatedPhase: CjmPhase) => {
+    if (!cjm) return;
     const updatedPhases = cjm.phases.map((phase) =>
       phase.id === updatedPhase.id ? updatedPhase : phase
     );
@@ -38,12 +33,14 @@ export function CjmEditor() {
   };
 
   const handleActionDelete = (actionId: string) => {
+    if (!cjm) return;
     const updatedActions = cjm.actions.filter((action) => action.id !== actionId);
     updateCjm({ ...cjm, actions: updatedActions });
     setSelectedAction(null);
   };
 
   const handlePhaseDelete = (phaseId: string) => {
+    if (!cjm) return;
     // Delete phase and all associated actions
     const updatedPhases = cjm.phases.filter((phase) => phase.id !== phaseId);
     const updatedActions = cjm.actions.filter((action) => action.phase !== phaseId);
@@ -66,15 +63,26 @@ export function CjmEditor() {
       thoughts_feelings: [],
     };
 
-    updateCjm({
-      ...cjm,
-      phases: [...cjm.phases, newPhase],
-      actions: [...cjm.actions, newAction],
-    });
+    // cjmがnullの場合は初期化してから追加
+    if (!cjm) {
+      updateCjm({
+        kind: 'cjm',
+        version: '1.0',
+        phases: [newPhase],
+        actions: [newAction],
+      });
+    } else {
+      updateCjm({
+        ...cjm,
+        phases: [...cjm.phases, newPhase],
+        actions: [...cjm.actions, newAction],
+      });
+    }
     setSelectedPhase(newPhase);
   };
 
   const handleAddAction = (phaseId: string, actionName: string) => {
+    if (!cjm) return;
     const newAction: CjmAction = {
       id: generateId('cjm', 'action'),
       name: actionName,
@@ -88,12 +96,41 @@ export function CjmEditor() {
   };
 
   const handleReorderActions = (reorderedActions: CjmAction[]) => {
+    if (!cjm) return;
     updateCjm({ ...cjm, actions: reorderedActions });
   };
 
   const handleReorderPhases = (reorderedPhases: CjmPhase[]) => {
+    if (!cjm) return;
     updateCjm({ ...cjm, phases: reorderedPhases });
   };
+
+  // 空状態の表示
+  if (!cjm) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 3 }}>
+        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleAddPhase}
+          >
+            フェーズ追加
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            disabled
+          >
+            アクション追加
+          </Button>
+        </Stack>
+        <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Typography color="text.secondary">フェーズを追加する か YAML をロードしてください</Typography>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', height: '100%' }}>

@@ -16,15 +16,28 @@ import {
   type OnEdgesDelete,
   type Edge,
   type Node,
-  type NodeDragHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Box, Button } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from '@mui/material';
 import { Add } from '@mui/icons-material';
 import type { SbpDsl, SbpTask, SbpLane, CjmDsl } from '@enablement-map-studio/dsl';
 import { TaskNode } from './TaskNode';
 import { LaneNode } from './LaneNode';
-import { dslToFlow, updateDslFromFlow, getLaneY, LANE_HEIGHT, LANE_SPACING, LANE_WIDTH } from '../utils/flowConverter';
+import { AlignmentGuides } from './AlignmentGuides';
+import { useAlignmentGuides } from '../hooks/useAlignmentGuides';
+import { dslToFlow, updateDslFromFlow, LANE_HEIGHT, LANE_SPACING, LANE_WIDTH } from '../utils/flowConverter';
 
 interface SbpCanvasProps {
   sbp: SbpDsl;
@@ -36,6 +49,7 @@ interface SbpCanvasProps {
   onTaskUpdate: (task: SbpTask) => void;
   onLaneUpdate: (lane: SbpLane) => void;
   onLaneAdd: () => void;
+  onTaskAdd?: (laneId: string, taskName: string) => void;
   onLaneReorder: (lanes: SbpLane[]) => void;
   onSbpUpdate: (sbp: SbpDsl) => void;
 }
@@ -49,10 +63,11 @@ export function SbpCanvas({
   sbp,
   cjm,
   selectedTask,
-  selectedLane,
+  selectedLane: _selectedLane,
   onTaskSelect,
   onLaneSelect,
   onLaneAdd,
+  onTaskAdd,
   onLaneReorder,
   onSbpUpdate,
 }: SbpCanvasProps) {
@@ -62,6 +77,14 @@ export function SbpCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialFlow.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialFlow.edges);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+
+  // タスク追加ダイアログの状態管理
+  const [addTaskDialogOpen, setAddTaskDialogOpen] = useState(false);
+  const [newTaskName, setNewTaskName] = useState('');
+  const [selectedLaneForNewTask, setSelectedLaneForNewTask] = useState('');
+
+  // アライメントガイド用のフック
+  const { alignmentLines, onDragStart, onDrag, onDragEnd } = useAlignmentGuides();
 
   // レーンの更新と削除の検出
   useEffect(() => {
@@ -124,11 +147,24 @@ export function SbpCanvas({
     });
   }, [sbp.lanes, setNodes]);
 
-  // タスク削除の検出と処理
+  // タスクの追加・削除の検出と処理
   useEffect(() => {
     const dslTaskIds = new Set(sbp.tasks.map((t) => t.id));
 
+    // CJMアクションのIDも含める（CJM接続のエッジ削除を防ぐため）
+    if (cjm) {
+      cjm.actions.forEach((action) => dslTaskIds.add(action.id));
+    }
+
     setNodes((currentNodes) => {
+      // 既存のタスクノードIDを取得（CJM readonlyを除く）
+      const existingTaskNodeIds = new Set(
+        currentNodes
+          .filter((n) => n.type === 'taskNode' && !n.id.startsWith('cjm-readonly-'))
+          .map((n) => n.id)
+      );
+
+      // 削除されたタスクをフィルタリング
       const taskNodesToKeep = currentNodes.filter((node) => {
         if (node.type === 'taskNode' && !node.id.startsWith('cjm-readonly-')) {
           return dslTaskIds.has(node.id);
@@ -136,16 +172,41 @@ export function SbpCanvas({
         return true; // レーンノードとCJM readonlyノードは保持
       });
 
-      return taskNodesToKeep;
+      // 新しく追加されたタスクを検出してノードを作成
+      const newTaskNodes: Node[] = [];
+      sbp.tasks.forEach((task) => {
+        if (!task.readonly && !existingTaskNodeIds.has(task.id)) {
+          newTaskNodes.push({
+            id: task.id,
+            type: 'taskNode',
+            position: task.position || { x: 100, y: 100 },
+            data: { task },
+            parentId: `lane:${task.lane}`,
+            extent: 'parent' as const,
+            draggable: true,
+            selectable: true,
+          });
+        }
+      });
+
+      return [...taskNodesToKeep, ...newTaskNodes];
     });
 
     // タスク削除に伴うエッジの削除
     setEdges((currentEdges) => {
       return currentEdges.filter((edge) => {
-        return dslTaskIds.has(edge.source) && dslTaskIds.has(edge.target);
+        // CJM readonlyノード（cjm-readonly-*）のIDをDSL形式に変換してチェック
+        const sourceId = edge.source.startsWith('cjm-readonly-')
+          ? edge.source.replace('cjm-readonly-', '')
+          : edge.source;
+        const targetId = edge.target.startsWith('cjm-readonly-')
+          ? edge.target.replace('cjm-readonly-', '')
+          : edge.target;
+
+        return dslTaskIds.has(sourceId) && dslTaskIds.has(targetId);
       });
     });
-  }, [sbp.tasks, setNodes, setEdges]);
+  }, [sbp.tasks, cjm, setNodes, setEdges]);
 
   // CJM readonlyノードの同期（CJMアクションの追加・削除・更新）
   useEffect(() => {
@@ -264,9 +325,98 @@ export function SbpCanvas({
     []
   );
 
+  // タスクノードのドラッグ開始時の処理
+  const handleNodeDragStart = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      // タスクノード（CJM readonlyノード含む）の場合、アライメントガイドを有効化
+      if (node.type === 'taskNode') {
+        onDragStart();
+      }
+    },
+    [onDragStart]
+  );
+
+  // タスクノードのドラッグ中の処理
+  const handleNodeDrag = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      // タスクノード（CJM readonlyノード含む）の場合、アライメントガイドとスナップを計算
+      if (node.type === 'taskNode') {
+        const snapPosition = onDrag(node, nodes);
+
+        // スナップ位置があれば、ノード位置を更新（ドラッグ中にリアルタイムで吸着）
+        if (snapPosition) {
+          setNodes((currentNodes) =>
+            currentNodes.map((n) =>
+              n.id === node.id ? { ...n, position: snapPosition } : n
+            )
+          );
+        }
+      }
+    },
+    [onDrag, nodes, setNodes]
+  );
+
   // レーンのドラッグ終了時の処理
-  const handleNodeDragStop: NodeDragHandler = useCallback(
-    (_event, node) => {
+  const handleNodeDragStop = useCallback(
+    (_event: unknown, node: Node) => {
+      // タスクノード（CJM readonlyノード含む）の場合は最終的なスナップ位置を確定してからガイドを非表示
+      if (node.type === 'taskNode') {
+        // まずガイドを非表示にする
+        onDragEnd();
+
+        // その後、最終スナップ位置を確定（ガイド非表示後なので破線は表示されない）
+        setTimeout(() => {
+          setNodes((currentNodes) => {
+            const currentNode = currentNodes.find((n) => n.id === node.id);
+            if (!currentNode) return currentNodes;
+
+            // 現在位置でスナップ判定（onDragを使わずに直接計算）
+            const otherNodes = currentNodes.filter(
+              (n) => n.id !== node.id && n.type === 'taskNode'
+            );
+
+            let snapX: number | null = null;
+            let snapY: number | null = null;
+
+            const nodeCenterX = currentNode.position.x + (currentNode.measured?.width || 0) / 2;
+            const nodeCenterY = currentNode.position.y + (currentNode.measured?.height || 0) / 2;
+
+            otherNodes.forEach((other) => {
+              const otherCenterX = other.position.x + (other.measured?.width || 0) / 2;
+              const otherCenterY = other.position.y + (other.measured?.height || 0) / 2;
+
+              const SNAP_THRESHOLD = 10;
+
+              if (Math.abs(nodeCenterY - otherCenterY) < SNAP_THRESHOLD) {
+                snapY = otherCenterY - (currentNode.measured?.height || 0) / 2;
+              }
+
+              if (Math.abs(nodeCenterX - otherCenterX) < SNAP_THRESHOLD) {
+                snapX = otherCenterX - (currentNode.measured?.width || 0) / 2;
+              }
+            });
+
+            if (snapX !== null || snapY !== null) {
+              return currentNodes.map((n) =>
+                n.id === node.id
+                  ? {
+                      ...n,
+                      position: {
+                        x: snapX ?? n.position.x,
+                        y: snapY ?? n.position.y,
+                      },
+                    }
+                  : n
+              );
+            }
+
+            return currentNodes;
+          });
+        }, 0);
+
+        return;
+      }
+
       // レーンノードの場合のみ処理
       if (node.type !== 'laneNode') return;
 
@@ -287,14 +437,30 @@ export function SbpCanvas({
         onLaneReorder(newLaneOrder);
       }
     },
-    [nodes, sbp.lanes, onLaneReorder]
+    [nodes, sbp.lanes, onLaneReorder, onDrag, onDragEnd, setNodes]
   );
 
   // エッジ接続時の処理
   const handleConnect: OnConnect = useCallback(
     (connection: Connection) => {
+      console.log('🔗 handleConnect called:', {
+        originalSource: connection.source,
+        originalTarget: connection.target,
+        originalSourceHandle: connection.sourceHandle,
+        originalTargetHandle: connection.targetHandle,
+      });
+
+      // sourceとtargetを入れ替え（D&D終了側に矢印をつけるため）
+      // ハンドルも入れ替える（D&D開始側のハンドルから矢印が出るように）
+      const reversedConnection = {
+        source: connection.target,
+        target: connection.source,
+        sourceHandle: connection.targetHandle,
+        targetHandle: connection.sourceHandle,
+      };
+
       const newEdge = {
-        ...connection,
+        ...reversedConnection,
         type: 'smoothstep',
         animated: false,
         style: {
@@ -310,43 +476,69 @@ export function SbpCanvas({
       };
       setEdges((eds) => addEdge(newEdge, eds));
 
-      // CJM readonlyノードからの接続の場合、source_idを自動設定
-      if (connection.source?.startsWith('cjm-readonly-') && connection.target) {
-        setNodes((currentNodes) => {
-          const updatedNodes = currentNodes.map((node) => {
-            if (node.id === connection.target) {
-              const nodeData = node.data as any;
-              const task = nodeData.task;
+      // CJM readonlyノードとの接続の場合、source_idを自動設定
+      // ※元のconnectionオブジェクトでCJM接続を判定（エッジのsource/targetは入れ替え済み）
+      console.log('🔍 Checking CJM connection:', {
+        isCjmSource: connection.source?.startsWith('cjm-readonly-'),
+        isCjmTarget: connection.target?.startsWith('cjm-readonly-'),
+      });
 
-              // CJMアクションIDを抽出（cjm-readonly-{actionId}形式）
-              const cjmActionId = connection.source.replace('cjm-readonly-', '');
+      // CJM → タスク、またはタスク → CJMの両方向に対応
+      const cjmNodeId = connection.source?.startsWith('cjm-readonly-')
+        ? connection.source
+        : connection.target?.startsWith('cjm-readonly-')
+          ? connection.target
+          : null;
 
-              // タスクのsource_idを更新
-              const updatedTask = {
-                ...task,
-                source_id: cjmActionId,
-              };
+      const taskNodeId = connection.source?.startsWith('cjm-readonly-')
+        ? connection.target
+        : connection.target?.startsWith('cjm-readonly-')
+          ? connection.source
+          : null;
 
-              return {
-                ...node,
-                data: {
-                  ...nodeData,
-                  task: updatedTask,
-                },
-              };
-            }
-            return node;
-          });
-
-          // DSLを更新
-          setEdges((currentEdges) => {
-            const updatedDsl = updateDslFromFlow(sbp, updatedNodes, currentEdges);
-            onSbpUpdate(updatedDsl);
-            return currentEdges;
-          });
-
-          return updatedNodes;
+      if (cjmNodeId && taskNodeId) {
+        // CJMアクションIDを抽出（cjm-readonly-{actionId}形式）
+        const cjmActionId = cjmNodeId.replace('cjm-readonly-', '');
+        console.log('✅ CJM connection detected:', {
+          cjmActionId,
+          taskNodeId,
         });
+
+        // ノード更新とDSL更新を一度に実行
+        setTimeout(() => {
+          setNodes((currentNodes) => {
+            const updatedNodes = currentNodes.map((node) => {
+              if (node.id === taskNodeId) {
+                const nodeData = node.data as any;
+                const task = nodeData.task;
+
+                // タスクのsource_idを更新
+                const updatedTask = {
+                  ...task,
+                  source_id: cjmActionId,
+                };
+
+                return {
+                  ...node,
+                  data: {
+                    ...nodeData,
+                    task: updatedTask,
+                  },
+                };
+              }
+              return node;
+            });
+
+            // DSL更新を同じタイミングで実行
+            setEdges((currentEdges) => {
+              const updatedDsl = updateDslFromFlow(sbp, updatedNodes, currentEdges);
+              onSbpUpdate(updatedDsl);
+              return currentEdges;
+            });
+
+            return updatedNodes;
+          });
+        }, 100); // タイミングを調整
       }
     },
     [setEdges, setNodes, sbp, onSbpUpdate]
@@ -411,11 +603,55 @@ export function SbpCanvas({
         const deletedEdgeIds = new Set(edgesToDelete.map((e) => e.id));
         const updatedEdges = currentEdges.filter((e) => !deletedEdgeIds.has(e.id));
 
-        // DSLを更新
+        // 削除されたエッジからCJM接続を特定し、該当タスクのsource_idをクリア
         setNodes((currentNodes) => {
-          const updatedDsl = updateDslFromFlow(sbp, currentNodes, updatedEdges);
+          let updatedNodes = currentNodes;
+
+          edgesToDelete.forEach((edge) => {
+            // CJM readonlyノードが関係するエッジかチェック
+            const cjmNodeId = edge.source.startsWith('cjm-readonly-')
+              ? edge.source
+              : edge.target.startsWith('cjm-readonly-')
+                ? edge.target
+                : null;
+
+            const taskNodeId = edge.source.startsWith('cjm-readonly-')
+              ? edge.target
+              : edge.target.startsWith('cjm-readonly-')
+                ? edge.source
+                : null;
+
+            if (cjmNodeId && taskNodeId) {
+              const cjmActionId = cjmNodeId.replace('cjm-readonly-', '');
+
+              // 該当タスクのsource_idをクリア
+              updatedNodes = updatedNodes.map((node) => {
+                if (node.id === taskNodeId) {
+                  const nodeData = node.data as any;
+                  const task = nodeData.task;
+
+                  if (task.source_id === cjmActionId) {
+                    return {
+                      ...node,
+                      data: {
+                        ...nodeData,
+                        task: {
+                          ...task,
+                          source_id: undefined,
+                        },
+                      },
+                    };
+                  }
+                }
+                return node;
+              });
+            }
+          });
+
+          // DSLを更新
+          const updatedDsl = updateDslFromFlow(sbp, updatedNodes, updatedEdges);
           onSbpUpdate(updatedDsl);
-          return currentNodes;
+          return updatedNodes;
         });
 
         return updatedEdges;
@@ -444,25 +680,57 @@ export function SbpCanvas({
         stroke: edge.id === selectedEdgeId ? '#1976d2' : '#555',
         strokeWidth: edge.id === selectedEdgeId ? 3 : 2,
       },
-      markerEnd: {
+      markerStart: edge.markerStart && typeof edge.markerStart === 'object' ? {
+        ...edge.markerStart,
+        color: edge.id === selectedEdgeId ? '#1976d2' : '#555',
+      } : edge.markerStart,
+      markerEnd: edge.markerEnd && typeof edge.markerEnd === 'object' ? {
         ...edge.markerEnd,
         color: edge.id === selectedEdgeId ? '#1976d2' : '#555',
-      },
+      } : edge.markerEnd,
     }));
   }, [edges, selectedEdgeId]);
 
+  // タスク追加ダイアログのハンドラー
+  const handleOpenAddTaskDialog = () => {
+    setNewTaskName('');
+    // CJMレーン以外の最初のレーンを選択
+    const regularLane = sbp.lanes.find(lane => lane.kind !== 'cjm');
+    setSelectedLaneForNewTask(regularLane?.id || sbp.lanes[0]?.id || '');
+    setAddTaskDialogOpen(true);
+  };
+
+  const handleCloseAddTaskDialog = () => {
+    setAddTaskDialogOpen(false);
+  };
+
+  const handleAddTaskSubmit = () => {
+    if (newTaskName.trim() && selectedLaneForNewTask && onTaskAdd) {
+      onTaskAdd(selectedLaneForNewTask, newTaskName.trim());
+      handleCloseAddTaskDialog();
+    }
+  };
+
   return (
     <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* レーン追加ボタン */}
-      <Box sx={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}>
+      {/* レーン・タスク追加ボタン */}
+      <Box sx={{ position: 'absolute', top: 16, left: 16, zIndex: 10, display: 'flex', gap: 2 }}>
         <Button
           variant="contained"
           startIcon={<Add />}
           onClick={onLaneAdd}
-          size="small"
         >
           レーン追加
         </Button>
+        {onTaskAdd && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleOpenAddTaskDialog}
+          >
+            タスク追加
+          </Button>
+        )}
       </Box>
 
       <ReactFlow
@@ -474,6 +742,8 @@ export function SbpCanvas({
         onConnect={handleConnect}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
+        onNodeDragStart={handleNodeDragStart}
+        onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
         nodeTypes={nodeTypes}
         deleteKeyCode={['Delete', 'Backspace']}
@@ -495,6 +765,52 @@ export function SbpCanvas({
           style={{ backgroundColor: '#f5f5f5' }}
         />
       </ReactFlow>
+
+      {/* アライメントガイド（タスクノードドラッグ時） */}
+      <AlignmentGuides
+        lines={alignmentLines}
+        viewportWidth={window.innerWidth}
+        viewportHeight={window.innerHeight}
+      />
+
+      {/* タスク追加ダイアログ */}
+      <Dialog open={addTaskDialogOpen} onClose={handleCloseAddTaskDialog}>
+        <DialogTitle>タスク追加</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
+            <InputLabel>レーン</InputLabel>
+            <Select
+              value={selectedLaneForNewTask}
+              label="レーン"
+              onChange={(e) => setSelectedLaneForNewTask(e.target.value)}
+            >
+              {sbp.lanes.filter(lane => lane.kind !== 'cjm').map((lane) => (
+                <MenuItem key={lane.id} value={lane.id}>
+                  {lane.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            autoFocus
+            label="タスク名"
+            fullWidth
+            value={newTaskName}
+            onChange={(e) => setNewTaskName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newTaskName.trim()) {
+                handleAddTaskSubmit();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddTaskDialog}>キャンセル</Button>
+          <Button onClick={handleAddTaskSubmit} variant="contained" disabled={!newTaskName.trim()}>
+            追加
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

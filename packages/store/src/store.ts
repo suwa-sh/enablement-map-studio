@@ -40,7 +40,7 @@ const initialState = {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    temporal(
+    temporal<AppStore>(
       (set, get) => ({
         ...initialState,
 
@@ -103,10 +103,12 @@ export const useAppStore = create<AppStore>()(
       {
         limit: 50,
         equality: (a, b) => JSON.stringify(a) === JSON.stringify(b),
-        partialize: (state) => {
-          const { cjm, sbp, outcome, em } = state;
-          return { cjm, sbp, outcome, em } as Partial<Pick<AppStore, 'cjm' | 'sbp' | 'outcome' | 'em'>>;
-        },
+        partialize: (state) => ({
+          cjm: state.cjm,
+          sbp: state.sbp,
+          outcome: state.outcome,
+          em: state.em,
+        }) as AppStore,
       }
     ),
     {

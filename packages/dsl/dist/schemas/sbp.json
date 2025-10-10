@@ -14,9 +14,13 @@
         "tasks": {
             "type": "array",
             "items": { "$ref": "#/$defs/task" }
+        },
+        "connections": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/connection" }
         }
     },
-    "required": ["kind", "version", "id", "lanes", "tasks"],
+    "required": ["kind", "version", "id", "lanes", "tasks", "connections"],
     "$defs": {
         "lane": {
             "type": "object",
@@ -34,13 +38,27 @@
                 "lane": { "type": "string" },
                 "name": { "type": "string" },
                 "source_id": { "type": "string" },
-                "link_to": {
-                    "type": "array",
-                    "items": { "type": "string" }
+                "position": {
+                    "type": "object",
+                    "properties": {
+                        "x": { "type": "number" },
+                        "y": { "type": "number" }
+                    },
+                    "required": ["x", "y"]
                 },
                 "readonly": { "type": "boolean" }
             },
             "required": ["id", "lane", "name"]
+        },
+        "connection": {
+            "type": "object",
+            "properties": {
+                "source": { "type": "string" },
+                "target": { "type": "string" },
+                "sourceHandle": { "enum": ["top", "right", "bottom", "left"] },
+                "targetHandle": { "enum": ["top", "right", "bottom", "left"] }
+            },
+            "required": ["source", "target", "sourceHandle", "targetHandle"]
         }
     }
 }

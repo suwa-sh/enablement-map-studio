@@ -1,10 +1,11 @@
 import { MarkerType } from '@xyflow/react';
 // レーンの高さとY座標マッピング
-const LANE_HEIGHT = 200;
-const LANE_SPACING = 20;
+export const LANE_HEIGHT = 200;
+export const LANE_SPACING = 20;
+export const LANE_WIDTH = 1400;
 // レーンのY座標を計算
-function getLaneY(laneIndex) {
-    return laneIndex * (LANE_HEIGHT + LANE_SPACING) + 50;
+export function getLaneY(laneIndex) {
+    return laneIndex * (LANE_HEIGHT + LANE_SPACING);
 }
 // SBP DSLをReact Flow形式に変換
 export function dslToFlow(sbp, cjm) {
@@ -15,94 +16,167 @@ export function dslToFlow(sbp, cjm) {
     sbp.lanes.forEach((lane, index) => {
         laneIndexMap.set(lane.id, index);
     });
+    // レーンをグループノードとして追加
+    sbp.lanes.forEach((lane, index) => {
+        nodes.push({
+            id: `lane:${lane.id}`,
+            type: 'laneNode',
+            position: { x: 0, y: getLaneY(index) },
+            style: {
+                width: LANE_WIDTH,
+                height: LANE_HEIGHT,
+            },
+            data: {
+                lane,
+            },
+            draggable: true,
+            selectable: true,
+        });
+    });
     // CJMアクションからreadonlyタスクを生成
     if (cjm) {
         const cjmLane = sbp.lanes.find((lane) => lane.kind === 'cjm');
         if (cjmLane) {
-            const laneY = getLaneY(laneIndexMap.get(cjmLane.id) || 0);
-            cjm.actions.forEach((action, index) => {
-                // SBPにすでに存在するか確認
-                const existingTask = sbp.tasks.find((task) => task.source_id === action.id && task.lane === cjmLane.id);
-                if (!existingTask) {
-                    // 新しいreadonlyタスクとしてノードを作成（DSLには追加しない、表示のみ）
-                    nodes.push({
-                        id: `cjm-readonly-${action.id}`,
-                        type: 'taskNode',
-                        position: { x: 100 + index * 220, y: laneY },
-                        data: {
-                            task: {
-                                id: action.id,
-                                lane: cjmLane.id,
-                                name: action.name,
-                                source_id: action.id,
-                                readonly: true,
-                            },
-                            isReadonly: true,
-                            isSelected: false,
-                        },
-                    });
+            // CJMアクションをphases配列の順序、同じphase内ではactions配列の順序でソート
+            const sortedActions = cjm.actions.slice().sort((a, b) => {
+                const phaseAIndex = cjm.phases.findIndex((p) => p.id === a.phase);
+                const phaseBIndex = cjm.phases.findIndex((p) => p.id === b.phase);
+                // phase配列のインデックスで比較
+                if (phaseAIndex !== phaseBIndex) {
+                    return phaseAIndex - phaseBIndex;
                 }
+                // 同じphase内ではactions配列のインデックスで比較
+                const aIndex = cjm.actions.findIndex((act) => act.id === a.id);
+                const bIndex = cjm.actions.findIndex((act) => act.id === b.id);
+                return aIndex - bIndex;
             });
-        }
-    }
-    // SBPタスクをノードに変換
-    sbp.tasks.forEach((task) => {
-        const laneY = getLaneY(laneIndexMap.get(task.lane) || 0);
-        const existingNodes = nodes.filter((n) => n.data.task?.lane === task.lane);
-        const xPosition = 100 + existingNodes.length * 220;
-        nodes.push({
-            id: task.id,
-            type: 'taskNode',
-            position: { x: xPosition, y: laneY },
-            data: {
-                task,
-                isReadonly: task.readonly || false,
-                isSelected: false,
-            },
-        });
-        // link_toからエッジを生成
-        if (task.link_to) {
-            task.link_to.forEach((targetId) => {
-                edges.push({
-                    id: `${task.id}-${targetId}`,
-                    source: task.id,
-                    target: targetId,
-                    type: 'smoothstep',
-                    animated: false,
-                    style: {
-                        stroke: '#555',
-                        strokeWidth: 2,
-                    },
-                    markerEnd: {
-                        type: MarkerType.ArrowClosed,
-                        width: 20,
-                        height: 20,
-                        color: '#555',
+            sortedActions.forEach((action, index) => {
+                // SBPにすでに存在するか確認（readonly タスクは id が action.id と一致）
+                const existingTask = sbp.tasks.find((task) => task.id === action.id && task.lane === cjmLane.id && task.readonly);
+                // readonly タスクは常に cjm-readonly- プレフィックス付きで生成
+                // 位置情報は既存タスクがあればそれを使用、なければ自動計算
+                const position = existingTask?.position || { x: 100 + index * 220, y: 50 };
+                nodes.push({
+                    id: `cjm-readonly-${action.id}`,
+                    type: 'taskNode',
+                    parentId: `lane:${cjmLane.id}`,
+                    extent: 'parent',
+                    position,
+                    data: {
+                        task: {
+                            id: action.id,
+                            lane: cjmLane.id,
+                            name: action.name,
+                            readonly: true,
+                        },
+                        isReadonly: true,
+                        isSelected: false,
                     },
                 });
             });
         }
+    }
+    // SBPタスクをノードに変換（readonly タスクは CJM から生成するのでスキップ）
+    sbp.tasks.forEach((task) => {
+        // readonly タスクはスキップ（CJM アクションから生成される）
+        if (task.readonly) {
+            return;
+        }
+        // 位置情報がDSLにあればそれを使用、なければ自動計算
+        let position;
+        if (task.position) {
+            position = task.position;
+        }
+        else {
+            const existingNodes = nodes.filter((n) => n.type === 'taskNode' && n.data.task?.lane === task.lane);
+            const xPosition = 100 + existingNodes.length * 220;
+            position = { x: xPosition, y: 50 };
+        }
+        nodes.push({
+            id: task.id,
+            type: 'taskNode',
+            parentId: `lane:${task.lane}`,
+            extent: 'parent',
+            position,
+            data: {
+                task,
+                isReadonly: false,
+                isSelected: false,
+            },
+        });
     });
+    // connections配列からエッジを生成
+    if (sbp.connections) {
+        sbp.connections.forEach((conn) => {
+            // CJM action ID の場合は cjm-readonly- プレフィックスを追加
+            const sourceId = conn.source.startsWith('cjm:action:')
+                ? `cjm-readonly-${conn.source}`
+                : conn.source;
+            const targetId = conn.target.startsWith('cjm:action:')
+                ? `cjm-readonly-${conn.target}`
+                : conn.target;
+            edges.push({
+                id: `${sourceId}-${targetId}`,
+                source: sourceId,
+                target: targetId,
+                sourceHandle: conn.sourceHandle,
+                targetHandle: conn.targetHandle,
+                type: 'smoothstep',
+                animated: false,
+                style: {
+                    stroke: '#555',
+                    strokeWidth: 2,
+                },
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    width: 20,
+                    height: 20,
+                    color: '#555',
+                },
+            });
+        });
+    }
     return { nodes, edges };
 }
 // React FlowのノードからSBP DSLを更新
 export function updateDslFromFlow(sbp, nodes, edges) {
-    // readonlyタスク（CJM由来）を除外
-    const editableNodes = nodes.filter((node) => !node.data.isReadonly);
-    // ノードからタスクを更新（位置情報は保持しない）
-    const updatedTasks = editableNodes.map((node) => {
+    // タスクノードを通常タスクとCJM readonlyノードに分けて処理
+    const normalTaskNodes = nodes.filter((node) => node.type === 'taskNode' && !node.id.startsWith('cjm-readonly-'));
+    const cjmReadonlyNodes = nodes.filter((node) => node.type === 'taskNode' && node.id.startsWith('cjm-readonly-'));
+    // 通常タスク（位置情報を保存）
+    const normalTasks = normalTaskNodes.map((node) => {
         const task = node.data.task;
-        // このタスクから出ているエッジを集める
-        const outgoingEdges = edges.filter((edge) => edge.source === node.id);
-        const linkTo = outgoingEdges.map((edge) => edge.target);
         return {
             ...task,
-            link_to: linkTo.length > 0 ? linkTo : undefined,
+            position: node.position,
         };
     });
+    // CJM readonlyノード（位置情報を保存）
+    const cjmReadonlyTasks = cjmReadonlyNodes.map((node) => {
+        const task = node.data.task;
+        return {
+            ...task,
+            position: node.position,
+        };
+    });
+    // 通常タスクとCJM readonlyタスクをマージ
+    const updatedTasks = [...normalTasks, ...cjmReadonlyTasks];
+    // エッジから接続情報を生成
+    // CJM readonly ノード（cjm-readonly-*）のIDをDSL用ID（cjm:action:*）に変換
+    const connections = edges.map((edge) => ({
+        source: edge.source.startsWith('cjm-readonly-')
+            ? edge.source.replace('cjm-readonly-', '')
+            : edge.source,
+        target: edge.target.startsWith('cjm-readonly-')
+            ? edge.target.replace('cjm-readonly-', '')
+            : edge.target,
+        sourceHandle: (edge.sourceHandle || 'right'),
+        targetHandle: (edge.targetHandle || 'left'),
+    }));
     return {
         ...sbp,
         tasks: updatedTasks,
+        connections,
     };
 }
 export function getLaneBackgrounds(lanes) {

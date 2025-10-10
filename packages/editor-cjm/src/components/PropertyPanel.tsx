@@ -121,7 +121,7 @@ export function PropertyPanel({
               onChange={(e) =>
                 setEditedAction({
                   ...editedAction,
-                  touchpoints: e.target.value.split('\n').filter(Boolean),
+                  touchpoints: e.target.value.split('\n'),
                 })
               }
               placeholder="1行に1つ入力"
@@ -136,7 +136,7 @@ export function PropertyPanel({
               onChange={(e) =>
                 setEditedAction({
                   ...editedAction,
-                  thoughts_feelings: e.target.value.split('\n').filter(Boolean),
+                  thoughts_feelings: e.target.value.split('\n'),
                 })
               }
               placeholder="1行に1つ入力"

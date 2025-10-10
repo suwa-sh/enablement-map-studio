@@ -1,6 +1,8 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
+import { Box, Typography } from '@mui/material';
 import { useAppStore } from '@enablement-map-studio/store';
+import { generateId } from '@enablement-map-studio/dsl';
 import { CjmCanvas } from './components/CjmCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 export function CjmEditor() {
@@ -9,7 +11,7 @@ export function CjmEditor() {
     const [selectedAction, setSelectedAction] = useState(null);
     const [selectedPhase, setSelectedPhase] = useState(null);
     if (!cjm) {
-        return (_jsx("div", { className: "flex h-full items-center justify-center", children: _jsx("p", { className: "text-gray-500", children: "No CJM data loaded. Please load a YAML file." }) }));
+        return (_jsx(Box, { sx: { display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }, children: _jsx(Typography, { color: "text.secondary", children: "No CJM data loaded. Please load a YAML file." }) }));
     }
     const handleActionUpdate = (updatedAction) => {
         const updatedActions = cjm.actions.map((action) => action.id === updatedAction.id ? updatedAction : action);
@@ -33,7 +35,45 @@ export function CjmEditor() {
         updateCjm({ ...cjm, phases: updatedPhases, actions: updatedActions });
         setSelectedPhase(null);
     };
-    return (_jsxs("div", { className: "flex h-full", children: [_jsx("div", { className: "flex-1 overflow-auto", children: _jsx(CjmCanvas, { cjm: cjm, selectedAction: selectedAction, selectedPhase: selectedPhase, onActionSelect: setSelectedAction, onPhaseSelect: setSelectedPhase, onActionUpdate: handleActionUpdate, onPhaseUpdate: handlePhaseUpdate }) }), _jsx(PropertyPanel, { selectedAction: selectedAction, selectedPhase: selectedPhase, onActionUpdate: handleActionUpdate, onPhaseUpdate: handlePhaseUpdate, onActionDelete: handleActionDelete, onPhaseDelete: handlePhaseDelete, onClose: () => {
+    const handleAddPhase = () => {
+        const newPhase = {
+            id: generateId('cjm', 'phase'),
+            name: '新しいフェーズ',
+        };
+        const newAction = {
+            id: generateId('cjm', 'action'),
+            name: 'アクション 1',
+            phase: newPhase.id,
+            emotion_score: 0,
+            touchpoints: [],
+            thoughts_feelings: [],
+        };
+        updateCjm({
+            ...cjm,
+            phases: [...cjm.phases, newPhase],
+            actions: [...cjm.actions, newAction],
+        });
+        setSelectedPhase(newPhase);
+    };
+    const handleAddAction = (phaseId, actionName) => {
+        const newAction = {
+            id: generateId('cjm', 'action'),
+            name: actionName,
+            phase: phaseId,
+            emotion_score: 0,
+            touchpoints: [],
+            thoughts_feelings: [],
+        };
+        updateCjm({ ...cjm, actions: [...cjm.actions, newAction] });
+        setSelectedAction(newAction);
+    };
+    const handleReorderActions = (reorderedActions) => {
+        updateCjm({ ...cjm, actions: reorderedActions });
+    };
+    const handleReorderPhases = (reorderedPhases) => {
+        updateCjm({ ...cjm, phases: reorderedPhases });
+    };
+    return (_jsxs(Box, { sx: { display: 'flex', height: '100%' }, children: [_jsx(Box, { sx: { flex: 1, overflow: 'auto' }, children: _jsx(CjmCanvas, { cjm: cjm, selectedAction: selectedAction, selectedPhase: selectedPhase, onActionSelect: setSelectedAction, onPhaseSelect: setSelectedPhase, onAddPhase: handleAddPhase, onAddAction: handleAddAction, onReorderActions: handleReorderActions, onReorderPhases: handleReorderPhases }) }), _jsx(PropertyPanel, { selectedAction: selectedAction, selectedPhase: selectedPhase, onActionUpdate: handleActionUpdate, onPhaseUpdate: handlePhaseUpdate, onActionDelete: handleActionDelete, onPhaseDelete: handlePhaseDelete, onClose: () => {
                     setSelectedAction(null);
                     setSelectedPhase(null);
                 } })] }));

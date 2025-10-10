@@ -67,79 +67,101 @@ export function dslToFlow(sbp: SbpDsl, cjm: CjmDsl | null): FlowData {
       });
 
       sortedActions.forEach((action, index) => {
-        // SBPにすでに存在するか確認
+        // SBPにすでに存在するか確認（readonly タスクは id が action.id と一致）
         const existingTask = sbp.tasks.find(
-          (task) => task.source_id === action.id && task.lane === cjmLane.id
+          (task) => task.id === action.id && task.lane === cjmLane.id && task.readonly
         );
 
-        if (!existingTask) {
-          // 新しいreadonlyタスクとしてノードを作成（DSLには追加しない、表示のみ）
-          nodes.push({
-            id: `cjm-readonly-${action.id}`,
-            type: 'taskNode',
-            parentId: `lane:${cjmLane.id}`,
-            extent: 'parent' as const,
-            position: { x: 100 + index * 220, y: 50 },
-            data: {
-              task: {
-                id: action.id,
-                lane: cjmLane.id,
-                name: action.name,
-                source_id: action.id,
-                readonly: true,
-              },
-              isReadonly: true,
-              isSelected: false,
+        // readonly タスクは常に cjm-readonly- プレフィックス付きで生成
+        // 位置情報は既存タスクがあればそれを使用、なければ自動計算
+        const position = existingTask?.position || { x: 100 + index * 220, y: 50 };
+
+        nodes.push({
+          id: `cjm-readonly-${action.id}`,
+          type: 'taskNode',
+          parentId: `lane:${cjmLane.id}`,
+          extent: 'parent' as const,
+          position,
+          data: {
+            task: {
+              id: action.id,
+              lane: cjmLane.id,
+              name: action.name,
+              readonly: true,
             },
-          });
-        }
+            isReadonly: true,
+            isSelected: false,
+          },
+        });
       });
     }
   }
 
-  // SBPタスクをノードに変換
+  // SBPタスクをノードに変換（readonly タスクは CJM から生成するのでスキップ）
   sbp.tasks.forEach((task) => {
-    const existingNodes = nodes.filter(
-      (n) => n.type === 'taskNode' && (n.data as any).task?.lane === task.lane
-    );
-    const xPosition = 100 + existingNodes.length * 220;
+    // readonly タスクはスキップ（CJM アクションから生成される）
+    if (task.readonly) {
+      return;
+    }
+
+    // 位置情報がDSLにあればそれを使用、なければ自動計算
+    let position: { x: number; y: number };
+    if (task.position) {
+      position = task.position;
+    } else {
+      const existingNodes = nodes.filter(
+        (n) => n.type === 'taskNode' && (n.data as any).task?.lane === task.lane
+      );
+      const xPosition = 100 + existingNodes.length * 220;
+      position = { x: xPosition, y: 50 };
+    }
 
     nodes.push({
       id: task.id,
       type: 'taskNode',
       parentId: `lane:${task.lane}`,
       extent: 'parent' as const,
-      position: { x: xPosition, y: 50 },
+      position,
       data: {
         task,
-        isReadonly: task.readonly || false,
+        isReadonly: false,
         isSelected: false,
       },
     });
-
-    // link_toからエッジを生成
-    if (task.link_to) {
-      task.link_to.forEach((targetId) => {
-        edges.push({
-          id: `${task.id}-${targetId}`,
-          source: task.id,
-          target: targetId,
-          type: 'smoothstep',
-          animated: false,
-          style: {
-            stroke: '#555',
-            strokeWidth: 2,
-          },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 20,
-            height: 20,
-            color: '#555',
-          },
-        });
-      });
-    }
   });
+
+  // connections配列からエッジを生成
+  if (sbp.connections) {
+    sbp.connections.forEach((conn) => {
+      // CJM action ID の場合は cjm-readonly- プレフィックスを追加
+      const sourceId = conn.source.startsWith('cjm:action:')
+        ? `cjm-readonly-${conn.source}`
+        : conn.source;
+      const targetId = conn.target.startsWith('cjm:action:')
+        ? `cjm-readonly-${conn.target}`
+        : conn.target;
+
+      edges.push({
+        id: `${sourceId}-${targetId}`,
+        source: sourceId,
+        target: targetId,
+        sourceHandle: conn.sourceHandle,
+        targetHandle: conn.targetHandle,
+        type: 'smoothstep',
+        animated: false,
+        style: {
+          stroke: '#555',
+          strokeWidth: 2,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+          color: '#555',
+        },
+      });
+    });
+  }
 
   return { nodes, edges };
 }
@@ -150,28 +172,53 @@ export function updateDslFromFlow(
   nodes: Node[],
   edges: Edge[]
 ): SbpDsl {
-  // タスクノードのみフィルタリング（レーンノードとreadonlyタスクを除外）
-  const taskNodes = nodes.filter(
-    (node) => node.type === 'taskNode' && !(node.data as any).isReadonly
+  // タスクノードを通常タスクとCJM readonlyノードに分けて処理
+  const normalTaskNodes = nodes.filter(
+    (node) => node.type === 'taskNode' && !node.id.startsWith('cjm-readonly-')
   );
 
-  // ノードからタスクを更新（parentIdは無視、DSLのlaneをそのまま使用）
-  const updatedTasks: SbpTask[] = taskNodes.map((node) => {
+  const cjmReadonlyNodes = nodes.filter(
+    (node) => node.type === 'taskNode' && node.id.startsWith('cjm-readonly-')
+  );
+
+  // 通常タスク（位置情報を保存）
+  const normalTasks: SbpTask[] = normalTaskNodes.map((node) => {
     const task = (node.data as any).task as SbpTask;
-
-    // このタスクから出ているエッジを集める
-    const outgoingEdges = edges.filter((edge) => edge.source === node.id);
-    const linkTo = outgoingEdges.map((edge) => edge.target);
-
     return {
       ...task,
-      link_to: linkTo.length > 0 ? linkTo : undefined,
+      position: node.position,
     };
   });
+
+  // CJM readonlyノード（位置情報を保存）
+  const cjmReadonlyTasks: SbpTask[] = cjmReadonlyNodes.map((node) => {
+    const task = (node.data as any).task as SbpTask;
+    return {
+      ...task,
+      position: node.position,
+    };
+  });
+
+  // 通常タスクとCJM readonlyタスクをマージ
+  const updatedTasks = [...normalTasks, ...cjmReadonlyTasks];
+
+  // エッジから接続情報を生成
+  // CJM readonly ノード（cjm-readonly-*）のIDをDSL用ID（cjm:action:*）に変換
+  const connections = edges.map((edge) => ({
+    source: edge.source.startsWith('cjm-readonly-')
+      ? edge.source.replace('cjm-readonly-', '')
+      : edge.source,
+    target: edge.target.startsWith('cjm-readonly-')
+      ? edge.target.replace('cjm-readonly-', '')
+      : edge.target,
+    sourceHandle: (edge.sourceHandle || 'right') as 'top' | 'right' | 'bottom' | 'left',
+    targetHandle: (edge.targetHandle || 'left') as 'top' | 'right' | 'bottom' | 'left',
+  }));
 
   return {
     ...sbp,
     tasks: updatedTasks,
+    connections,
   };
 }
 

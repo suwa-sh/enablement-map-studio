@@ -140,13 +140,35 @@ apps/
 
 ### 重要な仕様決定事項
 
-[tmp/em_studio.md](tmp/em_studio.md) より:
+[REQUIREMENTS.md](REQUIREMENTS.md) より:
 
 1. **Outcome CSF構造**: `primary_csf.source_id` を持つ単一オブジェクト (配列ではない)
 2. **SBP Task接続**: `link_to` は配列 (複数接続を許可)
 3. **EMエディタ階層**: Outcome → CJM Phase → CJM Action → SBP Task → EM Actions → skills/knowledge/tools (1:1:1:1:n:m,o,p)
 4. **CJM感情スコア**: -2 (非常にネガティブ) から +2 (非常にポジティブ)
 5. **バージョン**: すべてのDSLは現在 "1.0"、バージョンチェックは未実装
+
+### 重要な実装上の注意点
+
+**React状態更新のベストプラクティス**:
+1. **レンダリング中の状態更新を避ける**:
+   - ❌ コンポーネント本体で直接 `updateSbp()` を呼び出す
+   - ✅ `useEffect` 内で状態更新を実行
+   - エラー: "Cannot update a component while rendering a different component"
+
+2. **空状態からの直接作成**:
+   - CJM/SBPエディタは `null` 状態でも追加ボタンを表示
+   - 追加操作時にDSLを初期化してデータを同時作成
+   - `setTimeout` による再帰呼び出しは使用しない（動作が不安定）
+
+3. **useEffectの依存配列管理**:
+   - 追加・削除・更新の検出をそれぞれ独立したuseEffectで実装
+   - 新規アイテム検出: 既存IDセットと比較して差分を抽出
+   - 削除アイテム検出: DSL IDセットと現在のノードを比較
+
+4. **配列フィルタリングの注意**:
+   - `.filter(Boolean)` は空文字列も除去するため、改行対応には不適切
+   - タッチポイント・思考感情フィールドでは使用しない
 
 ### CJM Editorの実装詳細
 
@@ -159,17 +181,104 @@ apps/
 - フェーズ追加時、自動的に「アクション 1」を作成
 - アクション追加はダイアログでフェーズ選択+名前入力
 - ドラッグハンドル（≡）とクリックターゲットを分離（activationConstraint: 8px）
+- **空状態からの直接作成**: CJMがnullの場合でも「フェーズ追加」「アクション追加」ボタンを表示
+  - フェーズ追加時、CJM DSLを初期化してフェーズ+アクションを同時作成
+  - メッセージ: "フェーズを追加する か YAML をロードしてください"
 
 **プロパティパネル**:
 - 幅: 画面の33vw（最小400px）
 - アクション編集順: アクション → タッチポイント → 思考・感情 → 感情スコア
 - すべてのラベルを日本語化
 - SAVEとDELETEボタンは同じサイズ（flex: 1）
+- **タッチポイント・思考感情フィールド**: 改行可能（`.filter(Boolean)` を除去）
 
 **技術的詳細**:
 - @dnd-kit/core, @dnd-kit/sortableでドラッグ&ドロップ実装
 - フェーズとアクションそれぞれに独立したDndContext
 - アクション行の列数をフェーズヘッダーのcolSpanと一致させる
+- **初期化ロジック**: `handleAddPhase()`内で直接CJM DSLを作成（useEffectではなく同期的に初期化）
+
+### SBP Editorの実装詳細
+
+**UI構成**:
+- @xyflow/react (React Flow) によるフローダイアグラム
+- カスタムノードタイプ: `laneNode`, `taskNode`
+- スイムレーン構造（レーンは親ノード、タスクは子ノード）
+- ミニマップ、コントロールパネル、背景グリッド
+
+**状態管理の重要な設計決定**:
+- **ID-based状態管理**: オブジェクト参照ではなくIDで状態を管理
+  - `selectedLaneId: string | null` (❌ `selectedLane: SbpLane | null` ではない)
+  - 派生状態として `sbp.lanes.find(lane => lane.id === selectedLaneId)` で最新データを取得
+  - これにより、Zustand更新時に常に最新データを参照可能
+- **選択的useEffect更新**: パフォーマンス最適化のため、3つの独立したuseEffectを使用
+  1. レーン更新・削除・追加の検出 (`[sbp.lanes, setNodes]`)
+  2. タスク追加・削除の検出 (`[sbp.tasks, setNodes, setEdges]`)
+  3. CJM readonlyノードの同期 (`[cjm, sbp.lanes, sbp.tasks, setNodes]`)
+- **CJM存在時の自動初期化**: `useEffect`でCJMが存在しSBPがnullの場合、CJMレーンを含むSBPを自動初期化
+  - レンダリング中の状態更新を避けるため、必ずuseEffectで実行
+
+**CJM連動の詳細**:
+- `kind: 'cjm'` レーンに CJM actions を readonly タスクとして自動表示
+- ノードID形式: `cjm-readonly-{actionId}`
+- CJMアクションをphase順にソートして配置
+- 既存のSBP taskと重複しない（`source_id`でチェック）
+- CJM更新時に自動的に追加・削除・更新
+- **CJMアクションの位置情報**: `position` フィールドでlocalStorageに永続化
+  - ドラッグ移動した位置を保存し、リロード後も保持
+  - CJM readonlyタスクもSBP DSLの`tasks`配列に`readonly: true`で保存
+
+**レーン管理**:
+- レーンノード: `id: "lane:{laneId}"`, `type: "laneNode"`
+- レーン種別: `cjm` (readonly), `human`, `team`, `system`
+- レーン追加時の自動配置: Y座標 = `index * (LANE_HEIGHT + LANE_SPACING)`
+- DELETEキー・ボタンによる削除を即時DSLに反映
+- **空状態からの直接作成**: SBPがnullの場合
+  - CJMが存在する場合: 自動的にCJMレーンを含むSBPを初期化（useEffectで実行）
+  - CJMが存在しない場合: "CJMを作成する か YAML をロードしてください" メッセージ表示
+
+**タスク管理**:
+- タスクノード: `id: taskId`, `type: "taskNode"`, `parentId: "lane:{laneId}"`
+- **タスク追加ダイアログ**: レーン選択+タスク名入力（CJMレーンは選択肢から除外）
+- **useEffectでの追加検出**: 新規タスクを検出してReact Flowノードを自動作成
+- タスク間接続: `connections[]` 配列でハンドル位置も含めて管理
+  - `sourceHandle`: 接続開始側のハンドル位置 (`'top' | 'right' | 'bottom' | 'left'`)
+  - `targetHandle`: 接続終了側のハンドル位置 (`'top' | 'right' | 'bottom' | 'left'`)
+  - 4方向すべてのハンドル接続を許可（JSONスキーマ、TypeScript型定義で対応済み）
+- **D&D接続の仕様**:
+  - D&D開始側のハンドルから矢印が出る
+  - D&D終了側のハンドルに矢印が刺さる（`markerEnd`）
+  - source/target入れ替えロジック: React FlowのデフォルトとユーザーUX期待値を調整
+- **CJM接続の自動設定**:
+  - CJM readonlyタスクから/へ接続時、自動的に通常タスクの`source_id`を設定
+  - 双方向D&D対応（CJM→タスク、タスク→CJM）
+  - エッジ削除時に`source_id`も自動削除
+
+**UX改善機能**:
+- **アライメントガイド**: ドラッグ中に他のタスクとの中央揃えガイド（破線）を表示
+  - 水平・垂直の中央位置が近い場合（閾値10px）に表示
+  - スナップ機能: ガイド表示時に自動的に位置を調整
+  - D&D終了後に破線を即座に非表示
+- **接続ハンドル**: タスクノードの4方向すべてに接続ハンドル
+  - ホバー時に灰色の丸ハンドルを表示
+  - クリック&ドラッグで接続開始
+  - 双方向接続可能（矢印は常にD&D終了側）
+
+**プロパティパネル**:
+- 幅: 画面の33vw（最小400px）
+- タスク編集: タスク名、レーン選択、削除
+- レーン編集: レーン名、種別（CJMレーンは変更不可）
+- SAVE時の即時反映（ID-based状態管理により）
+
+**技術的詳細**:
+- `flowConverter.ts`: DSL ⇔ React Flow 形式の相互変換
+  - `dslToFlow()`: connections配列からエッジ生成、CJM readonly node IDに`cjm-readonly-`プレフィックス付与
+  - `updateDslFromFlow()`: エッジからconnections配列生成、CJM readonly nodeの位置情報も保存
+- `handleNodesChange`: レーン削除も含めたDSL更新
+- `handleEdgesDelete`: エッジ削除時にCJM接続の`source_id`をクリア
+- `handleConnect`: D&D接続時のsource/target入れ替えとCJM `source_id`自動設定
+- `useAlignmentGuides`: アライメントガイドとスナップ機能のカスタムフック
+- `LANE_HEIGHT=200`, `LANE_SPACING=20`, `LANE_WIDTH=1400`
 
 ### 開発ワークフロー
 
@@ -188,15 +297,19 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
 **✅ 完了**:
 - フェーズ1-3: モノレポ、TypeScript設定、全DSLインフラ
 - 永続化とバリデーションを持つZustandストア
-- UIコンポーネントライブラリ、アプリシェル、ファイル操作
+- UIコンポーネントライブラリ、アプリシェル、ファイル操作（Clear Canvasボタン追加）
 - ビルドシステム稼働中
-- **CJM Editor完成**: テーブルUI、ドラッグ&ドロップ、感情曲線、プロパティパネル
-
-**🚧 進行中** (フェーズ4):
-- **SBP Editor**: React Flow実装中
-  - スイムレーン構造
-  - CJM連動（readonly表示）
-  - タスク間接続（箱と矢印）
+- **CJM Editor完成**:
+  - テーブルUI、ドラッグ&ドロップ、感情曲線、プロパティパネル
+  - 空状態からの直接作成（フェーズ追加・アクション追加ボタン常時表示）
+  - タッチポイント・思考感情フィールドの改行対応
+- **SBP Editor完成** (React Flow実装):
+  - スイムレーン構造（レーン追加・削除・並び替え・種別変更）
+  - CJM連動（readonly ノード自動同期、CJM存在時の自動初期化）
+  - タスク追加・削除・接続管理（タスク追加ダイアログ、useEffectでの追加検出）
+  - プロパティパネル統合（タスク・レーン編集）
+  - ID-based状態管理による即時反映
+  - レーン・タスクの即時CRUD反映
 
 **⏳ 未着手**:
 - Outcome Editor
@@ -204,6 +317,6 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
 
 ## 関連ドキュメント
 
-- 詳細仕様: [tmp/em_studio.md](tmp/em_studio.md)
+- 詳細仕様: [REQUIREMENTS.md](REQUIREMENTS.md)
 - 開発計画: [tmp/todo.md](tmp/todo.md)
 - イネーブルメントコンセプト: https://note.com/suwash/n/n02fa7e60d409

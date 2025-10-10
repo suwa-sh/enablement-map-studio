@@ -1,5 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
+import { Box, Typography } from '@mui/material';
 import { useAppStore } from '@enablement-map-studio/store';
 import { EmCanvas } from './components/EmCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
@@ -11,7 +12,7 @@ export function EmEditor() {
     const updateEm = useAppStore((state) => state.updateEm);
     const [selectedItem, setSelectedItem] = useState(null);
     if (!em) {
-        return (_jsx("div", { className: "flex h-full items-center justify-center", children: _jsx("p", { className: "text-gray-500", children: "No EM data loaded. Please load a YAML file." }) }));
+        return (_jsx(Box, { sx: { display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }, children: _jsx(Typography, { color: "text.secondary", children: "No EM data loaded. Please load a YAML file." }) }));
     }
     const handleActionUpdate = (updatedAction) => {
         const updatedActions = em.actions.map((action) => action.id === updatedAction.id ? updatedAction : action);
@@ -64,5 +65,5 @@ export function EmEditor() {
         }
         setSelectedItem(null);
     };
-    return (_jsxs("div", { className: "flex h-full", children: [_jsx("div", { className: "flex-1 overflow-auto", children: _jsx(EmCanvas, { em: em, outcome: outcome, sbp: sbp, cjm: cjm, selectedItem: selectedItem, onSelectItem: setSelectedItem }) }), _jsx(PropertyPanel, { selectedItem: selectedItem, onActionUpdate: handleActionUpdate, onSkillUpdate: handleSkillUpdate, onKnowledgeUpdate: handleKnowledgeUpdate, onToolUpdate: handleToolUpdate, onDelete: handleDelete, onClose: () => setSelectedItem(null) })] }));
+    return (_jsxs(Box, { sx: { display: 'flex', height: '100%' }, children: [_jsx(Box, { sx: { flex: 1, overflow: 'auto' }, children: _jsx(EmCanvas, { em: em, outcome: outcome, sbp: sbp, cjm: cjm, selectedItem: selectedItem, onSelectItem: setSelectedItem }) }), _jsx(PropertyPanel, { selectedItem: selectedItem, onActionUpdate: handleActionUpdate, onSkillUpdate: handleSkillUpdate, onKnowledgeUpdate: handleKnowledgeUpdate, onToolUpdate: handleToolUpdate, onDelete: handleDelete, onClose: () => setSelectedItem(null) })] }));
 }

@@ -1,10 +1,11 @@
 import { Box, Card, Typography, Chip, Button } from '@mui/material';
 import { Close } from '@mui/icons-material';
-import type { SbpTask, CjmDsl } from '@enablement-map-studio/dsl';
+import type { SbpTask, SbpConnection, CjmDsl } from '@enablement-map-studio/dsl';
 
 interface TaskCardProps {
   task: SbpTask;
   allTasks: SbpTask[];
+  connections: SbpConnection[];
   cjm: CjmDsl | null;
   isSelected: boolean;
   isConnectingTarget: boolean;
@@ -17,6 +18,7 @@ interface TaskCardProps {
 export function TaskCard({
   task,
   allTasks,
+  connections,
   cjm,
   isSelected,
   isConnectingTarget,
@@ -40,7 +42,10 @@ export function TaskCard({
     }
   };
 
-  const connectedTasks = task.link_to || [];
+  // Get connected task IDs from connections array
+  const connectedTaskIds = connections
+    .filter((conn) => conn.source === task.id)
+    .map((conn) => conn.target);
 
   return (
     <Box sx={{ minWidth: 250, flexShrink: 0 }}>
@@ -78,18 +83,18 @@ export function TaskCard({
         )}
 
         {/* Connection count */}
-        {connectedTasks.length > 0 && (
+        {connectedTaskIds.length > 0 && (
           <Box sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
             <Typography variant="caption" color="text.secondary">
-              → {connectedTasks.length} connection(s)
+              → {connectedTaskIds.length} connection(s)
             </Typography>
           </Box>
         )}
 
         {/* Connected task badges */}
-        {connectedTasks.length > 0 && (
+        {connectedTaskIds.length > 0 && (
           <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-            {connectedTasks.map((connectedId) => {
+            {connectedTaskIds.map((connectedId) => {
               const connectedTask = allTasks.find((t) => t.id === connectedId);
               return (
                 <Chip

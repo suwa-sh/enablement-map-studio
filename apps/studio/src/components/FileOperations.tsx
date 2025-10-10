@@ -1,13 +1,13 @@
 import React, { useRef } from 'react';
 import { Box, Button, Stack } from '@mui/material';
-import { UploadFile, Download, MenuBook } from '@mui/icons-material';
+import { UploadFile, Download, MenuBook, DeleteSweep } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@enablement-map-studio/store';
 
 export const FileOperations: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { loadYaml, exportYaml, cjm, sbp, outcome, em } = useAppStore();
+  const { loadYaml, exportYaml, reset, cjm, sbp, outcome, em } = useAppStore();
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -67,12 +67,18 @@ export const FileOperations: React.FC = () => {
       }
       const content = await response.text();
       loadYaml(content);
-      alert('Sample data loaded successfully!');
       // CJMエディタに遷移
       navigate('/cjm');
     } catch (error) {
       console.error('Failed to load sample:', error);
       alert(`Failed to load sample: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleClearCanvas = () => {
+    if (window.confirm('すべてのデータをクリアしてもよろしいですか？この操作は元に戻せません。')) {
+      reset();
+      navigate('/');
     }
   };
 
@@ -89,6 +95,16 @@ export const FileOperations: React.FC = () => {
       </Button>
       <Button variant="outlined" size="small" onClick={handleLoadSample} startIcon={<MenuBook />}>
         Load Sample
+      </Button>
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={handleClearCanvas}
+        disabled={!hasData}
+        startIcon={<DeleteSweep />}
+        color="error"
+      >
+        Clear Canvas
       </Button>
     </Stack>
   );

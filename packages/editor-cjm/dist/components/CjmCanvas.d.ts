@@ -5,8 +5,10 @@ interface CjmCanvasProps {
     selectedPhase: CjmPhase | null;
     onActionSelect: (action: CjmAction) => void;
     onPhaseSelect: (phase: CjmPhase) => void;
-    onActionUpdate: (action: CjmAction) => void;
-    onPhaseUpdate: (phase: CjmPhase) => void;
+    onAddPhase: () => void;
+    onAddAction: (phaseId: string, actionName: string) => void;
+    onReorderActions: (actions: CjmAction[]) => void;
+    onReorderPhases: (phases: CjmPhase[]) => void;
 }
-export declare function CjmCanvas({ cjm, selectedAction, selectedPhase, onActionSelect, onPhaseSelect, }: CjmCanvasProps): import("react/jsx-runtime").JSX.Element;
+export declare function CjmCanvas({ cjm, selectedAction, selectedPhase, onActionSelect, onPhaseSelect, onAddPhase, onAddAction, onReorderActions, onReorderPhases, }: CjmCanvasProps): import("react/jsx-runtime").JSX.Element;
 export {};
