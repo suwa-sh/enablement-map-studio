@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { temporal } from 'zundo';
 import { parseYaml, exportYaml, checkReferenceIntegrity, } from '@enablement-map-studio/dsl';
 const initialState = {
     cjm: null,
@@ -8,7 +9,7 @@ const initialState = {
     em: null,
     referenceCheck: null,
 };
-export const useAppStore = create()(persist((set, get) => ({
+export const useAppStore = create()(persist(temporal((set, get) => ({
     ...initialState,
     loadYaml: (content) => {
         try {
@@ -58,5 +59,22 @@ export const useAppStore = create()(persist((set, get) => ({
     },
     reset: () => set(initialState),
 }), {
+    limit: 50,
+    equality: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+    partialize: (state) => {
+        const { cjm, sbp, outcome, em } = state;
+        return { cjm, sbp, outcome, em };
+    },
+}), {
     name: 'enablement-map-studio-storage',
 }));
+// Temporal store用のリアクティブフック
+export const useTemporalStore = (selector, equality) => {
+    // useAppStore.temporalはストアなので、そのまま使える
+    // zundoのドキュメントに従い、useStoreWithEqualityFnを使う代わりに
+    // Zustandの標準的な方法でサブスクライブ
+    if (equality) {
+        return useAppStore.temporal(selector, equality);
+    }
+    return useAppStore.temporal(selector);
+};

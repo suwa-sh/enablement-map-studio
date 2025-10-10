@@ -1,10 +1,12 @@
 import React, { useRef } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import { UploadFile, Download, MenuBook } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@enablement-map-studio/store';
 
 export const FileOperations: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const { loadYaml, exportYaml, cjm, sbp, outcome, em } = useAppStore();
 
   const handleFileSelect = () => {
@@ -21,6 +23,8 @@ export const FileOperations: React.FC = () => {
         const content = e.target?.result as string;
         loadYaml(content);
         alert('YAML file loaded successfully!');
+        // CJMエディタに遷移
+        navigate('/cjm');
       } catch (error) {
         console.error('Failed to load YAML:', error);
         alert(`Failed to load YAML: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -64,6 +68,8 @@ export const FileOperations: React.FC = () => {
       const content = await response.text();
       loadYaml(content);
       alert('Sample data loaded successfully!');
+      // CJMエディタに遷移
+      navigate('/cjm');
     } catch (error) {
       console.error('Failed to load sample:', error);
       alert(`Failed to load sample: ${error instanceof Error ? error.message : 'Unknown error'}`);

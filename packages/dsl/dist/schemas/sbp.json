@@ -1,5 +1,4 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://example.com/schemas/sbp.json",
     "title": "Service Blueprint DSL",
     "description": "Schema for the SBP DSL format.",

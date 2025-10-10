@@ -59,7 +59,7 @@ export function PropertyPanel({
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
+    if (window.confirm('このアイテムを削除してもよろしいですか？')) {
       if (editedTask) {
         onTaskDelete(editedTask.id);
       } else if (editedLane) {
@@ -72,9 +72,9 @@ export function PropertyPanel({
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose} variant="temporary">
-      <Box sx={{ width: 360, p: 3 }}>
+      <Box sx={{ width: '33vw', minWidth: 400, p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6">Properties</Typography>
+          <Typography variant="h6">プロパティ</Typography>
           <IconButton onClick={onClose} size="small">
             <Close />
           </IconButton>
@@ -83,17 +83,18 @@ export function PropertyPanel({
         {editedLane && (
           <Stack spacing={3}>
             <TextField
-              label="Lane Name"
+              label="レーン名"
               fullWidth
               value={editedLane.name}
               onChange={(e) => setEditedLane({ ...editedLane, name: e.target.value })}
             />
 
             <FormControl fullWidth>
-              <InputLabel>Lane Kind</InputLabel>
+              <InputLabel>レーン種別</InputLabel>
               <Select
-                value={editedLane.kind}
-                label="Lane Kind"
+                value={editedLane.kind === 'cjm' ? 'cjm' : editedLane.kind}
+                label="レーン種別"
+                disabled={editedLane.kind === 'cjm'}
                 onChange={(e) =>
                   setEditedLane({
                     ...editedLane,
@@ -101,11 +102,16 @@ export function PropertyPanel({
                   })
                 }
               >
-                <MenuItem value="cjm">CJM</MenuItem>
+                {editedLane.kind === 'cjm' && <MenuItem value="cjm">顧客 (CJM連動)</MenuItem>}
                 <MenuItem value="human">Human</MenuItem>
                 <MenuItem value="team">Team</MenuItem>
                 <MenuItem value="system">System</MenuItem>
               </Select>
+              {editedLane.kind === 'cjm' && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                  CJM連動レーンの種別は変更できません
+                </Typography>
+              )}
             </FormControl>
 
             <Stack direction="row" spacing={1}>
@@ -113,7 +119,7 @@ export function PropertyPanel({
                 variant="contained"
                 startIcon={<Save />}
                 onClick={handleSave}
-                fullWidth
+                sx={{ flex: 1 }}
               >
                 Save
               </Button>
@@ -122,6 +128,7 @@ export function PropertyPanel({
                 color="error"
                 startIcon={<Delete />}
                 onClick={handleDelete}
+                sx={{ flex: 1 }}
               >
                 Delete
               </Button>
@@ -132,7 +139,7 @@ export function PropertyPanel({
         {editedTask && (
           <Stack spacing={3}>
             <TextField
-              label="Task Name"
+              label="タスク名"
               fullWidth
               value={editedTask.name}
               onChange={(e) => setEditedTask({ ...editedTask, name: e.target.value })}
@@ -141,18 +148,31 @@ export function PropertyPanel({
 
             {editedTask.readonly && (
               <Alert severity="warning">
-                This task is read-only (from CJM). Edit it in the CJM editor.
+                このタスクは読み取り専用です（CJM連動）。CJMエディタで編集してください。
               </Alert>
             )}
 
             <TextField
-              label="Source ID (CJM Action)"
+              label="ソースID (CJMアクション)"
               fullWidth
               value={editedTask.source_id || ''}
               onChange={(e) =>
                 setEditedTask({ ...editedTask, source_id: e.target.value || undefined })
               }
-              placeholder="Optional"
+              placeholder="任意"
+            />
+
+            <TextField
+              label="接続先タスク"
+              fullWidth
+              multiline
+              rows={2}
+              value={editedTask.link_to?.join('\n') || ''}
+              placeholder="接続は矢印で表示されます"
+              helperText="接続関係はキャンバス上の矢印で管理されます（読み取り専用）"
+              InputProps={{
+                readOnly: true,
+              }}
             />
 
             <Stack direction="row" spacing={1}>
@@ -160,7 +180,7 @@ export function PropertyPanel({
                 variant="contained"
                 startIcon={<Save />}
                 onClick={handleSave}
-                fullWidth
+                sx={{ flex: 1 }}
               >
                 Save
               </Button>
@@ -170,6 +190,7 @@ export function PropertyPanel({
                 startIcon={<Delete />}
                 onClick={handleDelete}
                 disabled={editedTask.readonly}
+                sx={{ flex: 1 }}
               >
                 Delete
               </Button>

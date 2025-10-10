@@ -1,3 +1,4 @@
+import { type TemporalState } from 'zundo';
 import type { CjmDsl, SbpDsl, OutcomeDsl, EmDsl } from '@enablement-map-studio/dsl';
 import { type ReferenceCheckResult } from '@enablement-map-studio/dsl';
 export interface AppStore {
@@ -15,7 +16,7 @@ export interface AppStore {
     checkReferences: () => ReferenceCheckResult;
     reset: () => void;
 }
-export declare const useAppStore: import("zustand").UseBoundStore<Omit<import("zustand").StoreApi<AppStore>, "persist"> & {
+export declare const useAppStore: import("zustand").UseBoundStore<Omit<Omit<import("zustand").StoreApi<AppStore>, "persist"> & {
     persist: {
         setOptions: (options: Partial<import("zustand/middleware").PersistOptions<AppStore, AppStore>>) => void;
         clearStorage: () => void;
@@ -25,5 +26,8 @@ export declare const useAppStore: import("zustand").UseBoundStore<Omit<import("z
         onFinishHydration: (fn: (state: AppStore) => void) => () => void;
         getOptions: () => Partial<import("zustand/middleware").PersistOptions<AppStore, AppStore>>;
     };
+}, "temporal"> & {
+    temporal: import("zustand").StoreApi<TemporalState<AppStore>>;
 }>;
+export declare const useTemporalStore: <T>(selector: (state: TemporalState<Partial<Pick<AppStore, "cjm" | "sbp" | "outcome" | "em">>>) => T, equality?: (a: T, b: T) => boolean) => T;
 //# sourceMappingURL=store.d.ts.map

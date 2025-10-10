@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { useAppStore } from '@enablement-map-studio/store';
+import { generateId } from '@enablement-map-studio/dsl';
 import type { SbpTask, SbpLane } from '@enablement-map-studio/dsl';
 import { SbpCanvas } from './components/SbpCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
@@ -11,8 +12,10 @@ export function SbpEditor() {
   const updateSbp = useAppStore((state) => state.updateSbp);
 
   const [selectedTask, setSelectedTask] = useState<SbpTask | null>(null);
-  const [selectedLane, setSelectedLane] = useState<SbpLane | null>(null);
-  const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+  const [selectedLaneId, setSelectedLaneId] = useState<string | null>(null);
+
+  // Always get the latest lane data from the store
+  const selectedLane = selectedLaneId ? sbp.lanes.find(lane => lane.id === selectedLaneId) || null : null;
 
   if (!sbp) {
     return (
@@ -35,7 +38,7 @@ export function SbpEditor() {
       lane.id === updatedLane.id ? updatedLane : lane
     );
     updateSbp({ ...sbp, lanes: updatedLanes });
-    setSelectedLane(updatedLane);
+    // Don't update selectedLane to avoid re-rendering PropertyPanel with stale data
   };
 
   const handleTaskDelete = (taskId: string) => {
@@ -63,55 +66,43 @@ export function SbpEditor() {
         link_to: task.link_to?.filter((id) => !deletedTaskIds.includes(id)),
       }));
     updateSbp({ ...sbp, lanes: updatedLanes, tasks: updatedTasks });
-    setSelectedLane(null);
+    setSelectedLaneId(null);
   };
 
-  const handleTaskConnect = (fromTaskId: string, toTaskId: string) => {
-    const fromTask = sbp.tasks.find((t) => t.id === fromTaskId);
-    if (!fromTask) return;
 
-    const updatedTasks = sbp.tasks.map((task) => {
-      if (task.id === fromTaskId) {
-        const linkTo = task.link_to || [];
-        if (!linkTo.includes(toTaskId)) {
-          return { ...task, link_to: [...linkTo, toTaskId] };
-        }
-      }
-      return task;
-    });
-    updateSbp({ ...sbp, tasks: updatedTasks });
-    setConnectingFrom(null);
+  const handleSbpUpdate = (updatedSbp: typeof sbp) => {
+    updateSbp(updatedSbp);
   };
 
-  const handleTaskDisconnect = (fromTaskId: string, toTaskId: string) => {
-    const updatedTasks = sbp.tasks.map((task) => {
-      if (task.id === fromTaskId) {
-        return {
-          ...task,
-          link_to: task.link_to?.filter((id) => id !== toTaskId),
-        };
-      }
-      return task;
-    });
-    updateSbp({ ...sbp, tasks: updatedTasks });
+  const handleLaneAdd = () => {
+    const newLane: SbpLane = {
+      id: generateId('sbp', 'lane'),
+      name: '新しいレーン',
+      kind: 'team',
+    };
+    updateSbp({ ...sbp, lanes: [...sbp.lanes, newLane] });
+    setSelectedLaneId(newLane.id);
+  };
+
+  const handleLaneReorder = (reorderedLanes: SbpLane[]) => {
+    updateSbp({ ...sbp, lanes: reorderedLanes });
   };
 
   return (
     <Box sx={{ display: 'flex', height: '100%' }}>
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, overflow: 'hidden' }}>
         <SbpCanvas
           sbp={sbp}
           cjm={cjm}
           selectedTask={selectedTask}
           selectedLane={selectedLane}
-          connectingFrom={connectingFrom}
           onTaskSelect={setSelectedTask}
-          onLaneSelect={setSelectedLane}
+          onLaneSelect={(lane) => setSelectedLaneId(lane.id)}
           onTaskUpdate={handleTaskUpdate}
           onLaneUpdate={handleLaneUpdate}
-          onConnectStart={setConnectingFrom}
-          onConnect={handleTaskConnect}
-          onDisconnect={handleTaskDisconnect}
+          onLaneAdd={handleLaneAdd}
+          onLaneReorder={handleLaneReorder}
+          onSbpUpdate={handleSbpUpdate}
         />
       </Box>
       <PropertyPanel
@@ -123,7 +114,7 @@ export function SbpEditor() {
         onLaneDelete={handleLaneDelete}
         onClose={() => {
           setSelectedTask(null);
-          setSelectedLane(null);
+          setSelectedLaneId(null);
         }}
       />
     </Box>

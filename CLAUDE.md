@@ -24,7 +24,7 @@ pnpm test             # Vitestでテストを実行
 
 ## ツール
 
-- 利用方法がわからないツール、ライブラリは Context7_1 mcpで確認できます
+- 利用方法がわからないツール、ライブラリは Context7 mcpで確認できます
 - 画面で確認する場合 chrome-devtools mcpが利用できます。
 - 問題の原因がわからない場合、相談役として mcp-codex-cli, mcp-gemini-cli mcpが利用できます
 - ソースコードのアクセスには serena mcpが利用できます
@@ -50,8 +50,11 @@ apps/
 - **フロントエンド**: React 18+ + TypeScript + Vite
 - **状態管理**: Zustand with persist middleware
 - **ルーティング**: React Router v6
-- **スタイリング**: Tailwind CSS with custom design system
+- **スタイリング**: Material-UI (MUI) v7 + Tailwind CSS
 - **DSL処理**: js-yaml (parser), ajv (JSON Schema validation)
+- **エディタUI**:
+  - CJM Editor: MUIテーブル + Recharts (感情曲線) + @dnd-kit (ドラッグ&ドロップ)
+  - SBP Editor: @xyflow/react (フローダイアグラム)
 - **Linter/Formatter**: qlty (biome, prettier, eslint)
 - **パッケージ管理**: pnpm workspaces
 
@@ -145,6 +148,29 @@ apps/
 4. **CJM感情スコア**: -2 (非常にネガティブ) から +2 (非常にポジティブ)
 5. **バージョン**: すべてのDSLは現在 "1.0"、バージョンチェックは未実装
 
+### CJM Editorの実装詳細
+
+**UI構成**:
+- MUIテーブルベースのレイアウト
+- フェーズとアクションをドラッグ&ドロップで並び替え可能
+- 感情曲線をRechartsで可視化（高さ240px）
+
+**操作**:
+- フェーズ追加時、自動的に「アクション 1」を作成
+- アクション追加はダイアログでフェーズ選択+名前入力
+- ドラッグハンドル（≡）とクリックターゲットを分離（activationConstraint: 8px）
+
+**プロパティパネル**:
+- 幅: 画面の33vw（最小400px）
+- アクション編集順: アクション → タッチポイント → 思考・感情 → 感情スコア
+- すべてのラベルを日本語化
+- SAVEとDELETEボタンは同じサイズ（flex: 1）
+
+**技術的詳細**:
+- @dnd-kit/core, @dnd-kit/sortableでドラッグ&ドロップ実装
+- フェーズとアクションそれぞれに独立したDndContext
+- アクション行の列数をフェーズヘッダーのcolSpanと一致させる
+
 ### 開発ワークフロー
 
 **DSLスキーマの変更**:
@@ -159,15 +185,22 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
 
 ## 現在の状況
 
-**✅ 完了** (フェーズ1-3):
-- モノレポ、TypeScript設定、全DSLインフラ
+**✅ 完了**:
+- フェーズ1-3: モノレポ、TypeScript設定、全DSLインフラ
 - 永続化とバリデーションを持つZustandストア
 - UIコンポーネントライブラリ、アプリシェル、ファイル操作
 - ビルドシステム稼働中
+- **CJM Editor完成**: テーブルUI、ドラッグ&ドロップ、感情曲線、プロパティパネル
 
-**⏳ 次** (フェーズ4):
-- ビジュアルエディタ (現在プレースホルダー)
-- D3.js/Konva.jsのキャンバスエディタ統合
+**🚧 進行中** (フェーズ4):
+- **SBP Editor**: React Flow実装中
+  - スイムレーン構造
+  - CJM連動（readonly表示）
+  - タスク間接続（箱と矢印）
+
+**⏳ 未着手**:
+- Outcome Editor
+- EM Editor
 
 ## 関連ドキュメント
 

@@ -1,5 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
+import { Box, Typography } from '@mui/material';
 import { useAppStore } from '@enablement-map-studio/store';
 import { SbpCanvas } from './components/SbpCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
@@ -9,9 +10,8 @@ export function SbpEditor() {
     const updateSbp = useAppStore((state) => state.updateSbp);
     const [selectedTask, setSelectedTask] = useState(null);
     const [selectedLane, setSelectedLane] = useState(null);
-    const [connectingFrom, setConnectingFrom] = useState(null);
     if (!sbp) {
-        return (_jsx("div", { className: "flex h-full items-center justify-center", children: _jsx("p", { className: "text-gray-500", children: "No SBP data loaded. Please load a YAML file." }) }));
+        return (_jsx(Box, { sx: { display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }, children: _jsx(Typography, { color: "text.secondary", children: "No SBP data loaded. Please load a YAML file." }) }));
     }
     const handleTaskUpdate = (updatedTask) => {
         const updatedTasks = sbp.tasks.map((task) => task.id === updatedTask.id ? updatedTask : task);
@@ -49,35 +49,10 @@ export function SbpEditor() {
         updateSbp({ ...sbp, lanes: updatedLanes, tasks: updatedTasks });
         setSelectedLane(null);
     };
-    const handleTaskConnect = (fromTaskId, toTaskId) => {
-        const fromTask = sbp.tasks.find((t) => t.id === fromTaskId);
-        if (!fromTask)
-            return;
-        const updatedTasks = sbp.tasks.map((task) => {
-            if (task.id === fromTaskId) {
-                const linkTo = task.link_to || [];
-                if (!linkTo.includes(toTaskId)) {
-                    return { ...task, link_to: [...linkTo, toTaskId] };
-                }
-            }
-            return task;
-        });
-        updateSbp({ ...sbp, tasks: updatedTasks });
-        setConnectingFrom(null);
+    const handleSbpUpdate = (updatedSbp) => {
+        updateSbp(updatedSbp);
     };
-    const handleTaskDisconnect = (fromTaskId, toTaskId) => {
-        const updatedTasks = sbp.tasks.map((task) => {
-            if (task.id === fromTaskId) {
-                return {
-                    ...task,
-                    link_to: task.link_to?.filter((id) => id !== toTaskId),
-                };
-            }
-            return task;
-        });
-        updateSbp({ ...sbp, tasks: updatedTasks });
-    };
-    return (_jsxs("div", { className: "flex h-full", children: [_jsx("div", { className: "flex-1 overflow-auto", children: _jsx(SbpCanvas, { sbp: sbp, cjm: cjm, selectedTask: selectedTask, selectedLane: selectedLane, connectingFrom: connectingFrom, onTaskSelect: setSelectedTask, onLaneSelect: setSelectedLane, onTaskUpdate: handleTaskUpdate, onLaneUpdate: handleLaneUpdate, onConnectStart: setConnectingFrom, onConnect: handleTaskConnect, onDisconnect: handleTaskDisconnect }) }), _jsx(PropertyPanel, { selectedTask: selectedTask, selectedLane: selectedLane, onTaskUpdate: handleTaskUpdate, onLaneUpdate: handleLaneUpdate, onTaskDelete: handleTaskDelete, onLaneDelete: handleLaneDelete, onClose: () => {
+    return (_jsxs(Box, { sx: { display: 'flex', height: '100%' }, children: [_jsx(Box, { sx: { flex: 1, overflow: 'hidden' }, children: _jsx(SbpCanvas, { sbp: sbp, cjm: cjm, selectedTask: selectedTask, selectedLane: selectedLane, onTaskSelect: setSelectedTask, onLaneSelect: setSelectedLane, onTaskUpdate: handleTaskUpdate, onLaneUpdate: handleLaneUpdate, onSbpUpdate: handleSbpUpdate }) }), _jsx(PropertyPanel, { selectedTask: selectedTask, selectedLane: selectedLane, onTaskUpdate: handleTaskUpdate, onLaneUpdate: handleLaneUpdate, onTaskDelete: handleTaskDelete, onLaneDelete: handleLaneDelete, onClose: () => {
                     setSelectedTask(null);
                     setSelectedLane(null);
                 } })] }));

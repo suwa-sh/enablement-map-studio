@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
-import { Box, AppBar, Toolbar, Typography } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, IconButton, Stack } from '@mui/material';
+import { Undo, Redo } from '@mui/icons-material';
 import { Navigation } from './Navigation';
 import { FileOperations } from './FileOperations';
 
@@ -8,6 +9,13 @@ export interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  // Undo/Redo機能は一時的に無効化
+  // TODO: zundoのtemporal APIの正しい使い方を調査して再実装
+  const undo = () => console.log('Undo (未実装)');
+  const redo = () => console.log('Redo (未実装)');
+  const canUndo = false;
+  const canRedo = false;
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* Top Header Bar */}
@@ -16,7 +24,16 @@ export function AppShell({ children }: AppShellProps) {
           <Typography variant="h6" component="h1" fontWeight="semibold">
             Enablement Map Studio
           </Typography>
-          <FileOperations />
+          <Stack direction="row" spacing={1} alignItems="center">
+            {/* Undo/Redo ボタン */}
+            <IconButton onClick={undo} disabled={!canUndo} size="small" title="Undo (元に戻す)">
+              <Undo />
+            </IconButton>
+            <IconButton onClick={redo} disabled={!canRedo} size="small" title="Redo (やり直し)">
+              <Redo />
+            </IconButton>
+            <FileOperations />
+          </Stack>
         </Toolbar>
       </AppBar>
 

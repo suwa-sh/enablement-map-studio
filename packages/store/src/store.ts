@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { temporal, type TemporalState } from 'zundo';
 import type { CjmDsl, SbpDsl, OutcomeDsl, EmDsl } from '@enablement-map-studio/dsl';
 import {
   parseYaml,
@@ -39,67 +40,91 @@ const initialState = {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set, get) => ({
-      ...initialState,
+    temporal(
+      (set, get) => ({
+        ...initialState,
 
-      loadYaml: (content: string) => {
-        try {
-          const parsed = parseYaml(content);
-          const refCheck = checkReferenceIntegrity(parsed);
+        loadYaml: (content: string) => {
+          try {
+            const parsed = parseYaml(content);
+            const refCheck = checkReferenceIntegrity(parsed);
 
-          set({
-            cjm: parsed.cjm,
-            sbp: parsed.sbp,
-            outcome: parsed.outcome,
-            em: parsed.em,
-            referenceCheck: refCheck,
-          });
+            set({
+              cjm: parsed.cjm,
+              sbp: parsed.sbp,
+              outcome: parsed.outcome,
+              em: parsed.em,
+              referenceCheck: refCheck,
+            });
 
-          if (!refCheck.valid) {
-            console.warn('Reference integrity check failed:', refCheck.errors);
+            if (!refCheck.valid) {
+              console.warn('Reference integrity check failed:', refCheck.errors);
+            }
+          } catch (error) {
+            console.error('Failed to load YAML:', error);
+            throw error;
           }
-        } catch (error) {
-          console.error('Failed to load YAML:', error);
-          throw error;
-        }
-      },
+        },
 
-      exportYaml: () => {
-        const { cjm, sbp, outcome, em } = get();
-        return exportYaml({ cjm, sbp, outcome, em });
-      },
+        exportYaml: () => {
+          const { cjm, sbp, outcome, em } = get();
+          return exportYaml({ cjm, sbp, outcome, em });
+        },
 
-      updateCjm: (cjm: CjmDsl) => {
-        set({ cjm });
-        get().checkReferences();
-      },
+        updateCjm: (cjm: CjmDsl) => {
+          set({ cjm });
+          get().checkReferences();
+        },
 
-      updateSbp: (sbp: SbpDsl) => {
-        set({ sbp });
-        get().checkReferences();
-      },
+        updateSbp: (sbp: SbpDsl) => {
+          set({ sbp });
+          get().checkReferences();
+        },
 
-      updateOutcome: (outcome: OutcomeDsl) => {
-        set({ outcome });
-        get().checkReferences();
-      },
+        updateOutcome: (outcome: OutcomeDsl) => {
+          set({ outcome });
+          get().checkReferences();
+        },
 
-      updateEm: (em: EmDsl) => {
-        set({ em });
-        get().checkReferences();
-      },
+        updateEm: (em: EmDsl) => {
+          set({ em });
+          get().checkReferences();
+        },
 
-      checkReferences: () => {
-        const { cjm, sbp, outcome, em } = get();
-        const refCheck = checkReferenceIntegrity({ cjm, sbp, outcome, em });
-        set({ referenceCheck: refCheck });
-        return refCheck;
-      },
+        checkReferences: () => {
+          const { cjm, sbp, outcome, em } = get();
+          const refCheck = checkReferenceIntegrity({ cjm, sbp, outcome, em });
+          set({ referenceCheck: refCheck });
+          return refCheck;
+        },
 
-      reset: () => set(initialState),
-    }),
+        reset: () => set(initialState),
+      }),
+      {
+        limit: 50,
+        equality: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+        partialize: (state) => {
+          const { cjm, sbp, outcome, em } = state;
+          return { cjm, sbp, outcome, em } as Partial<Pick<AppStore, 'cjm' | 'sbp' | 'outcome' | 'em'>>;
+        },
+      }
+    ),
     {
       name: 'enablement-map-studio-storage',
     }
   )
 );
+
+// Temporal store用のリアクティブフック
+export const useTemporalStore = <T,>(
+  selector: (state: TemporalState<Partial<Pick<AppStore, 'cjm' | 'sbp' | 'outcome' | 'em'>>>) => T,
+  equality?: (a: T, b: T) => boolean
+): T => {
+  // useAppStore.temporalはストアなので、そのまま使える
+  // zundoのドキュメントに従い、useStoreWithEqualityFnを使う代わりに
+  // Zustandの標準的な方法でサブスクライブ
+  if (equality) {
+    return (useAppStore.temporal as any)(selector, equality);
+  }
+  return (useAppStore.temporal as any)(selector);
+};

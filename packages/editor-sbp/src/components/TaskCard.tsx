@@ -1,4 +1,4 @@
-import { Box, Card, Typography, Chip, Button, IconButton } from '@mui/material';
+import { Box, Card, Typography, Chip, Button } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import type { SbpTask, CjmDsl } from '@enablement-map-studio/dsl';
 
