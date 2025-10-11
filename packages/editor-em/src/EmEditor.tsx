@@ -6,7 +6,7 @@ import type { EmAction, EmDsl } from '@enablement-map-studio/dsl';
 import { generateId } from '@enablement-map-studio/dsl';
 import { EmCanvasCard } from './components/EmCanvasCard';
 import { EmTable } from './components/EmTable';
-import { PropertyPanelNew } from './components/PropertyPanelNew';
+import { PropertyPanel } from './components/PropertyPanel';
 
 // Legacy type for backward compatibility with unused components
 export type SelectedItem =
@@ -102,7 +102,7 @@ export function EmEditor() {
       </Box>
 
       {/* Property Panel (right) */}
-      <PropertyPanelNew
+      <PropertyPanel
         selectedAction={selectedAction}
         em={em}
         onEmUpdate={updateEm}

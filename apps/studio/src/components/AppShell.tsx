@@ -4,8 +4,8 @@ import { Undo, Redo } from '@mui/icons-material';
 import { Navigation } from './Navigation';
 import { FileOperations, FileOperationsRef } from './FileOperations';
 import { useUndoableStore } from '@enablement-map-studio/store';
+import { ConfirmDialogProvider } from '@enablement-map-studio/ui';
 import { ToastProvider } from '../contexts/ToastContext';
-import { ConfirmDialogProvider } from '../contexts/ConfirmDialogContext';
 import { ErrorDialogProvider } from '../contexts/ErrorDialogContext';
 
 export interface AppShellProps {

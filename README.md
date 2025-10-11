@@ -52,6 +52,7 @@ A unified web application for designing end-to-end processes from customer exper
 - YAML形式でのインポート/エクスポート
 - サンプルデータのロード
 - Clear Canvasボタン（データクリア）
+- **MUI通知システム**: Toast（情報・成功・エラー通知）、ConfirmDialog（削除確認など）、ErrorDialog（エラー詳細表示）
 - Undo/Redo機能（実装予定）
 
 ## 技術スタック
@@ -104,7 +105,7 @@ enablement-map-studio/
 ├── packages/
 │   ├── dsl/                 # DSL型定義・パーサー
 │   ├── store/               # 状態管理（Zustand）
-│   ├── ui/                  # 共通UIコンポーネント
+│   ├── ui/                  # 共通UIコンポーネント（Toast/ConfirmDialog/ErrorDialog含む）
 │   ├── editor-cjm/          # CJMエディタ
 │   ├── editor-sbp/          # SBPエディタ
 │   ├── editor-outcome/      # Outcomeエディタ

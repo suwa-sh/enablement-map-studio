@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
 import type { SbpTask, SbpLane } from '@enablement-map-studio/dsl';
+import { useConfirm } from '@enablement-map-studio/ui';
 
 interface PropertyPanelProps {
   selectedTask: SbpTask | null;
@@ -35,6 +36,7 @@ export function PropertyPanel({
   onLaneDelete,
   onClose,
 }: PropertyPanelProps) {
+  const { confirm } = useConfirm();
   const [editedTask, setEditedTask] = useState<SbpTask | null>(null);
   const [editedLane, setEditedLane] = useState<SbpLane | null>(null);
 
@@ -58,8 +60,9 @@ export function PropertyPanel({
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm('このアイテムを削除してもよろしいですか？')) {
+  const handleDelete = async () => {
+    const confirmed = await confirm({ message: 'このアイテムを削除してもよろしいですか？' });
+    if (confirmed) {
       if (editedTask) {
         onTaskDelete(editedTask.id);
       } else if (editedLane) {

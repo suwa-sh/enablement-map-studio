@@ -3,8 +3,8 @@ import { Box, Button, Stack } from '@mui/material';
 import { UploadFile, Download, MenuBook, DeleteSweep } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@enablement-map-studio/store';
+import { useConfirm } from '@enablement-map-studio/ui';
 import { useToast } from '../contexts/ToastContext';
-import { useConfirm } from '../contexts/ConfirmDialogContext';
 import { useError } from '../contexts/ErrorDialogContext';
 
 export interface FileOperationsRef {

@@ -1,251 +1,448 @@
 import { useState, useEffect } from 'react';
+import {
+  Box,
+  Drawer,
+  Typography,
+  TextField,
+  Button,
+  Stack,
+  IconButton,
+  Divider,
+  Paper,
+} from '@mui/material';
+import { Close, Save, Delete, Add } from '@mui/icons-material';
 import type {
   EmAction,
-  EmSkill,
-  EmKnowledge,
-  EmTool,
-  EmLearning,
+  EmDsl,
 } from '@enablement-map-studio/dsl';
-import type { SelectedItem } from '../EmEditor';
+import { generateId } from '@enablement-map-studio/dsl';
+import { useConfirm } from '@enablement-map-studio/ui';
 
 interface PropertyPanelProps {
-  selectedItem: SelectedItem;
-  onActionUpdate: (action: EmAction) => void;
-  onSkillUpdate: (skill: EmSkill) => void;
-  onKnowledgeUpdate: (knowledge: EmKnowledge) => void;
-  onToolUpdate: (tool: EmTool) => void;
-  onDelete: () => void;
+  selectedAction: EmAction | null;
+  em: EmDsl | null;
+  onEmUpdate: (em: EmDsl) => void;
   onClose: () => void;
 }
 
 export function PropertyPanel({
-  selectedItem,
-  onActionUpdate,
-  onSkillUpdate,
-  onKnowledgeUpdate,
-  onToolUpdate,
-  onDelete,
+  selectedAction,
+  em,
+  onEmUpdate,
   onClose,
 }: PropertyPanelProps) {
-  const [editedItem, setEditedItem] = useState<any>(null);
+  const { confirm } = useConfirm();
+  const [editedAction, setEditedAction] = useState<EmAction | null>(selectedAction);
 
   useEffect(() => {
-    if (selectedItem) {
-      setEditedItem(selectedItem.item);
-    }
-  }, [selectedItem]);
-
-  if (!selectedItem || !editedItem) {
-    return null;
-  }
+    setEditedAction(selectedAction);
+  }, [selectedAction]);
 
   const handleSave = () => {
-    if (selectedItem.type === 'action') {
-      onActionUpdate(editedItem);
-    } else if (selectedItem.type === 'skill') {
-      onSkillUpdate(editedItem);
-    } else if (selectedItem.type === 'knowledge') {
-      onKnowledgeUpdate(editedItem);
-    } else if (selectedItem.type === 'tool') {
-      onToolUpdate(editedItem);
-    }
+    if (!editedAction || !em) return;
+
+    const updatedActions = em.actions.map((a) =>
+      a.id === editedAction.id ? editedAction : a
+    );
+
+    onEmUpdate({ ...em, actions: updatedActions });
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      onDelete();
-    }
+  const handleDelete = async () => {
+    if (!editedAction || !em) return;
+    const confirmed = await confirm({ message: 'この行動を削除しますか?' });
+    if (!confirmed) return;
+
+    // Delete action and related resources
+    const updatedActions = em.actions.filter((a) => a.id !== editedAction.id);
+    const updatedSkills = (em.skills || []).filter((s) => s.action_id !== editedAction.id);
+    const updatedKnowledge = (em.knowledge || []).filter((k) => k.action_id !== editedAction.id);
+    const updatedTools = (em.tools || []).filter((t) => t.action_id !== editedAction.id);
+
+    onEmUpdate({
+      ...em,
+      actions: updatedActions,
+      skills: updatedSkills,
+      knowledge: updatedKnowledge,
+      tools: updatedTools,
+    });
+
+    onClose();
   };
+
+  const handleAddSkill = () => {
+    if (!editedAction || !em) return;
+
+    const newSkill = {
+      id: generateId('em', 'skill'),
+      name: '新しいスキル',
+      action_id: editedAction.id,
+      learnings: [],
+    };
+
+    onEmUpdate({
+      ...em,
+      skills: [...(em.skills || []), newSkill],
+    });
+  };
+
+  const handleAddKnowledge = () => {
+    if (!editedAction || !em) return;
+
+    const newKnowledge = {
+      id: generateId('em', 'knowledge'),
+      name: '新しいナレッジ',
+      action_id: editedAction.id,
+      url: '',
+    };
+
+    onEmUpdate({
+      ...em,
+      knowledge: [...(em.knowledge || []), newKnowledge],
+    });
+  };
+
+  const handleAddTool = () => {
+    if (!editedAction || !em) return;
+
+    const newTool = {
+      id: generateId('em', 'tool'),
+      name: '新しいツール',
+      action_id: editedAction.id,
+      url: '',
+    };
+
+    onEmUpdate({
+      ...em,
+      tools: [...(em.tools || []), newTool],
+    });
+  };
+
+  if (!editedAction || !em) return null;
+
+  const relatedSkills = (em.skills || []).filter((s) => s.action_id === editedAction.id);
+  const relatedKnowledge = (em.knowledge || []).filter((k) => k.action_id === editedAction.id);
+  const relatedTools = (em.tools || []).filter((t) => t.action_id === editedAction.id);
 
   return (
-    <div className="w-80 overflow-auto border-l border-gray-200 bg-white p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Properties</h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          ✕
-        </button>
-      </div>
+    <Drawer
+      anchor="right"
+      open={!!editedAction}
+      onClose={onClose}
+      variant="persistent"
+      sx={{
+        '& .MuiDrawer-paper': {
+          width: '33vw',
+          minWidth: 400,
+          boxSizing: 'border-box',
+        },
+      }}
+    >
+      <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">プロパティ</Typography>
+          <IconButton onClick={onClose} size="small">
+            <Close />
+          </IconButton>
+        </Box>
 
-      <div className="space-y-4">
-        {selectedItem.type === 'action' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Action Name
-              </label>
-              <input
-                type="text"
-                value={editedItem.name}
+        {/* Content */}
+        <Box sx={{ flex: 1, overflow: 'auto' }}>
+          <Stack spacing={3}>
+            {/* Action Name */}
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
+                行動名
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                value={editedAction.name}
                 onChange={(e) =>
-                  setEditedItem({ ...editedItem, name: e.target.value })
+                  setEditedAction({ ...editedAction, name: e.target.value })
                 }
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
               />
-            </div>
+            </Box>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Source ID (SBP Task)
-              </label>
-              <input
-                type="text"
-                value={editedItem.source_id}
-                disabled
-                className="mt-1 w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2"
-              />
-              <p className="mt-1 text-xs text-gray-500">Read-only reference</p>
-            </div>
-          </>
-        )}
+            <Divider />
 
-        {selectedItem.type === 'skill' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Skill Name
-              </label>
-              <input
-                type="text"
-                value={editedItem.name}
-                onChange={(e) =>
-                  setEditedItem({ ...editedItem, name: e.target.value })
-                }
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-            </div>
+            {/* Skills */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle2" fontWeight="bold">
+                  スキル ({relatedSkills.length})
+                </Typography>
+                <Button size="small" startIcon={<Add />} onClick={handleAddSkill}>
+                  追加
+                </Button>
+              </Box>
+              {relatedSkills.length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  スキルが設定されていません
+                </Typography>
+              )}
+              {relatedSkills.map((skill) => {
+                const handleSkillNameChange = (newName: string) => {
+                  const updatedSkills = (em.skills || []).map((s) =>
+                    s.id === skill.id ? { ...s, name: newName } : s
+                  );
+                  onEmUpdate({ ...em, skills: updatedSkills });
+                };
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Learnings
-              </label>
-              {(editedItem.learnings || []).map((learning: EmLearning, idx: number) => (
-                <div key={idx} className="mt-2 rounded border border-gray-200 p-2">
-                  <input
-                    type="text"
-                    value={learning.title}
-                    onChange={(e) => {
-                      const updated = [...(editedItem.learnings || [])];
-                      updated[idx] = { ...learning, title: e.target.value };
-                      setEditedItem({ ...editedItem, learnings: updated });
-                    }}
-                    placeholder="Title"
-                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={learning.url}
-                    onChange={(e) => {
-                      const updated = [...(editedItem.learnings || [])];
-                      updated[idx] = { ...learning, url: e.target.value };
-                      setEditedItem({ ...editedItem, learnings: updated });
-                    }}
-                    placeholder="URL"
-                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
-                  />
-                  <button
-                    onClick={() => {
-                      const updated = (editedItem.learnings || []).filter(
-                        (_: any, i: number) => i !== idx
-                      );
-                      setEditedItem({ ...editedItem, learnings: updated });
-                    }}
-                    className="mt-1 text-xs text-red-600 hover:text-red-800"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={() => {
-                  const updated = [
-                    ...(editedItem.learnings || []),
-                    { title: '', url: '' },
-                  ];
-                  setEditedItem({ ...editedItem, learnings: updated });
-                }}
-                className="mt-2 text-sm text-blue-600 hover:text-blue-800"
-              >
-                + Add Learning
-              </button>
-            </div>
-          </>
-        )}
+                const handleAddLearning = () => {
+                  const newLearning = {
+                    title: '新しい学習コンテンツ',
+                    url: '',
+                  };
+                  const updatedSkills = (em.skills || []).map((s) =>
+                    s.id === skill.id
+                      ? { ...s, learnings: [...(s.learnings || []), newLearning] }
+                      : s
+                  );
+                  onEmUpdate({ ...em, skills: updatedSkills });
+                };
 
-        {selectedItem.type === 'knowledge' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Knowledge Name
-              </label>
-              <input
-                type="text"
-                value={editedItem.name}
-                onChange={(e) =>
-                  setEditedItem({ ...editedItem, name: e.target.value })
-                }
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-            </div>
+                const handleLearningChange = (learningIndex: number, field: 'title' | 'url', value: string) => {
+                  const updatedSkills = (em.skills || []).map((s) =>
+                    s.id === skill.id
+                      ? {
+                          ...s,
+                          learnings: (s.learnings || []).map((l, idx) =>
+                            idx === learningIndex ? { ...l, [field]: value } : l
+                          ),
+                        }
+                      : s
+                  );
+                  onEmUpdate({ ...em, skills: updatedSkills });
+                };
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">URL</label>
-              <input
-                type="text"
-                value={editedItem.url}
-                onChange={(e) =>
-                  setEditedItem({ ...editedItem, url: e.target.value })
-                }
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-            </div>
-          </>
-        )}
+                const handleDeleteSkill = async () => {
+                  const confirmed = await confirm({ message: 'このスキルを削除しますか?' });
+                  if (!confirmed) return;
+                  const updatedSkills = (em.skills || []).filter((s) => s.id !== skill.id);
+                  onEmUpdate({ ...em, skills: updatedSkills });
+                };
 
-        {selectedItem.type === 'tool' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Tool Name
-              </label>
-              <input
-                type="text"
-                value={editedItem.name}
-                onChange={(e) =>
-                  setEditedItem({ ...editedItem, name: e.target.value })
-                }
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-            </div>
+                const handleDeleteLearning = async (learningIndex: number) => {
+                  const confirmed = await confirm({ message: 'この学習コンテンツを削除しますか?' });
+                  if (!confirmed) return;
+                  const updatedSkills = (em.skills || []).map((s) =>
+                    s.id === skill.id
+                      ? {
+                          ...s,
+                          learnings: (s.learnings || []).filter((_, idx) => idx !== learningIndex),
+                        }
+                      : s
+                  );
+                  onEmUpdate({ ...em, skills: updatedSkills });
+                };
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">URL</label>
-              <input
-                type="text"
-                value={editedItem.url}
-                onChange={(e) =>
-                  setEditedItem({ ...editedItem, url: e.target.value })
-                }
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-            </div>
-          </>
-        )}
+                return (
+                  <Paper key={skill.id} elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+                    <Stack spacing={2}>
+                      {/* Skill name and delete */}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="スキル名"
+                          value={skill.name}
+                          onChange={(e) => handleSkillNameChange(e.target.value)}
+                        />
+                        <IconButton size="small" color="error" onClick={handleDeleteSkill}>
+                          <Delete />
+                        </IconButton>
+                      </Box>
 
-        <div className="flex gap-2">
-          <button
-            onClick={handleSave}
-            className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Save
-          </button>
-          <button
-            onClick={handleDelete}
-            className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
+                      {/* Learnings */}
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="caption" fontWeight="medium">
+                            学習コンテンツ ({skill.learnings?.length || 0})
+                          </Typography>
+                          <Button size="small" startIcon={<Add />} onClick={handleAddLearning}>
+                            追加
+                          </Button>
+                        </Box>
+                        {(!skill.learnings || skill.learnings.length === 0) && (
+                          <Typography variant="caption" color="text.secondary">
+                            学習コンテンツが設定されていません
+                          </Typography>
+                        )}
+                        {skill.learnings?.map((learning, learningIndex) => (
+                          <Paper key={learningIndex} elevation={0} sx={{ p: 1.5, mb: 1, bgcolor: 'white', border: 1, borderColor: 'divider' }}>
+                            <Stack spacing={1}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="名前"
+                                  value={learning.title}
+                                  onChange={(e) => handleLearningChange(learningIndex, 'title', e.target.value)}
+                                />
+                                <IconButton size="small" color="error" onClick={() => handleDeleteLearning(learningIndex)}>
+                                  <Delete />
+                                </IconButton>
+                              </Box>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                label="URL"
+                                value={learning.url || ''}
+                                onChange={(e) => handleLearningChange(learningIndex, 'url', e.target.value)}
+                              />
+                            </Stack>
+                          </Paper>
+                        ))}
+                      </Box>
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Box>
+
+            {/* Knowledge */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle2" fontWeight="bold">
+                  ナレッジ ({relatedKnowledge.length})
+                </Typography>
+                <Button size="small" startIcon={<Add />} onClick={handleAddKnowledge}>
+                  追加
+                </Button>
+              </Box>
+              {relatedKnowledge.length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  ナレッジが設定されていません
+                </Typography>
+              )}
+              {relatedKnowledge.map((k) => {
+                const handleKnowledgeChange = (field: 'name' | 'url', value: string) => {
+                  const updatedKnowledge = (em.knowledge || []).map((item) =>
+                    item.id === k.id ? { ...item, [field]: value } : item
+                  );
+                  onEmUpdate({ ...em, knowledge: updatedKnowledge });
+                };
+
+                const handleDeleteKnowledge = async () => {
+                  const confirmed = await confirm({ message: 'このナレッジを削除しますか?' });
+                  if (!confirmed) return;
+                  const updatedKnowledge = (em.knowledge || []).filter((item) => item.id !== k.id);
+                  onEmUpdate({ ...em, knowledge: updatedKnowledge });
+                };
+
+                return (
+                  <Paper key={k.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: 'grey.50' }}>
+                    <Stack spacing={1}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="名前"
+                          value={k.name}
+                          onChange={(e) => handleKnowledgeChange('name', e.target.value)}
+                        />
+                        <IconButton size="small" color="error" onClick={handleDeleteKnowledge}>
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="URL"
+                        value={k.url || ''}
+                        onChange={(e) => handleKnowledgeChange('url', e.target.value)}
+                      />
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Box>
+
+            {/* Tools */}
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle2" fontWeight="bold">
+                  ツール ({relatedTools.length})
+                </Typography>
+                <Button size="small" startIcon={<Add />} onClick={handleAddTool}>
+                  追加
+                </Button>
+              </Box>
+              {relatedTools.length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  ツールが設定されていません
+                </Typography>
+              )}
+              {relatedTools.map((tool) => {
+                const handleToolChange = (field: 'name' | 'url', value: string) => {
+                  const updatedTools = (em.tools || []).map((item) =>
+                    item.id === tool.id ? { ...item, [field]: value } : item
+                  );
+                  onEmUpdate({ ...em, tools: updatedTools });
+                };
+
+                const handleDeleteTool = async () => {
+                  const confirmed = await confirm({ message: 'このツールを削除しますか?' });
+                  if (!confirmed) return;
+                  const updatedTools = (em.tools || []).filter((item) => item.id !== tool.id);
+                  onEmUpdate({ ...em, tools: updatedTools });
+                };
+
+                return (
+                  <Paper key={tool.id} elevation={1} sx={{ p: 2, mb: 1, bgcolor: 'grey.50' }}>
+                    <Stack spacing={1}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="名前"
+                          value={tool.name}
+                          onChange={(e) => handleToolChange('name', e.target.value)}
+                        />
+                        <IconButton size="small" color="error" onClick={handleDeleteTool}>
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="URL"
+                        value={tool.url || ''}
+                        onChange={(e) => handleToolChange('url', e.target.value)}
+                      />
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Box>
+          </Stack>
+        </Box>
+
+        {/* Actions */}
+        <Box sx={{ mt: 3 }}>
+          <Stack direction="row" spacing={2}>
+            <Button
+              onClick={handleSave}
+              variant="contained"
+              startIcon={<Save />}
+              sx={{ flex: 1 }}
+            >
+              SAVE
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="outlined"
+              color="error"
+              startIcon={<Delete />}
+              sx={{ flex: 1 }}
+            >
+              DELETE
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+    </Drawer>
   );
 }

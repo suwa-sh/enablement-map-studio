@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
 import type { CjmAction, CjmPhase, CjmPersona } from '@enablement-map-studio/dsl';
+import { useConfirm } from '@enablement-map-studio/ui';
 
 interface PropertyPanelProps {
   selectedAction: CjmAction | null;
@@ -35,6 +36,7 @@ export function PropertyPanel({
   onPhaseDelete,
   onClose,
 }: PropertyPanelProps) {
+  const { confirm } = useConfirm();
   const [editedAction, setEditedAction] = useState<CjmAction | null>(null);
   const [editedPhase, setEditedPhase] = useState<CjmPhase | null>(null);
   const [editedPersona, setEditedPersona] = useState<CjmPersona | null>(null);
@@ -61,8 +63,9 @@ export function PropertyPanel({
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm('このアイテムを削除してもよろしいですか？')) {
+  const handleDelete = async () => {
+    const confirmed = await confirm({ message: 'このアイテムを削除してもよろしいですか？' });
+    if (confirmed) {
       if (editedAction) {
         onActionDelete(editedAction.id);
       } else if (editedPhase) {

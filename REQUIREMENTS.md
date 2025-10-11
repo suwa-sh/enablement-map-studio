@@ -589,6 +589,7 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 - ✅ タッチポイント・思考感情フィールドの改行対応
 - ✅ PropertyPanel（33vw幅、MUI Drawer）
 - ✅ 空状態からの直接作成（フェーズ追加・アクション追加ボタン常時表示）
+- ✅ 削除確認ダイアログ統合（アクション削除、フェーズ削除）
 
 ##### SBP Editor
 - ✅ React Flowベースのフローダイアグラム
@@ -599,6 +600,7 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 - ✅ D&Dによるタスク接続とCJM `source_id`自動設定
 - ✅ PropertyPanel（タスク・レーン編集）
 - ✅ ID-based状態管理による即時反映
+- ✅ 削除確認ダイアログ統合（タスク削除、レーン削除）
 
 ##### Outcome Editor
 - ✅ MUI Paper/Stack/Buttonによるカード型レイアウト
@@ -618,6 +620,7 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 - ✅ 「必要な行動を追加」ボタンで新規EM Action作成
 - ✅ クリック外で閉じる機能（PropertyPanel）
 - ✅ 自動初期化（useEffect）
+- ✅ 削除確認ダイアログ統合（行動削除、スキル削除、学習コンテンツ削除、ナレッジ削除、ツール削除の5箇所）
 
 ##### 共通機能
 - ✅ localStorageによる永続化（Zustand persist middleware）
@@ -625,6 +628,9 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 - ✅ サンプルデータのロード
 - ✅ Clear Canvasボタン（データクリア）
 - ✅ 参照整合性チェック（バリデーション）
+- ✅ **MUI通知システム**: Toast（Snackbar + MUI Alert）、ConfirmDialog、ErrorDialog
+  - すべての `window.confirm` を `useConfirm()` に置き換え
+  - uiパッケージに配置、全エディタから共通利用
 
 #### 8.2. 今後の改善予定
 

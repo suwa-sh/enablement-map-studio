@@ -40,7 +40,7 @@ pnpm test             # Vitestでテストを実行
 packages/
 ├── dsl/           # DSL型定義、パーサー、バリデーター、参照チェック
 ├── store/         # localStorageによる永続化を持つZustandストア
-├── ui/            # 共有UIコンポーネント
+├── ui/            # 共有UIコンポーネント（Toast/ConfirmDialog/ErrorDialog含む）
 apps/
 └── studio/        # メインVite+Reactアプリケーション
 ```
@@ -151,6 +151,27 @@ apps/
 4. **CJM感情スコア**: -2 (非常にネガティブ) から +2 (非常にポジティブ)
 5. **バージョン**: すべてのDSLは現在 "1.0"、バージョンチェックは未実装
 
+### 通知システム
+
+**MUI通知コンポーネント** ([packages/ui/src/components/](packages/ui/src/components/)):
+- **ToastContext**: 情報・成功・エラー通知をSnackbar（MUI Alert）で表示
+  - `useToast()` フックで `showToast()` を呼び出し
+  - 自動クローズ（デフォルト6秒）、手動クローズ可能
+  - 使用例: `showToast({ message: '保存しました', severity: 'success' })`
+- **ConfirmDialogContext**: 確認ダイアログ（削除確認など）
+  - `useConfirm()` フックで `confirm()` を呼び出し
+  - Promise<boolean> を返す（OK: true, キャンセル: false）
+  - すべての `window.confirm` を置き換え（非推奨化）
+  - 使用例: `const confirmed = await confirm({ message: 'このアイテムを削除してもよろしいですか？' })`
+- **ErrorDialogContext**: エラー詳細表示ダイアログ
+  - `useErrorDialog()` フックで `showError()` を呼び出し
+  - エラーメッセージ＋詳細スタックトレースを表示
+  - 使用例: `showError({ message: 'ファイルの読み込みに失敗しました', details: error.message })`
+
+**統合場所**:
+- すべてのContextProviderは `AppShell.tsx` でラップ
+- すべてのエディタから `@enablement-map-studio/ui` 経由でインポート
+
 ### 重要な実装上の注意点
 
 **React状態更新のベストプラクティス**:
@@ -206,6 +227,7 @@ apps/
 - SAVEとDELETEボタンは同じサイズ（flex: 1）
 - **タッチポイント・思考感情フィールド**: 改行可能（`.filter(Boolean)` を除去）
 - アクション・フェーズ・ペルソナは排他的に表示（同時には表示されない）
+- **削除確認**: DELETEボタンクリック時に `useConfirm()` で確認ダイアログを表示
 
 **技術的詳細**:
 - @dnd-kit/core, @dnd-kit/sortableでドラッグ&ドロップ実装
@@ -296,6 +318,7 @@ apps/
 - タスク編集: タスク名、レーン選択、削除
 - レーン編集: レーン名、種別（CJMレーンは変更不可）
 - SAVE時の即時反映（ID-based状態管理により）
+- **削除確認**: DELETEボタンクリック時に `useConfirm()` で確認ダイアログを表示
 
 **技術的詳細**:
 - `flowConverter.ts`: DSL ⇔ React Flow 形式の相互変換
@@ -405,6 +428,7 @@ apps/
 - ナレッジ一覧: 名前＋URL入力
 - ツール一覧: 名前＋URL入力
 - SAVE/DELETEボタン（DELETEは関連リソースも一括削除）
+- **削除確認**: すべてのDELETEボタンクリック時に `useConfirm()` で確認ダイアログを表示（行動削除、スキル削除、学習コンテンツ削除、ナレッジ削除、ツール削除）
 
 **技術的詳細**:
 - **EmCanvasCard.tsx**: カード型レイアウト、フィルタリングロジック（useMemo）
@@ -448,11 +472,13 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
 - フェーズ1-3: モノレポ、TypeScript設定、全DSLインフラ
 - 永続化とバリデーションを持つZustandストア
 - UIコンポーネントライブラリ、アプリシェル、ファイル操作（Clear Canvasボタン追加）
+- **MUI通知システム**: Toast/ConfirmDialog/ErrorDialog統合（uiパッケージに配置）
 - ビルドシステム稼働中
 - **CJM Editor完成**:
   - テーブルUI、ドラッグ&ドロップ、感情曲線、プロパティパネル
   - 空状態からの直接作成（フェーズ追加・アクション追加ボタン常時表示）
   - タッチポイント・思考感情フィールドの改行対応
+  - ペルソナ表示・編集機能（カードクリック → PropertyPanel表示）
 - **SBP Editor完成** (React Flow実装):
   - スイムレーン構造（レーン追加・削除・並び替え・種別変更）
   - CJM連動（readonly ノード自動同期、CJM存在時の自動初期化）
@@ -470,9 +496,10 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
 - **EM Editor完成** (カードベースレイアウト):
   - エディタペイン: カード型UI、1カラムレイアウト
   - フィルタリング機能: CSF/CJMフェーズ/SBPレーン
-  - リソース一覧テーブル: ソート・検索・CSF強調表示
+  - リソース一覧テーブル: Paper elevation={2}でカードラップ、ソート・検索・CSF強調表示
   - PropertyPanel: スキル/ナレッジ/ツール編集（学習コンテンツ`title`フィールド対応）
   - クリック外で閉じる機能
+  - すべての削除操作に確認ダイアログ統合（5箇所）
 
 **⏳ 改善予定**:
 - すべてのエディタのUX改善
