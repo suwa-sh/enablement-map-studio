@@ -6,7 +6,7 @@ import { useAppStore } from '@enablement-map-studio/store';
 import { generateId } from '@enablement-map-studio/dsl';
 import { EmCanvasCard } from './components/EmCanvasCard';
 import { EmTable } from './components/EmTable';
-import { PropertyPanelNew } from './components/PropertyPanelNew';
+import { PropertyPanel } from './components/PropertyPanel';
 export function EmEditor() {
     const em = useAppStore((state) => state.state.em);
     const outcome = useAppStore((state) => state.state.outcome);
@@ -53,5 +53,5 @@ export function EmEditor() {
                                     height: 4,
                                     bgcolor: 'grey.400',
                                     borderRadius: 2,
-                                } }) }), _jsx(Panel, { defaultSize: 30, minSize: 10, children: _jsx(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: _jsx(EmTable, { em: em, outcome: outcome, sbp: sbp, cjm: cjm }) }) })] }) }), _jsx(PropertyPanelNew, { selectedAction: selectedAction, em: em, onEmUpdate: updateEm, onClose: () => setSelectedAction(null) })] }));
+                                } }) }), _jsx(Panel, { defaultSize: 30, minSize: 10, children: _jsx(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: _jsx(EmTable, { em: em, outcome: outcome, sbp: sbp, cjm: cjm }) }) })] }) }), _jsx(PropertyPanel, { selectedAction: selectedAction, em: em, onEmUpdate: updateEm, onClose: () => setSelectedAction(null) })] }));
 }

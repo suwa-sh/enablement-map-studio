@@ -24,6 +24,7 @@ export function EmEditor() {
   const updateEm = useAppStore((state) => state.updateEm);
 
   const [selectedAction, setSelectedAction] = useState<EmAction | null>(null);
+  const [visibleTaskIds, setVisibleTaskIds] = useState<Set<string> | null>(null);
 
   // Auto-initialize EM if empty but other data exists
   useEffect(() => {
@@ -68,6 +69,7 @@ export function EmEditor() {
               cjm={cjm}
               onEmUpdate={updateEm}
               onActionSelect={setSelectedAction}
+              onFilterChange={setVisibleTaskIds}
             />
           </Panel>
 
@@ -95,7 +97,7 @@ export function EmEditor() {
           {/* Table Panel (bottom) */}
           <Panel defaultSize={30} minSize={10}>
             <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
-              <EmTable em={em} outcome={outcome} sbp={sbp} cjm={cjm} />
+              <EmTable em={em} outcome={outcome} sbp={sbp} cjm={cjm} visibleTaskIds={visibleTaskIds} />
             </Box>
           </Panel>
         </PanelGroup>

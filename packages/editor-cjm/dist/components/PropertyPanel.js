@@ -2,7 +2,9 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
 import { Box, Drawer, Typography, TextField, Button, Stack, IconButton, Slider, } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
+import { useConfirm } from '@enablement-map-studio/ui';
 export function PropertyPanel({ selectedAction, selectedPhase, selectedPersona, onActionUpdate, onPhaseUpdate, onPersonaUpdate, onActionDelete, onPhaseDelete, onClose, }) {
+    const { confirm } = useConfirm();
     const [editedAction, setEditedAction] = useState(null);
     const [editedPhase, setEditedPhase] = useState(null);
     const [editedPersona, setEditedPersona] = useState(null);
@@ -26,8 +28,9 @@ export function PropertyPanel({ selectedAction, selectedPhase, selectedPersona, 
             onPersonaUpdate(editedPersona);
         }
     };
-    const handleDelete = () => {
-        if (window.confirm('このアイテムを削除してもよろしいですか？')) {
+    const handleDelete = async () => {
+        const confirmed = await confirm({ message: 'このアイテムを削除してもよろしいですか？' });
+        if (confirmed) {
             if (editedAction) {
                 onActionDelete(editedAction.id);
             }

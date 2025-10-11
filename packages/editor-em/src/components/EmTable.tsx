@@ -14,8 +14,9 @@ import {
   TextField,
   InputAdornment,
   Checkbox,
+  Button,
 } from '@mui/material';
-import { Search } from '@mui/icons-material';
+import { Search, Download } from '@mui/icons-material';
 import type { EmDsl, OutcomeDsl, SbpDsl, CjmDsl } from '@enablement-map-studio/dsl';
 
 interface EmTableProps {
@@ -23,6 +24,7 @@ interface EmTableProps {
   outcome: OutcomeDsl | null;
   sbp: SbpDsl | null;
   cjm: CjmDsl | null;
+  visibleTaskIds: Set<string> | null;
 }
 
 interface ResourceRow {
@@ -41,7 +43,7 @@ interface ResourceRow {
 type SortColumn = keyof ResourceRow;
 type SortOrder = 'asc' | 'desc';
 
-export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
+export function EmTable({ em, outcome, sbp, cjm, visibleTaskIds }: EmTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('isCSF');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [filterText, setFilterText] = useState('');
@@ -55,6 +57,9 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
     em.actions.forEach((action) => {
       const sbpTask = sbp.tasks.find((t) => t.id === action.source_id);
       if (!sbpTask) return;
+
+      // Apply filter: only show resources for visible tasks
+      if (visibleTaskIds !== null && !visibleTaskIds.has(sbpTask.id)) return;
 
       const sbpLane = sbp.lanes.find((l) => l.id === sbpTask.lane);
 
@@ -122,7 +127,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
     });
 
     return result;
-  }, [em, outcome, sbp, cjm]);
+  }, [em, outcome, sbp, cjm, visibleTaskIds]);
 
   // Filter and sort rows
   const filteredAndSortedRows = useMemo(() => {
@@ -162,6 +167,69 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
     }
   };
 
+  const generateCSV = (rows: ResourceRow[]): string => {
+    // CSV escape function
+    const escapeCSV = (value: string | boolean | undefined): string => {
+      if (value === undefined || value === '') return '';
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    // Header row
+    const headers = [
+      'CSF',
+      'CJMフェーズ',
+      'CJMアクション',
+      'SBPレーン',
+      'SBPタスク',
+      '必要な行動',
+      'リソースタイプ',
+      'リソース',
+      'URL',
+    ];
+    const headerRow = headers.map(escapeCSV).join(',');
+
+    // Data rows
+    const dataRows = rows.map((row) => {
+      return [
+        row.isCSF ? '○' : '',
+        row.cjmPhase,
+        row.cjmAction,
+        row.sbpLane,
+        row.sbpTask,
+        row.requiredAction,
+        row.linkType,
+        row.name,
+        row.url || '',
+      ].map(escapeCSV).join(',');
+    });
+
+    return [headerRow, ...dataRows].join('\n');
+  };
+
+  const handleDownloadCSV = () => {
+    const csv = generateCSV(filteredAndSortedRows);
+    // Add BOM for Excel UTF-8 support
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+
+    // Generate filename with timestamp
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+    link.download = `リソース一覧_${timestamp}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (!em || !outcome || !sbp || !cjm) {
     return (
       <Paper elevation={2} sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'white' }}>
@@ -173,22 +241,32 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
   return (
     <Paper elevation={2} sx={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: 'white' }}>
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
           <Typography variant="h6">リソース一覧</Typography>
-          <TextField
-            size="small"
-            placeholder="検索..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            sx={{ width: 300 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Download />}
+              onClick={handleDownloadCSV}
+            >
+              CSVダウンロード
+            </Button>
+            <TextField
+              size="small"
+              placeholder="検索..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              sx={{ width: 300 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
         </Box>
       </Box>
       <TableContainer sx={{ maxHeight: 'calc(100vh - 500px)' }}>
@@ -201,7 +279,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'isCSF' ? sortOrder : 'asc'}
                   onClick={() => handleSort('isCSF')}
                 >
-                  CSF
+                  <br />CSF
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -210,7 +288,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'cjmPhase' ? sortOrder : 'asc'}
                   onClick={() => handleSort('cjmPhase')}
                 >
-                  CJMフェーズ
+                  CJM<br />フェーズ
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -219,7 +297,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'cjmAction' ? sortOrder : 'asc'}
                   onClick={() => handleSort('cjmAction')}
                 >
-                  CJMアクション
+                  CJM<br />アクション
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -228,7 +306,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'sbpLane' ? sortOrder : 'asc'}
                   onClick={() => handleSort('sbpLane')}
                 >
-                  SBPレーン
+                  SBP<br />レーン
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -237,7 +315,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'sbpTask' ? sortOrder : 'asc'}
                   onClick={() => handleSort('sbpTask')}
                 >
-                  SBPタスク
+                  SBP<br />タスク
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -246,7 +324,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'requiredAction' ? sortOrder : 'asc'}
                   onClick={() => handleSort('requiredAction')}
                 >
-                  必要な行動
+                  <br />必要な行動
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -255,7 +333,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'linkType' ? sortOrder : 'asc'}
                   onClick={() => handleSort('linkType')}
                 >
-                  リンクタイプ
+                  リソース<br />タイプ
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -264,10 +342,10 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
                   direction={sortColumn === 'name' ? sortOrder : 'asc'}
                   onClick={() => handleSort('name')}
                 >
-                  名前
+                  <br />リソース
                 </TableSortLabel>
               </TableCell>
-              <TableCell>URL</TableCell>
+              <TableCell><br />URL</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

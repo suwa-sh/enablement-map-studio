@@ -1,50 +1,163 @@
-import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
-export function PropertyPanel({ selectedItem, onActionUpdate, onSkillUpdate, onKnowledgeUpdate, onToolUpdate, onDelete, onClose, }) {
-    const [editedItem, setEditedItem] = useState(null);
+import { Box, Drawer, Typography, TextField, Button, Stack, IconButton, Divider, Paper, } from '@mui/material';
+import { Close, Save, Delete, Add } from '@mui/icons-material';
+import { generateId } from '@enablement-map-studio/dsl';
+import { useConfirm } from '@enablement-map-studio/ui';
+export function PropertyPanel({ selectedAction, em, onEmUpdate, onClose, }) {
+    const { confirm } = useConfirm();
+    const [editedAction, setEditedAction] = useState(selectedAction);
     useEffect(() => {
-        if (selectedItem) {
-            setEditedItem(selectedItem.item);
-        }
-    }, [selectedItem]);
-    if (!selectedItem || !editedItem) {
-        return null;
-    }
+        setEditedAction(selectedAction);
+    }, [selectedAction]);
     const handleSave = () => {
-        if (selectedItem.type === 'action') {
-            onActionUpdate(editedItem);
-        }
-        else if (selectedItem.type === 'skill') {
-            onSkillUpdate(editedItem);
-        }
-        else if (selectedItem.type === 'knowledge') {
-            onKnowledgeUpdate(editedItem);
-        }
-        else if (selectedItem.type === 'tool') {
-            onToolUpdate(editedItem);
-        }
+        if (!editedAction || !em)
+            return;
+        const updatedActions = em.actions.map((a) => a.id === editedAction.id ? editedAction : a);
+        onEmUpdate({ ...em, actions: updatedActions });
     };
-    const handleDelete = () => {
-        if (window.confirm('Are you sure you want to delete this item?')) {
-            onDelete();
-        }
+    const handleDelete = async () => {
+        if (!editedAction || !em)
+            return;
+        const confirmed = await confirm({ message: 'この行動を削除しますか?' });
+        if (!confirmed)
+            return;
+        // Delete action and related resources
+        const updatedActions = em.actions.filter((a) => a.id !== editedAction.id);
+        const updatedSkills = (em.skills || []).filter((s) => s.action_id !== editedAction.id);
+        const updatedKnowledge = (em.knowledge || []).filter((k) => k.action_id !== editedAction.id);
+        const updatedTools = (em.tools || []).filter((t) => t.action_id !== editedAction.id);
+        onEmUpdate({
+            ...em,
+            actions: updatedActions,
+            skills: updatedSkills,
+            knowledge: updatedKnowledge,
+            tools: updatedTools,
+        });
+        onClose();
     };
-    return (_jsxs("div", { className: "w-80 overflow-auto border-l border-gray-200 bg-white p-6", children: [_jsxs("div", { className: "mb-4 flex items-center justify-between", children: [_jsx("h2", { className: "text-lg font-semibold text-gray-900", children: "Properties" }), _jsx("button", { onClick: onClose, className: "text-gray-400 hover:text-gray-600", children: "\u2715" })] }), _jsxs("div", { className: "space-y-4", children: [selectedItem.type === 'action' && (_jsxs(_Fragment, { children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "Action Name" }), _jsx("input", { type: "text", value: editedItem.name, onChange: (e) => setEditedItem({ ...editedItem, name: e.target.value }), className: "mt-1 w-full rounded-md border border-gray-300 px-3 py-2" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "Source ID (SBP Task)" }), _jsx("input", { type: "text", value: editedItem.source_id, disabled: true, className: "mt-1 w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2" }), _jsx("p", { className: "mt-1 text-xs text-gray-500", children: "Read-only reference" })] })] })), selectedItem.type === 'skill' && (_jsxs(_Fragment, { children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "Skill Name" }), _jsx("input", { type: "text", value: editedItem.name, onChange: (e) => setEditedItem({ ...editedItem, name: e.target.value }), className: "mt-1 w-full rounded-md border border-gray-300 px-3 py-2" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "Learnings" }), (editedItem.learnings || []).map((learning, idx) => (_jsxs("div", { className: "mt-2 rounded border border-gray-200 p-2", children: [_jsx("input", { type: "text", value: learning.title, onChange: (e) => {
-                                                    const updated = [...(editedItem.learnings || [])];
-                                                    updated[idx] = { ...learning, title: e.target.value };
-                                                    setEditedItem({ ...editedItem, learnings: updated });
-                                                }, placeholder: "Title", className: "w-full rounded border border-gray-300 px-2 py-1 text-sm" }), _jsx("input", { type: "text", value: learning.url, onChange: (e) => {
-                                                    const updated = [...(editedItem.learnings || [])];
-                                                    updated[idx] = { ...learning, url: e.target.value };
-                                                    setEditedItem({ ...editedItem, learnings: updated });
-                                                }, placeholder: "URL", className: "mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm" }), _jsx("button", { onClick: () => {
-                                                    const updated = (editedItem.learnings || []).filter((_, i) => i !== idx);
-                                                    setEditedItem({ ...editedItem, learnings: updated });
-                                                }, className: "mt-1 text-xs text-red-600 hover:text-red-800", children: "Remove" })] }, idx))), _jsx("button", { onClick: () => {
-                                            const updated = [
-                                                ...(editedItem.learnings || []),
-                                                { title: '', url: '' },
-                                            ];
-                                            setEditedItem({ ...editedItem, learnings: updated });
-                                        }, className: "mt-2 text-sm text-blue-600 hover:text-blue-800", children: "+ Add Learning" })] })] })), selectedItem.type === 'knowledge' && (_jsxs(_Fragment, { children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "Knowledge Name" }), _jsx("input", { type: "text", value: editedItem.name, onChange: (e) => setEditedItem({ ...editedItem, name: e.target.value }), className: "mt-1 w-full rounded-md border border-gray-300 px-3 py-2" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "URL" }), _jsx("input", { type: "text", value: editedItem.url, onChange: (e) => setEditedItem({ ...editedItem, url: e.target.value }), className: "mt-1 w-full rounded-md border border-gray-300 px-3 py-2" })] })] })), selectedItem.type === 'tool' && (_jsxs(_Fragment, { children: [_jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "Tool Name" }), _jsx("input", { type: "text", value: editedItem.name, onChange: (e) => setEditedItem({ ...editedItem, name: e.target.value }), className: "mt-1 w-full rounded-md border border-gray-300 px-3 py-2" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-sm font-medium text-gray-700", children: "URL" }), _jsx("input", { type: "text", value: editedItem.url, onChange: (e) => setEditedItem({ ...editedItem, url: e.target.value }), className: "mt-1 w-full rounded-md border border-gray-300 px-3 py-2" })] })] })), _jsxs("div", { className: "flex gap-2", children: [_jsx("button", { onClick: handleSave, className: "flex-1 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700", children: "Save" }), _jsx("button", { onClick: handleDelete, className: "rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700", children: "Delete" })] })] })] }));
+    const handleAddSkill = () => {
+        if (!editedAction || !em)
+            return;
+        const newSkill = {
+            id: generateId('em', 'skill'),
+            name: '新しいスキル',
+            action_id: editedAction.id,
+            learnings: [],
+        };
+        onEmUpdate({
+            ...em,
+            skills: [...(em.skills || []), newSkill],
+        });
+    };
+    const handleAddKnowledge = () => {
+        if (!editedAction || !em)
+            return;
+        const newKnowledge = {
+            id: generateId('em', 'knowledge'),
+            name: '新しいナレッジ',
+            action_id: editedAction.id,
+            url: '',
+        };
+        onEmUpdate({
+            ...em,
+            knowledge: [...(em.knowledge || []), newKnowledge],
+        });
+    };
+    const handleAddTool = () => {
+        if (!editedAction || !em)
+            return;
+        const newTool = {
+            id: generateId('em', 'tool'),
+            name: '新しいツール',
+            action_id: editedAction.id,
+            url: '',
+        };
+        onEmUpdate({
+            ...em,
+            tools: [...(em.tools || []), newTool],
+        });
+    };
+    if (!editedAction || !em)
+        return null;
+    const relatedSkills = (em.skills || []).filter((s) => s.action_id === editedAction.id);
+    const relatedKnowledge = (em.knowledge || []).filter((k) => k.action_id === editedAction.id);
+    const relatedTools = (em.tools || []).filter((t) => t.action_id === editedAction.id);
+    return (_jsx(Drawer, { anchor: "right", open: !!editedAction, onClose: onClose, variant: "persistent", sx: {
+            '& .MuiDrawer-paper': {
+                width: '33vw',
+                minWidth: 400,
+                boxSizing: 'border-box',
+            },
+        }, children: _jsxs(Box, { sx: { p: 3, height: '100%', display: 'flex', flexDirection: 'column' }, children: [_jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }, children: [_jsx(Typography, { variant: "h6", children: "\u30D7\u30ED\u30D1\u30C6\u30A3" }), _jsx(IconButton, { onClick: onClose, size: "small", children: _jsx(Close, {}) })] }), _jsx(Box, { sx: { flex: 1, overflow: 'auto' }, children: _jsxs(Stack, { spacing: 3, children: [_jsxs(Box, { children: [_jsx(Typography, { variant: "subtitle2", fontWeight: "bold", sx: { mb: 1 }, children: "\u884C\u52D5\u540D" }), _jsx(TextField, { fullWidth: true, size: "small", value: editedAction.name, onChange: (e) => setEditedAction({ ...editedAction, name: e.target.value }) })] }), _jsx(Divider, {}), _jsxs(Box, { children: [_jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }, children: [_jsxs(Typography, { variant: "subtitle2", fontWeight: "bold", children: ["\u30B9\u30AD\u30EB (", relatedSkills.length, ")"] }), _jsx(Button, { size: "small", startIcon: _jsx(Add, {}), onClick: handleAddSkill, children: "\u8FFD\u52A0" })] }), relatedSkills.length === 0 && (_jsx(Typography, { variant: "body2", color: "text.secondary", children: "\u30B9\u30AD\u30EB\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093" })), relatedSkills.map((skill) => {
+                                        const handleSkillNameChange = (newName) => {
+                                            const updatedSkills = (em.skills || []).map((s) => s.id === skill.id ? { ...s, name: newName } : s);
+                                            onEmUpdate({ ...em, skills: updatedSkills });
+                                        };
+                                        const handleAddLearning = () => {
+                                            const newLearning = {
+                                                title: '新しい学習コンテンツ',
+                                                url: '',
+                                            };
+                                            const updatedSkills = (em.skills || []).map((s) => s.id === skill.id
+                                                ? { ...s, learnings: [...(s.learnings || []), newLearning] }
+                                                : s);
+                                            onEmUpdate({ ...em, skills: updatedSkills });
+                                        };
+                                        const handleLearningChange = (learningIndex, field, value) => {
+                                            const updatedSkills = (em.skills || []).map((s) => s.id === skill.id
+                                                ? {
+                                                    ...s,
+                                                    learnings: (s.learnings || []).map((l, idx) => idx === learningIndex ? { ...l, [field]: value } : l),
+                                                }
+                                                : s);
+                                            onEmUpdate({ ...em, skills: updatedSkills });
+                                        };
+                                        const handleDeleteSkill = async () => {
+                                            const confirmed = await confirm({ message: 'このスキルを削除しますか?' });
+                                            if (!confirmed)
+                                                return;
+                                            const updatedSkills = (em.skills || []).filter((s) => s.id !== skill.id);
+                                            onEmUpdate({ ...em, skills: updatedSkills });
+                                        };
+                                        const handleDeleteLearning = async (learningIndex) => {
+                                            const confirmed = await confirm({ message: 'この学習コンテンツを削除しますか?' });
+                                            if (!confirmed)
+                                                return;
+                                            const updatedSkills = (em.skills || []).map((s) => s.id === skill.id
+                                                ? {
+                                                    ...s,
+                                                    learnings: (s.learnings || []).filter((_, idx) => idx !== learningIndex),
+                                                }
+                                                : s);
+                                            onEmUpdate({ ...em, skills: updatedSkills });
+                                        };
+                                        return (_jsx(Paper, { elevation: 1, sx: { p: 2, mb: 2, bgcolor: 'grey.50' }, children: _jsxs(Stack, { spacing: 2, children: [_jsxs(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 }, children: [_jsx(TextField, { fullWidth: true, size: "small", label: "\u30B9\u30AD\u30EB\u540D", value: skill.name, onChange: (e) => handleSkillNameChange(e.target.value) }), _jsx(IconButton, { size: "small", color: "error", onClick: handleDeleteSkill, children: _jsx(Delete, {}) })] }), _jsxs(Box, { children: [_jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }, children: [_jsxs(Typography, { variant: "caption", fontWeight: "medium", children: ["\u5B66\u7FD2\u30B3\u30F3\u30C6\u30F3\u30C4 (", skill.learnings?.length || 0, ")"] }), _jsx(Button, { size: "small", startIcon: _jsx(Add, {}), onClick: handleAddLearning, children: "\u8FFD\u52A0" })] }), (!skill.learnings || skill.learnings.length === 0) && (_jsx(Typography, { variant: "caption", color: "text.secondary", children: "\u5B66\u7FD2\u30B3\u30F3\u30C6\u30F3\u30C4\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093" })), skill.learnings?.map((learning, learningIndex) => (_jsx(Paper, { elevation: 0, sx: { p: 1.5, mb: 1, bgcolor: 'white', border: 1, borderColor: 'divider' }, children: _jsxs(Stack, { spacing: 1, children: [_jsxs(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 }, children: [_jsx(TextField, { fullWidth: true, size: "small", label: "\u540D\u524D", value: learning.title, onChange: (e) => handleLearningChange(learningIndex, 'title', e.target.value) }), _jsx(IconButton, { size: "small", color: "error", onClick: () => handleDeleteLearning(learningIndex), children: _jsx(Delete, {}) })] }), _jsx(TextField, { fullWidth: true, size: "small", label: "URL", value: learning.url || '', onChange: (e) => handleLearningChange(learningIndex, 'url', e.target.value) })] }) }, learningIndex)))] })] }) }, skill.id));
+                                    })] }), _jsxs(Box, { children: [_jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }, children: [_jsxs(Typography, { variant: "subtitle2", fontWeight: "bold", children: ["\u30CA\u30EC\u30C3\u30B8 (", relatedKnowledge.length, ")"] }), _jsx(Button, { size: "small", startIcon: _jsx(Add, {}), onClick: handleAddKnowledge, children: "\u8FFD\u52A0" })] }), relatedKnowledge.length === 0 && (_jsx(Typography, { variant: "body2", color: "text.secondary", children: "\u30CA\u30EC\u30C3\u30B8\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093" })), relatedKnowledge.map((k) => {
+                                        const handleKnowledgeChange = (field, value) => {
+                                            const updatedKnowledge = (em.knowledge || []).map((item) => item.id === k.id ? { ...item, [field]: value } : item);
+                                            onEmUpdate({ ...em, knowledge: updatedKnowledge });
+                                        };
+                                        const handleDeleteKnowledge = async () => {
+                                            const confirmed = await confirm({ message: 'このナレッジを削除しますか?' });
+                                            if (!confirmed)
+                                                return;
+                                            const updatedKnowledge = (em.knowledge || []).filter((item) => item.id !== k.id);
+                                            onEmUpdate({ ...em, knowledge: updatedKnowledge });
+                                        };
+                                        return (_jsx(Paper, { elevation: 1, sx: { p: 2, mb: 1, bgcolor: 'grey.50' }, children: _jsxs(Stack, { spacing: 1, children: [_jsxs(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 }, children: [_jsx(TextField, { fullWidth: true, size: "small", label: "\u540D\u524D", value: k.name, onChange: (e) => handleKnowledgeChange('name', e.target.value) }), _jsx(IconButton, { size: "small", color: "error", onClick: handleDeleteKnowledge, children: _jsx(Delete, {}) })] }), _jsx(TextField, { fullWidth: true, size: "small", label: "URL", value: k.url || '', onChange: (e) => handleKnowledgeChange('url', e.target.value) })] }) }, k.id));
+                                    })] }), _jsxs(Box, { children: [_jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }, children: [_jsxs(Typography, { variant: "subtitle2", fontWeight: "bold", children: ["\u30C4\u30FC\u30EB (", relatedTools.length, ")"] }), _jsx(Button, { size: "small", startIcon: _jsx(Add, {}), onClick: handleAddTool, children: "\u8FFD\u52A0" })] }), relatedTools.length === 0 && (_jsx(Typography, { variant: "body2", color: "text.secondary", children: "\u30C4\u30FC\u30EB\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093" })), relatedTools.map((tool) => {
+                                        const handleToolChange = (field, value) => {
+                                            const updatedTools = (em.tools || []).map((item) => item.id === tool.id ? { ...item, [field]: value } : item);
+                                            onEmUpdate({ ...em, tools: updatedTools });
+                                        };
+                                        const handleDeleteTool = async () => {
+                                            const confirmed = await confirm({ message: 'このツールを削除しますか?' });
+                                            if (!confirmed)
+                                                return;
+                                            const updatedTools = (em.tools || []).filter((item) => item.id !== tool.id);
+                                            onEmUpdate({ ...em, tools: updatedTools });
+                                        };
+                                        return (_jsx(Paper, { elevation: 1, sx: { p: 2, mb: 1, bgcolor: 'grey.50' }, children: _jsxs(Stack, { spacing: 1, children: [_jsxs(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 }, children: [_jsx(TextField, { fullWidth: true, size: "small", label: "\u540D\u524D", value: tool.name, onChange: (e) => handleToolChange('name', e.target.value) }), _jsx(IconButton, { size: "small", color: "error", onClick: handleDeleteTool, children: _jsx(Delete, {}) })] }), _jsx(TextField, { fullWidth: true, size: "small", label: "URL", value: tool.url || '', onChange: (e) => handleToolChange('url', e.target.value) })] }) }, tool.id));
+                                    })] })] }) }), _jsx(Box, { sx: { mt: 3 }, children: _jsxs(Stack, { direction: "row", spacing: 2, children: [_jsx(Button, { onClick: handleSave, variant: "contained", startIcon: _jsx(Save, {}), sx: { flex: 1 }, children: "SAVE" }), _jsx(Button, { onClick: handleDelete, variant: "outlined", color: "error", startIcon: _jsx(Delete, {}), sx: { flex: 1 }, children: "DELETE" })] }) })] }) }));
 }

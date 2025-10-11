@@ -2,7 +2,9 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
 import { Box, Drawer, Typography, TextField, Button, Stack, IconButton, Select, MenuItem, FormControl, InputLabel, Alert, } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
+import { useConfirm } from '@enablement-map-studio/ui';
 export function PropertyPanel({ selectedTask, selectedLane, onTaskUpdate, onLaneUpdate, onTaskDelete, onLaneDelete, onClose, }) {
+    const { confirm } = useConfirm();
     const [editedTask, setEditedTask] = useState(null);
     const [editedLane, setEditedLane] = useState(null);
     useEffect(() => {
@@ -22,8 +24,9 @@ export function PropertyPanel({ selectedTask, selectedLane, onTaskUpdate, onLane
             onLaneUpdate(editedLane);
         }
     };
-    const handleDelete = () => {
-        if (window.confirm('このアイテムを削除してもよろしいですか？')) {
+    const handleDelete = async () => {
+        const confirmed = await confirm({ message: 'このアイテムを削除してもよろしいですか？' });
+        if (confirmed) {
             if (editedTask) {
                 onTaskDelete(editedTask.id);
             }

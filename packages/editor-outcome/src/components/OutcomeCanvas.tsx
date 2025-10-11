@@ -1,6 +1,20 @@
 import { useMemo } from 'react';
-import { Box, Paper, Typography, Button, Stack, Chip } from '@mui/material';
-import { Star } from '@mui/icons-material';
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Stack,
+  Chip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from '@mui/material';
+import { Star, ExpandMore, FilterList } from '@mui/icons-material';
 import type { OutcomeDsl, SbpDsl, CjmDsl } from '@enablement-map-studio/dsl';
 
 interface OutcomeCanvasProps {
@@ -44,37 +58,96 @@ export function OutcomeCanvas({
   // Get the CSF source task
   const csfTask = sbp.tasks.find((task) => task.id === outcome.primary_csf.source_id);
 
+  // Count visible items for filter summary
+  const visibleCjmActionsCount = cjm
+    ? cjm.actions.filter((action) => selectedPhaseId === null || action.phase === selectedPhaseId).length
+    : 0;
+
   return (
     <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3 }}>
-      {/* Phase selector */}
+      {/* Filter accordion - right aligned, 50% width */}
       {cjm && (
-        <Paper elevation={2} sx={{ mb: 3, p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>CJMフェーズ</Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Button
-              onClick={() => onPhaseSelect(null)}
-              variant={selectedPhaseId === null ? 'contained' : 'outlined'}
-            >
-              すべて
-            </Button>
-            {cjm.phases.map((phase) => (
-              <Button
-                key={phase.id}
-                onClick={() => onPhaseSelect(phase.id)}
-                variant={selectedPhaseId === phase.id ? 'contained' : 'outlined'}
-              >
-                {phase.name}
-              </Button>
-            ))}
-          </Stack>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Accordion defaultExpanded sx={{ width: '50%', maxWidth: 800 }}>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <FilterList fontSize="small" />
+                <Typography variant="button">フィルター</Typography>
+              </Stack>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack spacing={2}>
+                {/* CJM Phase Filter */}
+                <FormControl fullWidth>
+                  <InputLabel id="phase-filter-label">顧客の意思決定プロセス</InputLabel>
+                  <Select
+                    labelId="phase-filter-label"
+                    value={selectedPhaseId || ''}
+                    onChange={(e) => onPhaseSelect(e.target.value || null)}
+                    label="顧客の意思決定プロセス"
+                  >
+                    <MenuItem value="">すべて</MenuItem>
+                    {cjm.phases.map((phase) => (
+                      <MenuItem key={phase.id} value={phase.id}>
+                        {phase.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {/* Filter summary */}
+                {selectedPhaseId && (
+                  <Paper elevation={1} sx={{ p: 2, bgcolor: 'grey.50', border: 1, borderColor: 'grey.300' }}>
+                    <Typography variant="body2" color="text.primary">
+                      フィルタ中: 顧客の意思決定プロセス {visibleCjmActionsCount}件 → 組織の価値提供プロセス {visibleTaskIds?.size || sbp.tasks.length}件
+                    </Typography>
+                  </Paper>
+                )}
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        </Box>
+      )}
+
+      {/* CJM actions */}
+      {cjm && (
+        <Paper elevation={2} sx={{ mb: 2, p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>CJM</Typography>
+
+          {/* CJM Actions - horizontal layout with frame */}
+          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+            <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
+              アクション ({visibleCjmActionsCount}件)
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
+              {cjm.actions
+                .filter((action) => selectedPhaseId === null || action.phase === selectedPhaseId)
+                .map((action) => (
+                  <Paper
+                    key={action.id}
+                    elevation={1}
+                    sx={{
+                      minWidth: 200,
+                      flexShrink: 0,
+                      p: 2,
+                      border: 1,
+                      borderColor: 'grey.300',
+                      bgcolor: 'white',
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight="medium">{action.name}</Typography>
+                  </Paper>
+                ))}
+            </Box>
+          </Box>
         </Paper>
       )}
 
-      {/* SBP swimlanes (read-only) */}
-      <Paper elevation={2} sx={{ p: 2 }}>
+      {/* SBP swimlanes (read-only) - skip first lane */}
+      <Paper elevation={2} sx={{ mb: 2, p: 2 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>SBP</Typography>
         <Stack spacing={2}>
-          {sbp.lanes.map((lane) => {
+          {sbp.lanes.slice(1).map((lane) => {
             const laneTasks = sbp.tasks
               .filter((task) => task.lane === lane.id)
               .filter((task) => visibleTaskIds === null || visibleTaskIds.has(task.id));
@@ -93,17 +166,20 @@ export function OutcomeCanvas({
                       <Paper
                         key={task.id}
                         elevation={isCsfTask ? 4 : 1}
-                        onClick={() => onTaskClick(task.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTaskClick(task.id);
+                        }}
                         sx={{
                           minWidth: 200,
                           flexShrink: 0,
                           p: 2,
                           border: 2,
-                          borderColor: isCsfTask ? 'success.main' : 'grey.300',
-                          bgcolor: isCsfTask ? 'success.lighter' : 'white',
+                          borderColor: isCsfTask ? 'primary.main' : 'grey.300',
+                          bgcolor: isCsfTask ? 'primary.lighter' : 'white',
                           cursor: 'pointer',
                           '&:hover': {
-                            bgcolor: isCsfTask ? 'success.light' : 'grey.100',
+                            bgcolor: isCsfTask ? 'primary.light' : 'grey.100',
                           },
                         }}
                       >
@@ -113,7 +189,7 @@ export function OutcomeCanvas({
                             icon={<Star />}
                             label="CSF"
                             size="small"
-                            color="success"
+                            color="primary"
                             sx={{ mt: 1 }}
                           />
                         )}
@@ -127,45 +203,39 @@ export function OutcomeCanvas({
         </Stack>
       </Paper>
 
-      {/* 求める成果 Card */}
-      <Paper elevation={2} sx={{ mt: 3, p: 3 }}>
-        <Typography variant="h6" sx={{ mb: 3 }}>求める成果</Typography>
-        <Stack spacing={2}>
+      {/* 組織の求める成果 Card */}
+      <Paper elevation={2} sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>組織の求める成果</Typography>
+        <Stack direction="row" spacing={2}>
           {/* KGI Card */}
-          <Paper elevation={1} sx={{ p: 2, bgcolor: 'grey.50' }}>
-            <Typography variant="subtitle2" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5 }}>
+          <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
+            <Typography variant="caption" fontWeight="bold" color="text.secondary">
               KGI
             </Typography>
-            <Typography variant="h6">{outcome.kgi.name}</Typography>
+            <Typography variant="body2">{outcome.kgi.name}</Typography>
           </Paper>
 
           {/* CSF Card */}
-          <Paper elevation={1} sx={{ p: 2, bgcolor: 'grey.50' }}>
-            <Typography variant="subtitle2" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5 }}>
+          <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
+            <Typography variant="caption" fontWeight="bold" color="text.secondary">
               CSF
             </Typography>
-            {csfTask && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                ソースタスク: <strong>{csfTask.name}</strong>
-              </Typography>
-            )}
-            <Typography variant="body1">{outcome.primary_csf.rationale || '（未設定）'}</Typography>
+            <Typography variant="body2">
+              {outcome.primary_csf.rationale || '（未設定）'}
+            </Typography>
           </Paper>
 
           {/* KPI Card */}
-          <Paper elevation={1} sx={{ p: 2, bgcolor: 'grey.50' }}>
-            <Typography variant="subtitle2" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5 }}>
+          <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
+            <Typography variant="caption" fontWeight="bold" color="text.secondary">
               KPI
             </Typography>
-            <Typography variant="h6" sx={{ mb: 1 }}>{outcome.primary_kpi.name}</Typography>
-            {outcome.primary_kpi.definition && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {outcome.primary_kpi.definition}
-              </Typography>
-            )}
-            <Typography variant="body1" fontWeight="medium">
-              目標値: {outcome.primary_kpi.target.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-              {outcome.primary_kpi.unit && ` ${outcome.primary_kpi.unit}`}
+            <Typography variant="body2">
+              {outcome.primary_kpi.name}: {outcome.primary_kpi.target.toLocaleString('ja-JP', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })}
+              {outcome.primary_kpi.unit && outcome.primary_kpi.unit}
             </Typography>
           </Paper>
         </Stack>

@@ -85,7 +85,15 @@ export function OutcomeEditor() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100%' }}>
+    <Box
+      sx={{ display: 'flex', height: '100%' }}
+      onClick={() => {
+        // Click outside property panel to close it
+        if (showPropertyPanel) {
+          setShowPropertyPanel(false);
+        }
+      }}
+    >
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         <OutcomeCanvas
           outcome={outcome}

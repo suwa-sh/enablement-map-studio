@@ -106,7 +106,7 @@ export function EmCanvasCard({ em, outcome, sbp, cjm, onEmUpdate, onActionSelect
         }
         return new Set(taskIds);
     }, [sbp, cjm, csfRelatedData, selectedPhaseId]);
-    // Get EM actions filtered by CSF or selected task
+    // Get EM actions filtered by CSF, phase, or selected task
     const visibleActions = useMemo(() => {
         if (!em)
             return [];
@@ -114,13 +114,17 @@ export function EmCanvasCard({ em, outcome, sbp, cjm, onEmUpdate, onActionSelect
         if (csfRelatedData) {
             return em.actions.filter((action) => csfRelatedData.emActionIds.has(action.id));
         }
+        // Phase filter: show actions linked to tasks in the selected phase
+        if (selectedPhaseId && visibleTaskIds) {
+            return em.actions.filter((action) => visibleTaskIds.has(action.source_id));
+        }
         // Task selection: show actions for selected task
         if (selectedTaskId) {
             return em.actions.filter((action) => action.source_id === selectedTaskId);
         }
         // No filter: show all
         return em.actions;
-    }, [em, csfRelatedData, selectedTaskId]);
+    }, [em, csfRelatedData, selectedPhaseId, visibleTaskIds, selectedTaskId]);
     const handleAddAction = useCallback(() => {
         if (!em || !sbp)
             return;
@@ -142,10 +146,25 @@ export function EmCanvasCard({ em, outcome, sbp, cjm, onEmUpdate, onActionSelect
     if (!outcome || !sbp || !cjm) {
         return (_jsx(Box, { sx: { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }, children: _jsx(Typography, { color: "text.secondary", children: "Outcome\u3001SBP\u3001CJM \u30C7\u30FC\u30BF\u3092\u30ED\u30FC\u30C9\u3057\u3066\u304F\u3060\u3055\u3044" }) }));
     }
-    return (_jsxs(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: [_jsx(Box, { sx: { mb: 3 }, children: _jsx(Button, { variant: "contained", startIcon: _jsx(Add, {}), onClick: handleAddAction, children: "\u5FC5\u8981\u306A\u884C\u52D5\u3092\u8FFD\u52A0" }) }), _jsxs(Stack, { spacing: 2, sx: { mb: 3 }, children: [_jsxs(Paper, { elevation: 2, sx: { p: 2 }, children: [_jsx(Typography, { variant: "h6", sx: { mb: 2 }, children: "\u6C42\u3081\u308B\u6210\u679C" }), _jsxs(Stack, { direction: "row", spacing: 2, sx: { mb: 2 }, children: [_jsxs(Paper, { elevation: 1, sx: { flex: 1, p: 2, bgcolor: 'grey.50' }, children: [_jsx(Typography, { variant: "caption", fontWeight: "bold", color: "text.secondary", children: "KGI" }), _jsx(Typography, { variant: "body2", children: outcome.kgi.name })] }), _jsxs(Paper, { elevation: 1, sx: { flex: 1, p: 2, bgcolor: 'grey.50' }, children: [_jsx(Typography, { variant: "caption", fontWeight: "bold", color: "text.secondary", children: "CSF" }), _jsx(Typography, { variant: "body2", children: outcome.primary_csf.rationale || '（未設定）' })] }), _jsxs(Paper, { elevation: 1, sx: { flex: 1, p: 2, bgcolor: 'grey.50' }, children: [_jsx(Typography, { variant: "caption", fontWeight: "bold", color: "text.secondary", children: "KPI" }), _jsxs(Typography, { variant: "body2", children: [outcome.primary_kpi.name, ": ", outcome.primary_kpi.target.toLocaleString('ja-JP', {
+    return (_jsxs(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: [_jsx(Box, { sx: { mb: 3 }, children: _jsx(Button, { variant: "contained", startIcon: _jsx(Add, {}), onClick: handleAddAction, children: "\u5FC5\u8981\u306A\u884C\u52D5\u3092\u8FFD\u52A0" }) }), _jsxs(Stack, { spacing: 2, sx: { mb: 3 }, children: [_jsxs(Paper, { elevation: 2, sx: { p: 2 }, children: [_jsx(Typography, { variant: "h6", sx: { mb: 2 }, children: "\u7D44\u7E54\u306E\u6C42\u3081\u308B\u6210\u679C" }), _jsxs(Stack, { direction: "row", spacing: 2, sx: { mb: 2 }, children: [_jsxs(Paper, { elevation: 1, sx: { flex: 1, p: 2, bgcolor: 'grey.50' }, children: [_jsx(Typography, { variant: "caption", fontWeight: "bold", color: "text.secondary", children: "KGI" }), _jsx(Typography, { variant: "body2", children: outcome.kgi.name })] }), _jsxs(Paper, { elevation: 1, sx: { flex: 1, p: 2, bgcolor: 'grey.50' }, children: [_jsx(Typography, { variant: "caption", fontWeight: "bold", color: "text.secondary", children: "CSF" }), _jsx(Typography, { variant: "body2", children: outcome.primary_csf.rationale || '（未設定）' })] }), _jsxs(Paper, { elevation: 1, sx: { flex: 1, p: 2, bgcolor: 'grey.50' }, children: [_jsx(Typography, { variant: "caption", fontWeight: "bold", color: "text.secondary", children: "KPI" }), _jsxs(Typography, { variant: "body2", children: [outcome.primary_kpi.name, ": ", outcome.primary_kpi.target.toLocaleString('ja-JP', {
                                                         minimumFractionDigits: 0,
                                                         maximumFractionDigits: 2,
-                                                    }), outcome.primary_kpi.unit && outcome.primary_kpi.unit] })] })] }), _jsxs(Stack, { direction: "row", spacing: 1, children: [_jsx(Button, { onClick: () => setCsfFilterActive(false), variant: !csfFilterActive ? 'contained' : 'outlined', size: "small", children: "\u3059\u3079\u3066" }), _jsx(Button, { onClick: () => setCsfFilterActive(true), variant: csfFilterActive ? 'contained' : 'outlined', size: "small", children: "CSF" })] })] }), _jsxs(Paper, { elevation: 2, sx: { p: 2 }, children: [_jsx(Typography, { variant: "h6", sx: { mb: 2 }, children: "CJM\u30D5\u30A7\u30FC\u30BA" }), _jsxs(Stack, { direction: "row", spacing: 1, flexWrap: "wrap", useFlexGap: true, children: [_jsx(Button, { onClick: () => setSelectedPhaseId(null), variant: selectedPhaseId === null ? 'contained' : 'outlined', size: "small", children: "\u3059\u3079\u3066" }), cjm.phases.map((phase) => (_jsx(Button, { onClick: () => setSelectedPhaseId(phase.id), variant: selectedPhaseId === phase.id ? 'contained' : 'outlined', size: "small", children: phase.name }, phase.id)))] })] })] }), _jsxs(Paper, { elevation: 2, sx: { p: 2, mb: 3 }, children: [_jsx(Typography, { variant: "h6", sx: { mb: 2 }, children: "SBP" }), _jsxs(Stack, { direction: "row", spacing: 1, flexWrap: "wrap", useFlexGap: true, sx: { mb: 2 }, children: [_jsx(Button, { onClick: () => setSelectedLaneId(null), variant: selectedLaneId === null ? 'contained' : 'outlined', size: "small", children: "\u3059\u3079\u3066" }), sbp.lanes.map((lane) => (_jsx(Button, { onClick: () => setSelectedLaneId(lane.id), variant: selectedLaneId === lane.id ? 'contained' : 'outlined', size: "small", children: lane.name }, lane.id)))] }), _jsx(Stack, { spacing: 2, children: visibleLanes.map((lane) => {
+                                                    }), outcome.primary_kpi.unit && outcome.primary_kpi.unit] })] })] }), _jsxs(Stack, { direction: "row", spacing: 1, children: [_jsx(Button, { onClick: () => setCsfFilterActive(false), variant: !csfFilterActive ? 'contained' : 'outlined', size: "small", children: "\u3059\u3079\u3066" }), _jsx(Button, { onClick: () => setCsfFilterActive(true), variant: csfFilterActive ? 'contained' : 'outlined', size: "small", children: "CSF" })] })] }), cjm.persona && (_jsxs(Paper, { elevation: 2, sx: { p: 2 }, children: [_jsx(Typography, { variant: "h6", sx: { mb: 2 }, children: "\u9867\u5BA2" }), _jsx(Stack, { direction: "row", spacing: 2, children: _jsxs(Paper, { elevation: 1, sx: { flex: 1, p: 2, bgcolor: 'grey.50' }, children: [_jsx(Typography, { variant: "caption", fontWeight: "bold", color: "text.secondary", children: "\u30DA\u30EB\u30BD\u30CA" }), _jsx(Typography, { variant: "body2", sx: { mb: 1 }, children: cjm.persona.name }), cjm.persona.description && (_jsx(Typography, { variant: "caption", color: "text.secondary", sx: { whiteSpace: 'pre-wrap' }, children: cjm.persona.description }))] }) })] })), _jsxs(Paper, { elevation: 2, sx: { p: 2 }, children: [_jsx(Typography, { variant: "h6", sx: { mb: 2 }, children: "\u9867\u5BA2\u306E\u610F\u601D\u6C7A\u5B9A\u30D7\u30ED\u30BB\u30B9" }), _jsxs(Stack, { direction: "row", spacing: 1, flexWrap: "wrap", useFlexGap: true, sx: { mb: 2 }, children: [_jsx(Button, { onClick: () => setSelectedPhaseId(null), variant: selectedPhaseId === null ? 'contained' : 'outlined', size: "small", children: "\u3059\u3079\u3066" }), cjm.phases.map((phase) => (_jsx(Button, { onClick: () => setSelectedPhaseId(phase.id), variant: selectedPhaseId === phase.id ? 'contained' : 'outlined', size: "small", children: phase.name }, phase.id)))] }), _jsx(Stack, { spacing: 2, children: cjm.phases.map((phase) => {
+                                    const phaseActions = cjm.actions.filter((action) => action.phase === phase.id);
+                                    // Skip phases without actions, or phases filtered out
+                                    if (phaseActions.length === 0)
+                                        return null;
+                                    if (selectedPhaseId && selectedPhaseId !== phase.id)
+                                        return null;
+                                    return (_jsxs(Box, { sx: { p: 2, bgcolor: 'grey.50', borderRadius: 1, border: 1, borderColor: 'divider' }, children: [_jsx(Typography, { variant: "subtitle1", fontWeight: "medium", sx: { mb: 2 }, children: phase.name }), _jsx(Box, { sx: { display: 'flex', gap: 2, overflowX: 'auto' }, children: phaseActions.map((action) => (_jsx(Paper, { elevation: 1, sx: {
+                                                        minWidth: 200,
+                                                        flexShrink: 0,
+                                                        p: 2,
+                                                        border: 1,
+                                                        borderColor: 'grey.300',
+                                                        bgcolor: 'white',
+                                                    }, children: _jsx(Typography, { variant: "body2", fontWeight: "medium", children: action.name }) }, action.id))) })] }, phase.id));
+                                }) })] })] }), _jsxs(Paper, { elevation: 2, sx: { p: 2, mb: 3 }, children: [_jsx(Typography, { variant: "h6", sx: { mb: 2 }, children: "\u7D44\u7E54\u306E\u4FA1\u5024\u63D0\u4F9B\u30D7\u30ED\u30BB\u30B9" }), _jsxs(Stack, { direction: "row", spacing: 1, flexWrap: "wrap", useFlexGap: true, sx: { mb: 2 }, children: [_jsx(Button, { onClick: () => setSelectedLaneId(null), variant: selectedLaneId === null ? 'contained' : 'outlined', size: "small", children: "\u3059\u3079\u3066" }), sbp.lanes.map((lane) => (_jsx(Button, { onClick: () => setSelectedLaneId(lane.id), variant: selectedLaneId === lane.id ? 'contained' : 'outlined', size: "small", children: lane.name }, lane.id)))] }), _jsx(Stack, { spacing: 2, children: visibleLanes.map((lane) => {
                             const laneTasks = sbp.tasks
                                 .filter((task) => task.lane === lane.id)
                                 .filter((task) => visibleTaskIds === null || visibleTaskIds.has(task.id));

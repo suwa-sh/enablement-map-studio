@@ -1,6 +1,22 @@
-import { useState, useMemo, useCallback } from 'react';
-import { Box, Paper, Typography, Button, Stack, Chip } from '@mui/material';
-import { Add, Star } from '@mui/icons-material';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Stack,
+  Chip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Switch,
+  FormControlLabel,
+} from '@mui/material';
+import { Add, Star, ExpandMore, FilterList } from '@mui/icons-material';
 import type { EmDsl, OutcomeDsl, SbpDsl, CjmDsl, EmAction } from '@enablement-map-studio/dsl';
 import { generateId } from '@enablement-map-studio/dsl';
 
@@ -11,6 +27,7 @@ interface EmCanvasCardProps {
   cjm: CjmDsl | null;
   onEmUpdate: (em: EmDsl) => void;
   onActionSelect: (action: EmAction | null) => void;
+  onFilterChange?: (visibleTaskIds: Set<string> | null) => void;
 }
 
 export function EmCanvasCard({
@@ -20,6 +37,7 @@ export function EmCanvasCard({
   cjm,
   onEmUpdate,
   onActionSelect,
+  onFilterChange,
 }: EmCanvasCardProps) {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [selectedLaneId, setSelectedLaneId] = useState<string | null>(null);
@@ -104,45 +122,132 @@ export function EmCanvasCard({
     return lanes;
   }, [sbp, selectedLaneId]);
 
-  // Get visible tasks based on CSF filter and phase selection
+  // Get visible tasks based on CSF filter, phase, and lane (Phase AND Lane)
   const visibleTaskIds = useMemo(() => {
     if (!sbp) return null; // null means show all
 
-    let taskIds: string[] = [];
-
-    // CSF filter: show all tasks connected to CSF task
+    // CSF filter: show all tasks connected to CSF task (exclusive)
     if (csfRelatedData) {
-      taskIds = Array.from(csfRelatedData.connectedTaskIds);
+      return csfRelatedData.connectedTaskIds;
     }
-    // Phase filter: show tasks for selected phase
-    else if (selectedPhaseId && cjm) {
+
+    // If no filter is active, return null (show all)
+    if (!selectedPhaseId && !selectedLaneId) {
+      return null;
+    }
+
+    // Phase filter only: Apply graph traversal to show all connected tasks
+    if (selectedPhaseId && !selectedLaneId && cjm) {
       const phaseActions = cjm.actions
         .filter((action) => action.phase === selectedPhaseId)
         .map((action) => action.id);
 
-      taskIds = sbp.tasks
-        .filter((task) => {
-          if (task.readonly && phaseActions.includes(task.id)) return true;
-          if (task.source_id && phaseActions.includes(task.source_id)) return true;
-          return false;
-        })
-        .map((task) => task.id);
-    }
-    // No filter: show all
-    else {
-      return null;
+      const initialTasks = sbp.tasks.filter((task) => {
+        if (task.readonly && phaseActions.includes(task.id)) return true;
+        if (task.source_id && phaseActions.includes(task.source_id)) return true;
+        return false;
+      });
+
+      // Graph traversal: expand to include all connected tasks
+      const connectedTaskIds = new Set<string>(initialTasks.map((task) => task.id));
+      const toVisit = [...connectedTaskIds];
+      const visited = new Set<string>();
+
+      while (toVisit.length > 0) {
+        const currentTaskId = toVisit.pop()!;
+        if (visited.has(currentTaskId)) continue;
+        visited.add(currentTaskId);
+
+        // Find all connections where this task is the source (outgoing edges)
+        sbp.connections.forEach((conn) => {
+          if (conn.source === currentTaskId && !connectedTaskIds.has(conn.target)) {
+            connectedTaskIds.add(conn.target);
+            toVisit.push(conn.target);
+          }
+        });
+
+        // Find all connections where this task is the target (incoming edges)
+        sbp.connections.forEach((conn) => {
+          if (conn.target === currentTaskId && !connectedTaskIds.has(conn.source)) {
+            connectedTaskIds.add(conn.source);
+            toVisit.push(conn.source);
+          }
+        });
+      }
+
+      return connectedTaskIds;
     }
 
-    return new Set(taskIds);
-  }, [sbp, cjm, csfRelatedData, selectedPhaseId]);
+    // Lane filter only: Show only tasks in selected lane (no graph traversal)
+    if (selectedLaneId && !selectedPhaseId) {
+      const laneTasks = sbp.tasks.filter((task) => task.lane === selectedLaneId);
+      return new Set(laneTasks.map((task) => task.id));
+    }
 
-  // Get EM actions filtered by CSF or selected task
+    // Phase AND Lane: Apply graph traversal for Phase, then filter by Lane
+    if (selectedPhaseId && selectedLaneId && cjm) {
+      const phaseActions = cjm.actions
+        .filter((action) => action.phase === selectedPhaseId)
+        .map((action) => action.id);
+
+      const initialTasks = sbp.tasks.filter((task) => {
+        if (task.readonly && phaseActions.includes(task.id)) return true;
+        if (task.source_id && phaseActions.includes(task.source_id)) return true;
+        return false;
+      });
+
+      // Graph traversal: expand to include all connected tasks
+      const connectedTaskIds = new Set<string>(initialTasks.map((task) => task.id));
+      const toVisit = [...connectedTaskIds];
+      const visited = new Set<string>();
+
+      while (toVisit.length > 0) {
+        const currentTaskId = toVisit.pop()!;
+        if (visited.has(currentTaskId)) continue;
+        visited.add(currentTaskId);
+
+        sbp.connections.forEach((conn) => {
+          if (conn.source === currentTaskId && !connectedTaskIds.has(conn.target)) {
+            connectedTaskIds.add(conn.target);
+            toVisit.push(conn.target);
+          }
+        });
+
+        sbp.connections.forEach((conn) => {
+          if (conn.target === currentTaskId && !connectedTaskIds.has(conn.source)) {
+            connectedTaskIds.add(conn.source);
+            toVisit.push(conn.source);
+          }
+        });
+      }
+
+      // Filter by lane after graph traversal
+      const laneFilteredTaskIds = new Set<string>();
+      connectedTaskIds.forEach((taskId) => {
+        const task = sbp.tasks.find((t) => t.id === taskId);
+        if (task && task.lane === selectedLaneId) {
+          laneFilteredTaskIds.add(taskId);
+        }
+      });
+
+      return laneFilteredTaskIds;
+    }
+
+    return null;
+  }, [sbp, cjm, csfRelatedData, selectedPhaseId, selectedLaneId]);
+
+  // Get EM actions filtered by CSF, phase/lane, or selected task
   const visibleActions = useMemo(() => {
     if (!em) return [];
 
     // CSF filter: show only CSF-related actions
     if (csfRelatedData) {
       return em.actions.filter((action) => csfRelatedData.emActionIds.has(action.id));
+    }
+
+    // Phase/Lane filter: show actions linked to visible tasks (Phase AND Lane)
+    if (visibleTaskIds) {
+      return em.actions.filter((action) => visibleTaskIds.has(action.source_id));
     }
 
     // Task selection: show actions for selected task
@@ -152,7 +257,26 @@ export function EmCanvasCard({
 
     // No filter: show all
     return em.actions;
-  }, [em, csfRelatedData, selectedTaskId]);
+  }, [em, csfRelatedData, visibleTaskIds, selectedTaskId]);
+
+  // Calculate visible CJM actions count for display
+  const visibleCjmActionsCount = useMemo(() => {
+    if (!cjm) return 0;
+    if (csfRelatedData && csfRelatedData.cjmActionId) {
+      return cjm.actions.filter((a) => a.id === csfRelatedData.cjmActionId).length;
+    }
+    if (selectedPhaseId) {
+      return cjm.actions.filter((a) => a.phase === selectedPhaseId).length;
+    }
+    return cjm.actions.length;
+  }, [cjm, csfRelatedData, selectedPhaseId]);
+
+  // Notify parent of filter changes
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange(visibleTaskIds);
+    }
+  }, [visibleTaskIds, onFilterChange]);
 
   const handleAddAction = useCallback(() => {
     if (!em || !sbp) return;
@@ -187,21 +311,104 @@ export function EmCanvasCard({
 
   return (
     <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
-      {/* Button area */}
-      <Box sx={{ mb: 3 }}>
+      {/* Button area and Filter panel - horizontal layout */}
+      <Stack direction="row" spacing={2} alignItems="flex-start" justifyContent="space-between" sx={{ mb: 2 }}>
+        {/* Button area */}
         <Button variant="contained" startIcon={<Add />} onClick={handleAddAction}>
           必要な行動を追加
         </Button>
-      </Box>
 
-      {/* Filter area - single column layout */}
-      <Stack spacing={2} sx={{ mb: 3 }}>
-        {/* Outcome card */}
-        <Paper elevation={2} sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>求める成果</Typography>
+        {/* Filter panel */}
+        <Accordion defaultExpanded sx={{ width: '50%', maxWidth: 800 }}>
+        <AccordionSummary
+          expandIcon={<ExpandMore />}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            <FilterList fontSize="small" />
+            <Typography variant="button">フィルター</Typography>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack spacing={2}>
+            {/* Filter controls - horizontal layout */}
+            <Stack direction="row" spacing={2} alignItems="flex-start">
+              {/* CSF Filter */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={csfFilterActive}
+                    onChange={(e) => {
+                      setCsfFilterActive(e.target.checked);
+                      if (e.target.checked) {
+                        // Clear other filters when CSF is activated
+                        setSelectedPhaseId(null);
+                        setSelectedLaneId(null);
+                      }
+                    }}
+                  />
+                }
+                label="CSFで絞り込む"
+                sx={{ minWidth: 150 }}
+              />
+
+              {/* CJM Phase Filter */}
+              <FormControl sx={{ flex: 1, minWidth: 200 }} disabled={csfFilterActive}>
+                <InputLabel id="phase-filter-label">顧客の意思決定プロセス</InputLabel>
+                <Select
+                  labelId="phase-filter-label"
+                  value={selectedPhaseId || ''}
+                  onChange={(e) => setSelectedPhaseId(e.target.value || null)}
+                  label="顧客の意思決定プロセス"
+                >
+                  <MenuItem value="">すべて</MenuItem>
+                  {cjm.phases.map((phase) => (
+                    <MenuItem key={phase.id} value={phase.id}>
+                      {phase.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {/* SBP Lane Filter */}
+              <FormControl sx={{ flex: 1, minWidth: 200 }} disabled={csfFilterActive}>
+                <InputLabel id="lane-filter-label">組織の価値提供プロセス</InputLabel>
+                <Select
+                  labelId="lane-filter-label"
+                  value={selectedLaneId || ''}
+                  onChange={(e) => setSelectedLaneId(e.target.value || null)}
+                  label="組織の価値提供プロセス"
+                >
+                  <MenuItem value="">すべて</MenuItem>
+                  {sbp.lanes.slice(1).map((lane) => (
+                    <MenuItem key={lane.id} value={lane.id}>
+                      {lane.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+
+            {/* Filter summary - inside accordion */}
+            {(csfFilterActive || selectedPhaseId || selectedLaneId) && (
+              <Paper elevation={1} sx={{ p: 2, bgcolor: 'grey.50', border: 1, borderColor: 'grey.300' }}>
+                <Typography variant="body2" color="text.primary">
+                  フィルタ中: 顧客の意思決定プロセス {visibleCjmActionsCount}件 → 組織の価値提供プロセス {visibleTaskIds?.size || sbp.tasks.length}件 → 必要な行動 {visibleActions.length}件
+                </Typography>
+              </Paper>
+            )}
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+      </Stack>
+
+      {/* Two-column layout: Organization outcome (left) and Customer (right) */}
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+        {/* Left: Outcome card */}
+        <Paper elevation={2} sx={{ p: 2, flex: 1 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>組織の求める成果</Typography>
 
           {/* KGI/CSF/KPI in one row */}
-          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={2}>
             <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
               <Typography variant="caption" fontWeight="bold" color="text.secondary">
                 KGI
@@ -231,84 +438,93 @@ export function EmCanvasCard({
               </Typography>
             </Paper>
           </Stack>
-
-          {/* Filter buttons */}
-          <Stack direction="row" spacing={1}>
-            <Button
-              onClick={() => setCsfFilterActive(false)}
-              variant={!csfFilterActive ? 'contained' : 'outlined'}
-              size="small"
-            >
-              すべて
-            </Button>
-            <Button
-              onClick={() => setCsfFilterActive(true)}
-              variant={csfFilterActive ? 'contained' : 'outlined'}
-              size="small"
-            >
-              CSF
-            </Button>
-          </Stack>
         </Paper>
 
-        {/* CJM Phase card */}
-        <Paper elevation={2} sx={{ p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>CJMフェーズ</Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Button
-              onClick={() => setSelectedPhaseId(null)}
-              variant={selectedPhaseId === null ? 'contained' : 'outlined'}
-              size="small"
-            >
-              すべて
-            </Button>
-            {cjm.phases.map((phase) => (
-              <Button
-                key={phase.id}
-                onClick={() => setSelectedPhaseId(phase.id)}
-                variant={selectedPhaseId === phase.id ? 'contained' : 'outlined'}
-                size="small"
-              >
-                {phase.name}
-              </Button>
-            ))}
-          </Stack>
-        </Paper>
+        {/* Right: Customer card */}
+        {cjm.persona && (
+          <Paper elevation={2} sx={{ p: 2, flex: 1 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>顧客</Typography>
+            <Stack direction="row" spacing={2}>
+              <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
+                <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                  ペルソナ
+                </Typography>
+                <Typography variant="body2">{cjm.persona.name}</Typography>
+              </Paper>
+
+              {cjm.persona.description && (
+                <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
+                  <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                    説明
+                  </Typography>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {cjm.persona.description}
+                  </Typography>
+                </Paper>
+              )}
+            </Stack>
+          </Paper>
+        )}
       </Stack>
 
-      {/* SBP area */}
-      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>SBP</Typography>
+      {/* Single column layout below */}
+      {/* CJM Phase card */}
+      <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          顧客の意思決定プロセス
+        </Typography>
 
-        {/* Lane filter buttons */}
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
-          <Button
-            onClick={() => setSelectedLaneId(null)}
-            variant={selectedLaneId === null ? 'contained' : 'outlined'}
-            size="small"
-          >
-            すべて
-          </Button>
-          {sbp.lanes.map((lane) => (
-            <Button
-              key={lane.id}
-              onClick={() => setSelectedLaneId(lane.id)}
-              variant={selectedLaneId === lane.id ? 'contained' : 'outlined'}
-              size="small"
-            >
-              {lane.name}
-            </Button>
-          ))}
-        </Stack>
+        {/* CJM Actions - horizontal layout with frame */}
+        <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
+            アクション ({visibleCjmActionsCount}件)
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
+            {cjm.actions
+              .filter((action) => {
+                // CSF filter: show only CSF-related action
+                if (csfRelatedData) {
+                  return action.id === csfRelatedData.cjmActionId;
+                }
+                // Phase filter
+                return selectedPhaseId === null || action.phase === selectedPhaseId;
+              })
+              .map((action) => (
+                <Paper
+                  key={action.id}
+                  elevation={1}
+                  sx={{
+                    minWidth: 200,
+                    flexShrink: 0,
+                    p: 2,
+                    border: 1,
+                    borderColor: 'grey.300',
+                    bgcolor: 'white',
+                  }}
+                >
+                  <Typography variant="body2" fontWeight="medium">{action.name}</Typography>
+                </Paper>
+              ))}
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* SBP area */}
+      <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          組織の価値提供プロセス
+        </Typography>
 
         <Stack spacing={2}>
-          {visibleLanes.map((lane) => {
-            const laneTasks = sbp.tasks
-              .filter((task) => task.lane === lane.id)
-              .filter((task) => visibleTaskIds === null || visibleTaskIds.has(task.id));
+          {visibleLanes
+            .filter((lane) => lane.kind !== 'cjm') // Skip CJM lane
+            .map((lane) => {
+              const laneTasks = sbp.tasks
+                .filter((task) => task.lane === lane.id)
+                .filter((task) => visibleTaskIds === null || visibleTaskIds.has(task.id));
 
-            // Skip empty lanes when filtering
-            if (visibleTaskIds !== null && laneTasks.length === 0) return null;
+              // Skip empty lanes when filtering
+              if (visibleTaskIds !== null && laneTasks.length === 0) return null;
 
             return (
               <Box key={lane.id} sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, border: 1, borderColor: 'divider' }}>
@@ -328,11 +544,11 @@ export function EmCanvasCard({
                           flexShrink: 0,
                           p: 2,
                           border: 2,
-                          borderColor: isCsfTask ? 'success.main' : isSelected ? 'primary.main' : 'grey.300',
-                          bgcolor: isCsfTask ? 'success.lighter' : isSelected ? 'primary.lighter' : 'white',
+                          borderColor: isCsfTask ? 'primary.main' : isSelected ? 'primary.main' : 'grey.300',
+                          bgcolor: isCsfTask ? 'primary.lighter' : isSelected ? 'primary.lighter' : 'white',
                           cursor: 'pointer',
                           '&:hover': {
-                            bgcolor: isCsfTask ? 'success.light' : isSelected ? 'primary.light' : 'grey.100',
+                            bgcolor: isCsfTask ? 'primary.light' : isSelected ? 'primary.light' : 'grey.100',
                           },
                         }}
                       >
@@ -342,7 +558,7 @@ export function EmCanvasCard({
                             icon={<Star />}
                             label="CSF"
                             size="small"
-                            color="success"
+                            color="primary"
                             sx={{ mt: 1 }}
                           />
                         )}
@@ -356,9 +572,9 @@ export function EmCanvasCard({
         </Stack>
       </Paper>
 
-      {/* Required Actions area */}
-      <Paper elevation={2} sx={{ p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>必要な行動</Typography>
+      {/* Required Actions area - full width below */}
+      <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>必要な行動 ({visibleActions.length}件)</Typography>
         {visibleActions.length === 0 ? (
           <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
             行動がありません。「必要な行動を追加」ボタンから追加してください。

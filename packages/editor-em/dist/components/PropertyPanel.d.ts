@@ -1,13 +1,9 @@
-import type { EmAction, EmSkill, EmKnowledge, EmTool } from '@enablement-map-studio/dsl';
-import type { SelectedItem } from '../EmEditor';
+import type { EmAction, EmDsl } from '@enablement-map-studio/dsl';
 interface PropertyPanelProps {
-    selectedItem: SelectedItem;
-    onActionUpdate: (action: EmAction) => void;
-    onSkillUpdate: (skill: EmSkill) => void;
-    onKnowledgeUpdate: (knowledge: EmKnowledge) => void;
-    onToolUpdate: (tool: EmTool) => void;
-    onDelete: () => void;
+    selectedAction: EmAction | null;
+    em: EmDsl | null;
+    onEmUpdate: (em: EmDsl) => void;
     onClose: () => void;
 }
-export declare function PropertyPanel({ selectedItem, onActionUpdate, onSkillUpdate, onKnowledgeUpdate, onToolUpdate, onDelete, onClose, }: PropertyPanelProps): import("react/jsx-runtime").JSX.Element | null;
+export declare function PropertyPanel({ selectedAction, em, onEmUpdate, onClose, }: PropertyPanelProps): import("react/jsx-runtime").JSX.Element | null;
 export {};
