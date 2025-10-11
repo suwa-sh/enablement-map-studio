@@ -1,21 +1,12 @@
-import { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useAppStore } from '@enablement-map-studio/store';
-import type {
-  EmAction,
-  EmSkill,
-  EmKnowledge,
-  EmTool,
-} from '@enablement-map-studio/dsl';
-import { EmCanvas } from './components/EmCanvas';
-import { PropertyPanel } from './components/PropertyPanel';
-
-export type SelectedItem =
-  | { type: 'action'; item: EmAction }
-  | { type: 'skill'; item: EmSkill }
-  | { type: 'knowledge'; item: EmKnowledge }
-  | { type: 'tool'; item: EmTool }
-  | null;
+import type { EmAction, EmDsl } from '@enablement-map-studio/dsl';
+import { generateId } from '@enablement-map-studio/dsl';
+import { EmCanvasCard } from './components/EmCanvasCard';
+import { EmTable } from './components/EmTable';
+import { PropertyPanelNew } from './components/PropertyPanelNew';
 
 export function EmEditor() {
   const em = useAppStore((state) => state.em);
@@ -24,110 +15,88 @@ export function EmEditor() {
   const cjm = useAppStore((state) => state.cjm);
   const updateEm = useAppStore((state) => state.updateEm);
 
-  const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
+  const [selectedAction, setSelectedAction] = useState<EmAction | null>(null);
 
-  if (!em) {
-    return (
-      <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography color="text.secondary">No EM data loaded. Please load a YAML file.</Typography>
-      </Box>
-    );
-  }
+  // Auto-initialize EM if empty but other data exists
+  useEffect(() => {
+    if (!em && outcome && sbp && cjm) {
+      const initialEm: EmDsl = {
+        kind: 'em',
+        version: '1.0',
+        id: generateId('em', 'em'),
+        outcomes: [
+          {
+            id: generateId('em', 'outcome'),
+            source_id: outcome.primary_kpi.id,
+          },
+        ],
+        actions: [],
+        skills: [],
+        knowledge: [],
+        tools: [],
+      };
 
-  const handleActionUpdate = (updatedAction: EmAction) => {
-    const updatedActions = em.actions.map((action) =>
-      action.id === updatedAction.id ? updatedAction : action
-    );
-    updateEm({ ...em, actions: updatedActions });
-    setSelectedItem({ type: 'action', item: updatedAction });
-  };
-
-  const handleSkillUpdate = (updatedSkill: EmSkill) => {
-    const updatedSkills = (em.skills || []).map((skill) =>
-      skill.id === updatedSkill.id ? updatedSkill : skill
-    );
-    updateEm({ ...em, skills: updatedSkills });
-    setSelectedItem({ type: 'skill', item: updatedSkill });
-  };
-
-  const handleKnowledgeUpdate = (updatedKnowledge: EmKnowledge) => {
-    const updatedKnowledge_ = (em.knowledge || []).map((k) =>
-      k.id === updatedKnowledge.id ? updatedKnowledge : k
-    );
-    updateEm({ ...em, knowledge: updatedKnowledge_ });
-    setSelectedItem({ type: 'knowledge', item: updatedKnowledge });
-  };
-
-  const handleToolUpdate = (updatedTool: EmTool) => {
-    const updatedTools = (em.tools || []).map((tool) =>
-      tool.id === updatedTool.id ? updatedTool : tool
-    );
-    updateEm({ ...em, tools: updatedTools });
-    setSelectedItem({ type: 'tool', item: updatedTool });
-  };
-
-  const handleDelete = () => {
-    if (!selectedItem) return;
-
-    if (selectedItem.type === 'action') {
-      const updatedActions = em.actions.filter((a) => a.id !== selectedItem.item.id);
-      // Also delete associated resources
-      const updatedSkills = (em.skills || []).filter(
-        (s) => s.action_id !== selectedItem.item.id
-      );
-      const updatedKnowledge = (em.knowledge || []).filter(
-        (k) => k.action_id !== selectedItem.item.id
-      );
-      const updatedTools = (em.tools || []).filter(
-        (t) => t.action_id !== selectedItem.item.id
-      );
-      updateEm({
-        ...em,
-        actions: updatedActions,
-        skills: updatedSkills,
-        knowledge: updatedKnowledge,
-        tools: updatedTools,
-      });
-    } else if (selectedItem.type === 'skill') {
-      const updatedSkills = (em.skills || []).filter(
-        (s) => s.id !== selectedItem.item.id
-      );
-      updateEm({ ...em, skills: updatedSkills });
-    } else if (selectedItem.type === 'knowledge') {
-      const updatedKnowledge = (em.knowledge || []).filter(
-        (k) => k.id !== selectedItem.item.id
-      );
-      updateEm({ ...em, knowledge: updatedKnowledge });
-    } else if (selectedItem.type === 'tool') {
-      const updatedTools = (em.tools || []).filter(
-        (t) => t.id !== selectedItem.item.id
-      );
-      updateEm({ ...em, tools: updatedTools });
+      updateEm(initialEm);
     }
-
-    setSelectedItem(null);
-  };
+  }, [em, outcome, sbp, cjm, updateEm]);
 
   return (
     <Box sx={{ display: 'flex', height: '100%' }}>
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        <EmCanvas
-          em={em}
-          outcome={outcome}
-          sbp={sbp}
-          cjm={cjm}
-          selectedItem={selectedItem}
-          onSelectItem={setSelectedItem}
-        />
+      <Box
+        sx={{ flex: 1, overflow: 'hidden' }}
+        onClick={() => {
+          if (selectedAction) {
+            setSelectedAction(null);
+          }
+        }}
+      >
+        <PanelGroup direction="vertical">
+          {/* Editor Pane (top) */}
+          <Panel defaultSize={70} minSize={30}>
+            <EmCanvasCard
+              em={em}
+              outcome={outcome}
+              sbp={sbp}
+              cjm={cjm}
+              onEmUpdate={updateEm}
+              onActionSelect={setSelectedAction}
+            />
+          </Panel>
+
+          {/* Resize Handle */}
+          <PanelResizeHandle style={{
+            height: '8px',
+            background: '#e0e0e0',
+            cursor: 'row-resize',
+            position: 'relative',
+          }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 40,
+                height: 4,
+                bgcolor: 'grey.400',
+                borderRadius: 2,
+              }}
+            />
+          </PanelResizeHandle>
+
+          {/* Table Panel (bottom) */}
+          <Panel defaultSize={30} minSize={10}>
+            <EmTable em={em} outcome={outcome} sbp={sbp} cjm={cjm} />
+          </Panel>
+        </PanelGroup>
       </Box>
-      <PropertyPanel
-        selectedItem={selectedItem}
-        onActionUpdate={handleActionUpdate}
-        onSkillUpdate={handleSkillUpdate}
-        onKnowledgeUpdate={handleKnowledgeUpdate}
-        onToolUpdate={handleToolUpdate}
-        onDelete={handleDelete}
-        onClose={() => setSelectedItem(null)}
+
+      {/* Property Panel (right) */}
+      <PropertyPanelNew
+        selectedAction={selectedAction}
+        em={em}
+        onEmUpdate={updateEm}
+        onClose={() => setSelectedAction(null)}
       />
     </Box>
   );

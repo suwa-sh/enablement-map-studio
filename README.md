@@ -29,6 +29,21 @@ A unified web application for designing end-to-end processes from customer exper
 - 4方向接続ハンドル + アライメントガイド
 - ドラッグ&ドロップによるタスク接続とCJM `source_id` 自動設定
 
+### Outcome Editor
+- CJMフェーズフィルタリング機能（関連SBPタスクのみ表示）
+- SBPタスククリックによるCSF設定
+- KGI/CSF/KPI個別カード表示
+- 数値フォーマット（カンマ区切り、小数点自動調整）
+- PropertyPanel（33vw幅、MUI Drawer）
+
+### EM Editor
+- カードベースレイアウト（求める成果/CJMフェーズ/SBPレーン・タスク/EM行動）
+- フィルタリング機能（CSF/CJMフェーズ/SBPレーン）
+- リソース一覧テーブル（ソート・検索・CSF強調表示）
+- PropertyPanel（スキル/ナレッジ/ツール編集、学習コンテンツ対応）
+- 「必要な行動を追加」ボタンで新規EM Action作成
+- クリック外で閉じる機能
+
 ### 共通機能
 - localStorageによる永続化
 - YAML形式でのインポート/エクスポート
@@ -47,6 +62,8 @@ A unified web application for designing end-to-end processes from customer exper
 - **エディタUI**:
   - CJM: MUIテーブル + Recharts + @dnd-kit (ドラッグ&ドロップ)
   - SBP: @xyflow/react (フローダイアグラム)
+  - Outcome: MUI Paper/Stack/Button + フィルタリング機能
+  - EM: MUI Paper/Stack/Button + react-resizable-panels + TableSortLabel
 - **DSL処理**: js-yaml, ajv
 - **Linter/Formatter**: qlty (biome, prettier, eslint)
 - **パッケージ管理**: pnpm workspaces

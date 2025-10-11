@@ -280,6 +280,123 @@ apps/
 - `useAlignmentGuides`: アライメントガイドとスナップ機能のカスタムフック
 - `LANE_HEIGHT=200`, `LANE_SPACING=20`, `LANE_WIDTH=1400`
 
+### Outcome Editorの実装詳細
+
+**UI構成**:
+- MUI Paper/Stack/Buttonによるカード型レイアウト
+- CJMフェーズボタンによるフィルタリング機能
+- SBPタスククリック選択（CSF設定）
+- PropertyPanel（33vw幅、MUI Drawer）
+
+**主要機能**:
+- **フェーズフィルタリング**: CJMフェーズ選択時、関連SBPタスクのみ表示
+  - "すべて"ボタンで全タスク表示
+  - フィルタリング時は空のレーンを非表示
+- **CSF設定**: SBPタスククリックで`primary_csf.source_id`を自動設定
+- **KGI/CSF/KPI表示**: 「求める成果」カード内に個別カード表示
+  - KGIカード: 名前のみ
+  - CSFカード: ソースタスク名 + 説明
+  - KPIカード: 名前 + 説明 + フォーマット済み目標値
+- **数値フォーマット**: `toLocaleString('ja-JP')`でカンマ区切り、小数点以下は0なら省略
+- **自動初期化**: OutcomeがnullでSBP/CJMが存在する場合、useEffectで自動初期化
+
+**PropertyPanel**:
+- KGI名入力
+- CSF: ソースタスク表示（readonly） + 説明入力
+- KPI: 名前、説明、目標値（フォーカス時は数値、フォーカスアウト時はフォーマット）、ユニット選択
+- フィールド順: KPI目標値を先に、ユニットを後に（"75" "%" の入力順）
+
+**技術的詳細**:
+- `useMemo`でフィルタリングロジック実装
+- ID-based状態管理（selectedPhaseId）
+- `OutcomeCanvas.tsx`: 読み取り専用ビュー
+- `PropertyPanel.tsx`: 編集UI（Drawer）
+
+### EM Editorの実装詳細
+
+**UI構成** (2025年1月 - カードベースレイアウトに改訂):
+- **エディタペイン** (上部): カード型レイアウトによるフィルタリング＆閲覧
+  - 求める成果カード（KGI/CSF/KPI表示）
+  - CJMフェーズフィルタボタン群
+  - SBPレーン・タスクカード（レーンフィルタボタン付き）
+  - EM行動カード（クリックでPropertyPanel表示）
+- **リソース一覧ペイン** (下部): react-resizable-panelsによるリサイズ可能なテーブル
+  - CSF/CJMフェーズ/CJMアクション/SBPレーン/SBPタスク/必要な行動/リンクタイプ/名前/URLカラム
+  - CSF行（true）を緑色＋チェックボックスで強調表示
+  - 全カラムでソート可能（昇順/降順）
+  - テキスト検索フィルタ
+  - 互い違いの背景色（白/薄いグレー）
+  - ヘッダー: 明るいグレー背景
+- **PropertyPanel** (右ペイン, 33vw幅):
+  - 行動名入力
+  - スキル一覧（学習コンテンツあり、`learnings[].title`フィールド使用）
+  - ナレッジ一覧（URL付き）
+  - ツール一覧（URL付き）
+  - 各リソースの追加・削除機能
+  - SAVE/DELETEボタン
+
+**フィルタリング機能**:
+- **CSFフィルタ**: CSFボタンをクリックすると、CSFに紐づく以下の要素のみ表示
+  - CSFに紐づくCJMアクション
+  - CSFに紐づくSBPレーン
+  - CSFに紐づくSBPタスク
+  - CSFに紐づくEM行動
+- **CJMフェーズフィルタ**: 選択したフェーズに紐づくCJMアクション、SBPタスク、EM行動を表示
+- **SBPレーンフィルタ**: 選択したレーンに属するSBPタスク、EM行動を表示
+- **フィルタ連携**: CSFフィルタが有効な場合、他のフィルタは無効化（CSFが最優先）
+
+**リソース一覧テーブル**:
+- **行の構造**: 各行は「SBPタスク × EM行動 × リソース（スキル/ナレッジ/ツール）」の組み合わせ
+- **CSFカラム**: SBPタスクがCSF（`outcome.primary_csf.source_id`）と一致する場合true、read onlyチェックボックスで表示
+- **CSF行の強調**: true行は背景色 `#c8e6c9`（緑）、太字
+- **ソート機能**: 全カラムのヘッダーをクリックで昇順/降順切り替え（TableSortLabel）
+- **フィルタ機能**: 検索欄（TextField）で全カラムを横断検索
+- **スキル/学習コンテンツ**: `{スキル名} / {学習コンテンツtitle}` 形式で表示（`learning.title`を使用）
+- **ナレッジ/ツール**: 名前のみ表示（URLは別カラム）
+
+**主要機能**:
+- **「必要な行動を追加」ボタン**: 新規EM Action作成 → PropertyPanel自動表示
+- **自動初期化**: EMがnullでOutcome/SBP/CJMが存在する場合、useEffectでEM初期化
+  - `outcomes`配列に`{ id, source_id: outcome.primary_kpi.id }`を設定
+- **Skills/Knowledge/Tools追加**: PropertyPanelの「追加」ボタンで即座に追加
+  - スキル: `{ id, name, action_id, learnings: [] }`
+    - 学習コンテンツ: `{ title, url }` （`title`フィールド使用、`id`なし）
+    - インデックスベースの更新（`learningIndex`で識別）
+  - ナレッジ: `{ id, name, action_id, url: '' }`
+  - ツール: `{ id, name, action_id, url: '' }`
+- **クリック外で閉じる**: PropertyPanel以外の領域をクリックするとパネルを閉じる（`stopPropagation()`で行動カードクリックを保護）
+
+**PropertyPanel詳細**:
+- 行動名入力
+- スキル一覧: 各スキルに学習コンテンツ（`title`, `url`）を複数追加可能
+  - 学習コンテンツのフィールド: `learning.title`（`name`ではない）
+  - インデックスベースの更新で連動問題を解消
+- ナレッジ一覧: 名前＋URL入力
+- ツール一覧: 名前＋URL入力
+- SAVE/DELETEボタン（DELETEは関連リソースも一括削除）
+
+**技術的詳細**:
+- **EmCanvasCard.tsx**: カード型レイアウト、フィルタリングロジック（useMemo）
+  - 1カラムレイアウト: 求める成果、CJMフェーズ、SBPエリアを縦に配置
+  - CSF関連データ計算: `csfFilterActive`フラグと`csfRelatedData`で管理
+  - KPI表示フォーマット: `{名前}: {目標値}{ユニット}` （例: "申込完了率: 75%"）
+  - レーンフィルタボタン群: `selectedLaneId`で管理、"すべて"ボタン付き
+  - 行動カードクリック: `e.stopPropagation()`でパネル閉じを防止
+- **EmTable.tsx**: ソート・フィルタリング機能付きテーブル
+  - `sortColumn`, `sortOrder`, `filterText`で状態管理
+  - `isCSF: boolean`でCSF行を判定（以前は`csfName: string`）
+  - Checkbox表示: `<Checkbox checked={row.isCSF} disabled size="small" />`
+  - 背景色: `index % 2 === 0 ? 'white' : 'grey.50'`（互い違い）
+  - ヘッダー背景色: `grey.300`（明るいグレー）
+  - CSF行強調: 背景色 `#c8e6c9`、太字
+- **PropertyPanelNew.tsx**: 学習コンテンツの`title`フィールド使用、インデックスベース更新
+  - 学習コンテンツ: `learning.title`（`name`ではない）
+  - 更新関数: `handleLearningChange(learningIndex: number, field: 'title' | 'url', value: string)`
+  - インデックスベースの更新: `learnings.map((l, idx) => idx === learningIndex ? {...l, [field]: value} : l)`
+- **EmEditor.tsx**: メインコンテナ、クリック外で閉じる機能
+  - onClick handler: PropertyPanel以外のクリックで`setSelectedAction(null)`
+  - PanelGroup (react-resizable-panels): エディタペインとリソース一覧ペインのリサイズ対応
+
 ### 開発ワークフロー
 
 **DSLスキーマの変更**:
@@ -311,9 +428,21 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
   - ID-based状態管理による即時反映
   - レーン・タスクの即時CRUD反映
 
-**⏳ 未着手**:
-- Outcome Editor
-- EM Editor
+- **Outcome Editor完成**:
+  - CJMフェーズフィルタリング
+  - SBPタスククリックCSF設定
+  - KGI/CSF/KPI個別カード表示（「求める成果」カード内にネスト）
+  - 数値フォーマット対応
+  - PropertyPanel統合
+- **EM Editor完成** (カードベースレイアウト):
+  - エディタペイン: カード型UI、1カラムレイアウト
+  - フィルタリング機能: CSF/CJMフェーズ/SBPレーン
+  - リソース一覧テーブル: ソート・検索・CSF強調表示
+  - PropertyPanel: スキル/ナレッジ/ツール編集（学習コンテンツ`title`フィールド対応）
+  - クリック外で閉じる機能
+
+**⏳ 改善予定**:
+- すべてのエディタのUX改善
 
 ## 関連ドキュメント
 

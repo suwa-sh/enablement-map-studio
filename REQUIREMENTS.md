@@ -679,31 +679,39 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 
 ##### EM Editor
 
-  - **中央キャンバス**: 成果からスキル・ツールまでを繋ぐピラミッド型の階層構造で表示します。
-
-```mermaid
-graph TD
-    subgraph "EM Editor 表示構造"
-        Outcome("Outcome (成果 / KPI)")
-        CJM_Phase("CJM Phase (フェーズ)")
-        CJM_Action("CJM Action (顧客行動)")
-        SBP_Task("SBP Task (業務タスク)")
-        EM_Action("EM Action (具体的行動)")
-        subgraph "実行要素"
-            Skill("Skill")
-            Knowledge("Knowledge")
-            Tool("Tool")
-        end
-    end
-
-    Outcome --> CJM_Phase
-    CJM_Phase --> CJM_Action
-    CJM_Action --> SBP_Task
-    SBP_Task --> EM_Action
-    EM_Action --> Skill
-    EM_Action --> Knowledge
-    EM_Action --> Tool
-```
+  - **実装状況**: ✅ 完成（カードベースレイアウト）
+  - **技術スタック**: MUI Paper/Stack/Button + react-resizable-panels + TableSortLabel
+  - **エディタペイン** (上部):
+    - **求める成果カード**: KGI/CSF/KPI表示（KPI: `{名前}: {目標値}{ユニット}` 形式）
+    - **CSFフィルタボタン**: CSFに紐づくCJMアクション、SBPレーン・タスク、EM行動のみ表示
+    - **CJMフェーズフィルタ**: フェーズ選択で関連要素をフィルタ
+    - **SBPレーンフィルタ**: レーン選択で関連タスク・行動をフィルタ
+    - **SBPタスクカード**: レーンごとにタスクを表示
+    - **EM行動カード**: タスクごとに行動を表示（クリックでPropertyPanel表示）
+  - **リソース一覧ペイン** (下部):
+    - リサイズ可能なテーブル（react-resizable-panels）
+    - カラム: CSF（チェックボックス）/CJMフェーズ/CJMアクション/SBPレーン/SBPタスク/必要な行動/リンクタイプ/名前/URL
+    - CSF行の強調表示（緑色背景 `#c8e6c9`、太字）
+    - 全カラムでソート可能（TableSortLabel）
+    - テキスト検索フィルタ
+    - 互い違いの背景色（白/薄いグレー）
+  - **PropertyPanel** (右ペイン):
+    - 幅: 33vw（最小400px）
+    - 行動名入力
+    - スキル一覧（学習コンテンツ `title` フィールド使用）
+    - ナレッジ一覧（名前＋URL）
+    - ツール一覧（名前＋URL）
+    - 各リソースの追加・削除機能
+    - SAVE/DELETEボタン
+  - **操作**:
+    - 「必要な行動を追加」ボタン: 新規EM Action作成
+    - CSF/フェーズ/レーンフィルタ: ボタンクリックでフィルタリング
+    - 行動カードクリック: PropertyPanel表示（`stopPropagation()`で保護）
+    - PropertyPanel以外をクリック: パネルを閉じる
+  - **データ構造**:
+    - 階層: Outcome KPI → CJM Phase → CJM Action → SBP Task → EM Actions → Skills/Knowledge/Tools
+    - 学習コンテンツ: `{ title, url }` （`id`、`name`フィールドなし）
+    - インデックスベースの更新で連動問題を解消
 
 -----
 
@@ -779,3 +787,59 @@ graph TD
 - 初期実装ではバージョンチェックは行いません
 - `version`フィールドは将来の拡張のために予約されています
 - すべてのDSLは`version: 1.0`で統一します
+
+-----
+
+### 8\. 実装状況
+
+#### 8.1. 完了済み機能
+
+##### CJM Editor
+- ✅ MUIテーブルベースのUI
+- ✅ フェーズとアクションのドラッグ&ドロップ並び替え（@dnd-kit）
+- ✅ 感情曲線の可視化（Recharts、-2〜+2スコア）
+- ✅ タッチポイント・思考感情フィールドの改行対応
+- ✅ PropertyPanel（33vw幅、MUI Drawer）
+- ✅ 空状態からの直接作成（フェーズ追加・アクション追加ボタン常時表示）
+
+##### SBP Editor
+- ✅ React Flowベースのフローダイアグラム
+- ✅ スイムレーン構造（レーン追加・削除・種別変更）
+- ✅ CJM連動（CJMアクション自動同期、CJM存在時の自動初期化）
+- ✅ タスク追加ダイアログ（レーン選択＋名前入力）
+- ✅ 4方向接続ハンドル＋アライメントガイド
+- ✅ D&Dによるタスク接続とCJM `source_id`自動設定
+- ✅ PropertyPanel（タスク・レーン編集）
+- ✅ ID-based状態管理による即時反映
+
+##### Outcome Editor
+- ✅ MUI Paper/Stack/Buttonによるカード型レイアウト
+- ✅ CJMフェーズフィルタリング機能（関連SBPタスクのみ表示）
+- ✅ SBPタスククリックによるCSF設定
+- ✅ KGI/CSF/KPI個別カード表示（「求める成果」カード内にネスト）
+- ✅ 数値フォーマット（カンマ区切り、小数点自動調整）
+- ✅ PropertyPanel（KGI/CSF/KPI編集）
+- ✅ 自動初期化（useEffect）
+
+##### EM Editor
+- ✅ カードベースレイアウト（MUI Paper/Stack/Button）
+- ✅ エディタペイン: 求める成果/CJMフェーズ/SBPレーン・タスク/EM行動の表示
+- ✅ フィルタリング機能: CSF/CJMフェーズ/SBPレーン
+- ✅ リソース一覧テーブル: ソート・検索・CSF強調表示（チェックボックス、緑色背景）
+- ✅ PropertyPanel: スキル/ナレッジ/ツール編集（学習コンテンツ `title` フィールド対応）
+- ✅ 「必要な行動を追加」ボタンで新規EM Action作成
+- ✅ クリック外で閉じる機能（PropertyPanel）
+- ✅ 自動初期化（useEffect）
+
+##### 共通機能
+- ✅ localStorageによる永続化（Zustand persist middleware）
+- ✅ YAML形式でのインポート/エクスポート
+- ✅ サンプルデータのロード
+- ✅ Clear Canvasボタン（データクリア）
+- ✅ 参照整合性チェック（バリデーション）
+
+#### 8.2. 今後の改善予定
+
+##### 共通
+- ⏳ Undo/Redo機能
+- ⏳ すべてのエディタのUX改善（使いやすさ・見やすさの向上）
