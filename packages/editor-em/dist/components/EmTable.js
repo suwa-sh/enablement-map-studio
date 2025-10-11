@@ -1,0 +1,121 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useMemo, useState } from 'react';
+import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Link, TableSortLabel, TextField, InputAdornment, Checkbox, } from '@mui/material';
+import { Search } from '@mui/icons-material';
+export function EmTable({ em, outcome, sbp, cjm }) {
+    const [sortColumn, setSortColumn] = useState('isCSF');
+    const [sortOrder, setSortOrder] = useState('desc');
+    const [filterText, setFilterText] = useState('');
+    const csfTaskId = outcome?.primary_csf.source_id;
+    // Build flat resource list
+    const rows = useMemo(() => {
+        if (!em || !outcome || !sbp || !cjm)
+            return [];
+        const result = [];
+        const csfTask = sbp.tasks.find((t) => t.id === outcome.primary_csf.source_id);
+        em.actions.forEach((action) => {
+            const sbpTask = sbp.tasks.find((t) => t.id === action.source_id);
+            if (!sbpTask)
+                return;
+            const sbpLane = sbp.lanes.find((l) => l.id === sbpTask.lane);
+            // Get CJM action linked to this SBP task
+            const cjmAction = sbpTask.readonly
+                ? cjm.actions.find((a) => a.id === sbpTask.id)
+                : cjm.actions.find((a) => a.id === sbpTask.source_id);
+            const cjmPhase = cjmAction
+                ? cjm.phases.find((p) => p.id === cjmAction.phase)
+                : undefined;
+            const baseRow = {
+                isCSF: sbpTask.id === outcome.primary_csf.source_id,
+                cjmPhase: cjmPhase?.name || '',
+                cjmAction: cjmAction?.name || '',
+                sbpLane: sbpLane?.name || '',
+                sbpTask: sbpTask.name,
+                sbpTaskId: sbpTask.id,
+                requiredAction: action.name,
+            };
+            // Add skills with learnings
+            const actionSkills = em.skills?.filter((s) => s.action_id === action.id) || [];
+            actionSkills.forEach((skill) => {
+                if (skill.learnings && skill.learnings.length > 0) {
+                    skill.learnings.forEach((learning) => {
+                        result.push({
+                            ...baseRow,
+                            linkType: 'スキル/学習コンテンツ',
+                            name: `${skill.name} / ${learning.title}`,
+                            url: learning.url,
+                        });
+                    });
+                }
+                else {
+                    result.push({
+                        ...baseRow,
+                        linkType: 'スキル',
+                        name: skill.name,
+                    });
+                }
+            });
+            // Add knowledge
+            const actionKnowledge = em.knowledge?.filter((k) => k.action_id === action.id) || [];
+            actionKnowledge.forEach((knowledge) => {
+                result.push({
+                    ...baseRow,
+                    linkType: 'ナレッジ',
+                    name: knowledge.name,
+                    url: knowledge.url,
+                });
+            });
+            // Add tools
+            const actionTools = em.tools?.filter((t) => t.action_id === action.id) || [];
+            actionTools.forEach((tool) => {
+                result.push({
+                    ...baseRow,
+                    linkType: 'ツール',
+                    name: tool.name,
+                    url: tool.url,
+                });
+            });
+        });
+        return result;
+    }, [em, outcome, sbp, cjm]);
+    // Filter and sort rows
+    const filteredAndSortedRows = useMemo(() => {
+        let filtered = rows;
+        // Apply filter
+        if (filterText) {
+            const lowerFilter = filterText.toLowerCase();
+            filtered = rows.filter((row) => Object.values(row).some((value) => String(value).toLowerCase().includes(lowerFilter)));
+        }
+        // Apply sort
+        const sorted = [...filtered].sort((a, b) => {
+            const aValue = String(a[sortColumn] || '');
+            const bValue = String(b[sortColumn] || '');
+            if (sortOrder === 'asc') {
+                return aValue.localeCompare(bValue, 'ja');
+            }
+            else {
+                return bValue.localeCompare(aValue, 'ja');
+            }
+        });
+        return sorted;
+    }, [rows, filterText, sortColumn, sortOrder]);
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        }
+        else {
+            setSortColumn(column);
+            setSortOrder('asc');
+        }
+    };
+    if (!em || !outcome || !sbp || !cjm) {
+        return (_jsx(Box, { sx: { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'white' }, children: _jsx(Typography, { color: "text.secondary", children: "\u30C7\u30FC\u30BF\u304C\u3042\u308A\u307E\u305B\u3093" }) }));
+    }
+    return (_jsxs(Box, { sx: { height: '100%', bgcolor: 'white', overflow: 'hidden', display: 'flex', flexDirection: 'column' }, children: [_jsx(Box, { sx: { p: 2, borderBottom: 1, borderColor: 'divider' }, children: _jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }, children: [_jsx(Typography, { variant: "h6", children: "\u30EA\u30BD\u30FC\u30B9\u4E00\u89A7" }), _jsx(TextField, { size: "small", placeholder: "\u691C\u7D22...", value: filterText, onChange: (e) => setFilterText(e.target.value), sx: { width: 300 }, InputProps: {
+                                startAdornment: (_jsx(InputAdornment, { position: "start", children: _jsx(Search, { fontSize: "small" }) })),
+                            } })] }) }), _jsx(TableContainer, { sx: { flex: 1 }, children: _jsxs(Table, { stickyHeader: true, size: "small", children: [_jsx(TableHead, { children: _jsxs(TableRow, { sx: { '& .MuiTableCell-head': { bgcolor: 'grey.300', color: 'black', fontWeight: 'bold' } }, children: [_jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'isCSF', direction: sortColumn === 'isCSF' ? sortOrder : 'asc', onClick: () => handleSort('isCSF'), children: "CSF" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'cjmPhase', direction: sortColumn === 'cjmPhase' ? sortOrder : 'asc', onClick: () => handleSort('cjmPhase'), children: "CJM\u30D5\u30A7\u30FC\u30BA" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'cjmAction', direction: sortColumn === 'cjmAction' ? sortOrder : 'asc', onClick: () => handleSort('cjmAction'), children: "CJM\u30A2\u30AF\u30B7\u30E7\u30F3" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'sbpLane', direction: sortColumn === 'sbpLane' ? sortOrder : 'asc', onClick: () => handleSort('sbpLane'), children: "SBP\u30EC\u30FC\u30F3" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'sbpTask', direction: sortColumn === 'sbpTask' ? sortOrder : 'asc', onClick: () => handleSort('sbpTask'), children: "SBP\u30BF\u30B9\u30AF" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'requiredAction', direction: sortColumn === 'requiredAction' ? sortOrder : 'asc', onClick: () => handleSort('requiredAction'), children: "\u5FC5\u8981\u306A\u884C\u52D5" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'linkType', direction: sortColumn === 'linkType' ? sortOrder : 'asc', onClick: () => handleSort('linkType'), children: "\u30EA\u30F3\u30AF\u30BF\u30A4\u30D7" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'name', direction: sortColumn === 'name' ? sortOrder : 'asc', onClick: () => handleSort('name'), children: "\u540D\u524D" }) }), _jsx(TableCell, { children: "URL" })] }) }), _jsx(TableBody, { children: filteredAndSortedRows.length === 0 ? (_jsx(TableRow, { children: _jsx(TableCell, { colSpan: 9, align: "center", children: _jsx(Typography, { color: "text.secondary", sx: { py: 3 }, children: filterText ? '検索結果がありません' : 'リソースがありません' }) }) })) : (filteredAndSortedRows.map((row, index) => (_jsxs(TableRow, { hover: true, sx: {
+                                    '& .MuiTableCell-root': {
+                                        bgcolor: index % 2 === 0 ? 'white' : 'grey.50'
+                                    }
+                                }, children: [_jsx(TableCell, { sx: { bgcolor: row.isCSF ? '#c8e6c9' : undefined, textAlign: 'center' }, children: _jsx(Checkbox, { checked: row.isCSF, disabled: true, size: "small" }) }), _jsx(TableCell, { children: row.cjmPhase }), _jsx(TableCell, { children: row.cjmAction }), _jsx(TableCell, { children: row.sbpLane }), _jsx(TableCell, { children: row.sbpTask }), _jsx(TableCell, { children: row.requiredAction }), _jsx(TableCell, { children: row.linkType }), _jsx(TableCell, { children: row.name }), _jsx(TableCell, { children: row.url ? (_jsx(Link, { href: row.url, target: "_blank", rel: "noopener noreferrer", children: row.url })) : ('-') })] }, index)))) })] }) })] }));
+}

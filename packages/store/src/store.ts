@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { temporal, type TemporalState } from 'zundo';
 import type { CjmDsl, SbpDsl, OutcomeDsl, EmDsl } from '@enablement-map-studio/dsl';
 import {
   parseYaml,
@@ -9,14 +8,19 @@ import {
   type ReferenceCheckResult,
 } from '@enablement-map-studio/dsl';
 
-export interface AppStore {
-  // DSL data
+// Nested state for undo/redo
+export interface AppState {
   cjm: CjmDsl | null;
   sbp: SbpDsl | null;
   outcome: OutcomeDsl | null;
   em: EmDsl | null;
+}
 
-  // Reference check result
+export interface AppStore {
+  // Nested DSL data (tracked by undo/redo)
+  state: AppState;
+
+  // Reference check result (not tracked)
   referenceCheck: ReferenceCheckResult | null;
 
   // Actions
@@ -30,103 +34,82 @@ export interface AppStore {
   reset: () => void;
 }
 
-const initialState = {
+const initialState: AppState = {
   cjm: null,
   sbp: null,
   outcome: null,
   em: null,
-  referenceCheck: null,
 };
+
+const storeImpl = (set: any, get: any): AppStore => ({
+  state: initialState,
+  referenceCheck: null,
+
+  loadYaml: (content: string) => {
+    try {
+      const parsed = parseYaml(content);
+      const refCheck = checkReferenceIntegrity(parsed);
+
+      set({
+        state: {
+          cjm: parsed.cjm,
+          sbp: parsed.sbp,
+          outcome: parsed.outcome,
+          em: parsed.em,
+        },
+        referenceCheck: refCheck,
+      });
+
+      if (!refCheck.valid) {
+        console.warn('Reference integrity check failed:', refCheck.errors);
+      }
+    } catch (error) {
+      console.error('Failed to load YAML:', error);
+      throw error;
+    }
+  },
+
+  exportYaml: () => {
+    const { state } = get();
+    return exportYaml(state);
+  },
+
+  updateCjm: (cjm: CjmDsl) => {
+    set((store: AppStore) => ({ state: { ...store.state, cjm } }));
+    get().checkReferences();
+  },
+
+  updateSbp: (sbp: SbpDsl) => {
+    set((store: AppStore) => ({ state: { ...store.state, sbp } }));
+    get().checkReferences();
+  },
+
+  updateOutcome: (outcome: OutcomeDsl) => {
+    set((store: AppStore) => ({ state: { ...store.state, outcome } }));
+    get().checkReferences();
+  },
+
+  updateEm: (em: EmDsl) => {
+    set((store: AppStore) => ({ state: { ...store.state, em } }));
+    get().checkReferences();
+  },
+
+  checkReferences: () => {
+    const { state } = get();
+    const refCheck = checkReferenceIntegrity(state);
+    set({ referenceCheck: refCheck });
+    return refCheck;
+  },
+
+  reset: () => set({ state: initialState, referenceCheck: null }),
+});
 
 export const useAppStore = create<AppStore>()(
-  persist(
-    temporal<AppStore>(
-      (set, get) => ({
-        ...initialState,
-
-        loadYaml: (content: string) => {
-          try {
-            const parsed = parseYaml(content);
-            const refCheck = checkReferenceIntegrity(parsed);
-
-            set({
-              cjm: parsed.cjm,
-              sbp: parsed.sbp,
-              outcome: parsed.outcome,
-              em: parsed.em,
-              referenceCheck: refCheck,
-            });
-
-            if (!refCheck.valid) {
-              console.warn('Reference integrity check failed:', refCheck.errors);
-            }
-          } catch (error) {
-            console.error('Failed to load YAML:', error);
-            throw error;
-          }
-        },
-
-        exportYaml: () => {
-          const { cjm, sbp, outcome, em } = get();
-          return exportYaml({ cjm, sbp, outcome, em });
-        },
-
-        updateCjm: (cjm: CjmDsl) => {
-          set({ cjm });
-          get().checkReferences();
-        },
-
-        updateSbp: (sbp: SbpDsl) => {
-          set({ sbp });
-          get().checkReferences();
-        },
-
-        updateOutcome: (outcome: OutcomeDsl) => {
-          set({ outcome });
-          get().checkReferences();
-        },
-
-        updateEm: (em: EmDsl) => {
-          set({ em });
-          get().checkReferences();
-        },
-
-        checkReferences: () => {
-          const { cjm, sbp, outcome, em } = get();
-          const refCheck = checkReferenceIntegrity({ cjm, sbp, outcome, em });
-          set({ referenceCheck: refCheck });
-          return refCheck;
-        },
-
-        reset: () => set(initialState),
-      }),
-      {
-        limit: 50,
-        equality: (a, b) => JSON.stringify(a) === JSON.stringify(b),
-        partialize: (state) => ({
-          cjm: state.cjm,
-          sbp: state.sbp,
-          outcome: state.outcome,
-          em: state.em,
-        }) as AppStore,
-      }
-    ),
-    {
-      name: 'enablement-map-studio-storage',
-    }
-  )
+  persist(storeImpl, {
+    name: 'enablement-map-studio-storage',
+    partialize: (store) => ({
+      state: store.state,
+      referenceCheck: store.referenceCheck,
+    }),
+  })
 );
-
-// Temporal store用のリアクティブフック
-export const useTemporalStore = <T,>(
-  selector: (state: TemporalState<Partial<Pick<AppStore, 'cjm' | 'sbp' | 'outcome' | 'em'>>>) => T,
-  equality?: (a: T, b: T) => boolean
-): T => {
-  // useAppStore.temporalはストアなので、そのまま使える
-  // zundoのドキュメントに従い、useStoreWithEqualityFnを使う代わりに
-  // Zustandの標準的な方法でサブスクライブ
-  if (equality) {
-    return (useAppStore.temporal as any)(selector, equality);
-  }
-  return (useAppStore.temporal as any)(selector);
-};

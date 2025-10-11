@@ -10,6 +10,14 @@ export interface SbpLane {
     id: string;
     name: string;
     kind: 'cjm' | 'human' | 'team' | 'system';
+    position?: {
+        x: number;
+        y: number;
+    };
+    size?: {
+        width: number;
+        height: number;
+    };
 }
 export interface SbpTask {
     id: string;

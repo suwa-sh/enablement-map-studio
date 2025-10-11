@@ -211,59 +211,9 @@ actions:
 
 ##### 3.3.2. JSON Schema定義
 
-CJM DSLを検証するためのJSON Schemaは以下の通りです。
+CJM DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/cjm.json",
-  "title": "Customer Journey Map DSL",
-  "description": "Schema for the CJM DSL format.",
-  "type": "object",
-  "properties": {
-    "kind": { "const": "cjm" },
-    "version": { "type": "number" },
-    "id": { "type": "string" },
-    "persona": { "$ref": "#/$defs/persona" },
-    "phases": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/phase" }
-    },
-    "actions": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/action" }
-    }
-  },
-  "required": ["kind", "version", "id", "phases", "actions"],
-  "$defs": {
-    "persona": {
-      "type": "object",
-      "properties": { "name": { "type": "string" } },
-      "required": ["name"]
-    },
-    "phase": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" }
-      },
-      "required": ["id", "name"]
-    },
-    "action": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "phase": { "type": "string" },
-        "touchpoints": { "type": "array", "items": { "type": "string" } },
-        "thoughts_feelings": { "type": "array", "items": { "type": "string" } },
-        "emotion_score": { "type": "integer", "minimum": -2, "maximum": 2 }
-      },
-      "required": ["id", "name", "phase", "emotion_score"]
-    }
-  }
-}
-```
+[packages/dsl/src/schemas/cjm.json](packages/dsl/src/schemas/cjm.json)
 
 #### 3.4. SBP DSL (Service Blueprint)
 
@@ -298,75 +248,9 @@ connections:
 
 ##### 3.4.2. JSON Schema定義
 
-SBP DSLを検証するためのJSON Schemaは以下の通りです。
+SBP DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/sbp.json",
-  "title": "Service Blueprint DSL",
-  "description": "Schema for the SBP DSL format.",
-  "type": "object",
-  "properties": {
-    "kind": { "const": "sbp" },
-    "version": { "type": "number" },
-    "id": { "type": "string" },
-    "lanes": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/lane" }
-    },
-    "tasks": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/task" }
-    },
-    "connections": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/connection" }
-    }
-  },
-  "required": ["kind", "version", "id", "lanes", "tasks", "connections"],
-  "$defs": {
-    "lane": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "kind": { "enum": ["cjm", "human", "team", "system"] }
-      },
-      "required": ["id", "name", "kind"]
-    },
-    "task": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "lane": { "type": "string" },
-        "name": { "type": "string" },
-        "source_id": { "type": "string" },
-        "position": {
-          "type": "object",
-          "properties": {
-            "x": { "type": "number" },
-            "y": { "type": "number" }
-          },
-          "required": ["x", "y"]
-        },
-        "readonly": { "type": "boolean" }
-      },
-      "required": ["id", "lane", "name"]
-    },
-    "connection": {
-      "type": "object",
-      "properties": {
-        "source": { "type": "string" },
-        "target": { "type": "string" },
-        "sourceHandle": { "enum": ["top", "right", "bottom", "left"] },
-        "targetHandle": { "enum": ["top", "right", "bottom", "left"] }
-      },
-      "required": ["source", "target", "sourceHandle", "targetHandle"]
-    }
-  }
-}
-```
+[packages/dsl/src/schemas/sbp.json](packages/dsl/src/schemas/sbp.json)
 
 #### 3.5. Outcome DSL (成果定義)
 
@@ -397,58 +281,9 @@ primary_kpi:
 
 ##### 3.5.2. JSON Schema定義
 
-Outcome DSLを検証するためのJSON Schemaは以下の通りです。
+Outcome DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/outcome.json",
-  "title": "Outcome DSL",
-  "description": "Schema for the Outcome DSL format.",
-  "type": "object",
-  "properties": {
-    "kind": { "const": "outcome" },
-    "version": { "type": "number" },
-    "id": { "type": "string" },
-    "kgi": { "$ref": "#/$defs/kgi" },
-    "primary_csf": { "$ref": "#/$defs/csf" },
-    "primary_kpi": { "$ref": "#/$defs/kpi" }
-  },
-  "required": ["kind", "id", "kgi", "primary_csf", "primary_kpi"],
-  "$defs": {
-    "kgi": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" }
-      },
-      "required": ["id", "name"]
-    },
-    "csf": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "kgi_id": { "type": "string" },
-        "source_id": { "type": "string" },
-        "rationale": { "type": "string" }
-      },
-      "required": ["id", "kgi_id", "source_id", "rationale"]
-    },
-    "kpi": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "csf_id": { "type": "string" },
-        "name": { "type": "string" },
-        "definition": { "type": "string" },
-        "unit": { "type": "string" },
-        "target": { "type": "number" }
-      },
-      "required": ["id", "csf_id", "name", "target"]
-    }
-  }
-}
-```
+[packages/dsl/src/schemas/outcome.json](packages/dsl/src/schemas/outcome.json)
 
 #### 3.6. EM DSL (Enablement Map)
 
@@ -495,85 +330,9 @@ tools: []
 
 ##### 3.6.2. JSON Schema定義
 
-EM DSLを検証するためのJSON Schemaは以下の通りです。
+EM DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
 
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/em.json",
-  "title": "Enablement Map DSL",
-  "description": "Schema for the EM DSL format.",
-  "type": "object",
-  "properties": {
-    "kind": { "const": "em" },
-    "version": { "type": "number" },
-    "id": { "type": "string" },
-    "outcomes": { "type": "array", "items": { "$ref": "#/$defs/outcome" } },
-    "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } },
-    "skills": { "type": "array", "items": { "$ref": "#/$defs/skill" } },
-    "knowledge": { "type": "array", "items": { "$ref": "#/$defs/knowledge" } },
-    "tools": { "type": "array", "items": { "$ref": "#/$defs/tool" } }
-  },
-  "required": ["kind", "id", "outcomes", "actions"],
-  "$defs": {
-    "outcome": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "source_id": { "type": "string" }
-      },
-      "required": ["id", "source_id"]
-    },
-    "action": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "source_id": { "type": "string" }
-      },
-      "required": ["id", "name", "source_id"]
-    },
-    "learning": {
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "url": { "type": "string", "format": "uri" }
-      },
-      "required": ["title", "url"]
-    },
-    "skill": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "action_id": { "type": "string" },
-        "learnings": { "type": "array", "items": { "$ref": "#/$defs/learning" } }
-      },
-      "required": ["id", "name", "action_id"]
-    },
-    "knowledge": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "action_id": { "type": "string" },
-        "url": { "type": "string", "format": "uri" }
-      },
-      "required": ["id", "name", "action_id", "url"]
-    },
-    "tool": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "action_id": { "type": "string" },
-        "url": { "type": "string", "format": "uri" }
-      },
-      "required": ["id", "name", "action_id", "url"]
-    }
-  }
-}
-```
+[packages/dsl/src/schemas/em.json](packages/dsl/src/schemas/em.json)
 
 -----
 
@@ -635,6 +394,11 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
     - レーン追加: 左上の「レーン追加」ボタンから即座に追加
     - レーン削除: DELETEキー、またはプロパティパネルのDELETEボタン
     - レーン並び替え: レーンノードをドラッグして上下移動
+    - レーンリサイズ: レーン選択時に表示されるNodeResizerハンドルでサイズ変更
+      - 最小幅800px、最小高さ150px、最大高さ400px
+      - リサイズ中に他レーン・タスクの端（右端・下端）との距離が10px以内で破線ガイド表示＋自動スナップ
+      - リサイズ終了時にスナップ位置を確定
+      - レーン位置・サイズは`position: {x, y}`と`size: {width, height}`をDSLに保存
     - タスク追加: 左上の「タスク追加」ボタン（レーン選択+名前入力）
     - タスク接続: ドラッグ&ドロップで矢印を作成（`connections[]`配列に追加）
       - 4方向ハンドル対応: `top`, `right`, `bottom`, `left` いずれからでも接続可能
@@ -643,7 +407,7 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
       - CJM連動: CJM readonlyタスクから通常タスクへの接続時、自動的にタスクの`source_id`を設定
       - 削除時の連動: CJM接続エッジ削除時、タスクの`source_id`を自動的にクリア
     - タスク削除: DELETEキー、またはプロパティパネルのDELETEボタン
-    - アライメントガイド: タスクD&D時に他タスクとの中央位置で破線ガイド表示＋自動スナップ（閾値5px）
+    - タスクアライメントガイド: タスクD&D時に他タスクとの中央位置で破線ガイド表示＋自動スナップ（閾値5px）
     - 位置情報永続化: 通常タスク・CJM readonlyタスクともに`position: {x, y}`をDSLに保存
   - **CJM連動**:
     - `kind: 'cjm'`レーンに`readonly: true`タスクを自動表示
@@ -661,12 +425,14 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
     - ID-based状態管理: `selectedLaneId`でstale closure回避
     - 選択的useEffect更新: レーン・タスク・CJM readonlyを独立して同期
     - `flowConverter.ts`: DSL ⇔ React Flow形式の相互変換
-      - `convertDslToFlow()`: DSLからReact Flow形式に変換、`connections[]`を`edges`に変換
-      - `updateDslFromFlow()`: React Flow形式からDSLに変換、`edges`を`connections[]`に変換
+      - `convertDslToFlow()`: DSLからReact Flow形式に変換、`connections[]`を`edges`に変換、レーン位置・サイズ読み込み
+      - `updateDslFromFlow()`: React Flow形式からDSLに変換、`edges`を`connections[]`に変換、レーン位置・サイズ保存
       - CJM readonly nodeのID変換: 内部ID `cjm-readonly-{actionId}` ⇔ DSL ID `{actionId}`
       - 位置情報保存: 通常タスク・CJM readonlyタスクともに`position`を保存
-    - レーン配置: Y座標 = `index * (LANE_HEIGHT + LANE_SPACING)`
-    - アライメントガイド: `useAlignmentGuides` フックによる破線ガイド表示とスナップ処理
+      - レーンサイズ抽出: NodeResizerのサイズは`node.measured?.width/height`, `node.width/height`, `node.style?.width/height`の優先順で取得
+    - レーン配置: Y座標 = `index * (LANE_HEIGHT + LANE_SPACING)`, デフォルトサイズ: `LANE_WIDTH=1400`, `LANE_HEIGHT=300`
+    - タスクアライメントガイド: `useAlignmentGuides` フックによる破線ガイド表示とスナップ処理（閾値5px）
+    - レーンリサイズアライメントガイド: `handleLaneResize`, `handleLaneResizeEnd`による破線ガイド表示とスナップ処理（閾値10px）
     - エッジマーカー: `markerEnd` を使用して矢印を終了側（target）に表示
     - 接続削除処理: `handleEdgesDelete` でCJM接続エッジ削除時に`source_id`をクリア
   - 参考
@@ -674,8 +440,19 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 
 ##### Outcome Editor
 
-  - **中央キャンバス**: SBPのスイムレーンを表示し、CJMで選択したフェーズに対応するタスクをハイライトします。
-  - **右ペイン**: SBPからドラッグ＆ドロップされたタスクをCSFとして設定し、KPIを定義するフォームを表示します。D&D時に既存のCSFがある場合は上書き確認ダイアログを表示します。
+  - **実装状況**: ✅ 完成（カード型レイアウト）
+  - **技術スタック**: MUI Paper/Stack/Button + PropertyPanel (Drawer)
+  - **中央エリア**:
+    - **求める成果カード**: KGI/CSF/KPI個別カード表示（「求める成果」カード内にネスト）
+    - **CJMフェーズフィルタ**: ボタンで選択したフェーズに対応するSBPタスクをフィルタ表示
+    - **SBPタスク表示**: レーンごとにカード形式でタスクを表示
+    - **CSF設定**: SBPタスクカードをクリックして`primary_csf.source_id`を設定
+  - **PropertyPanel** (右ペイン):
+    - 幅: 33vw（最小400px）
+    - KGI名入力
+    - CSF: ソースタスク表示（readonly）+ 説明入力
+    - KPI: 名前、説明、目標値、ユニット選択
+    - 数値フォーマット対応（カンマ区切り、小数点自動調整）
 
 ##### EM Editor
 
@@ -732,14 +509,14 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 
 | 項目 | 内容 |
 | :--- | :--- |
-| **プロジェクト構成** | **モノレポ構成** (例: pnpm workspaces, Turborepo) |
+| **プロジェクト構成** | **モノレポ構成** (pnpm workspaces) |
 | **技術基盤** | React / TypeScript |
-| **アプリケーションシェル**| React (Vite)。ナビゲーションとビューの切り替えはReact Routerなどで管理。 |
-| **状態管理** | **単一のグローバルストア** (Zustand, Jotaiなど) で、読み込んだYAMLのパース結果（4つのDSLオブジェクト）を一元管理。各エディタビューはこのストアからデータを読み書きする。 |
-| **エディタモジュール** | D3.js or Konva.js。各エディタはシェルから動的にロードされるコンポーネントとして開発。 |
+| **アプリケーションシェル**| React (Vite)。ナビゲーションとビューの切り替えはReact Router v6で管理。 |
+| **状態管理** | **単一のグローバルストア** (Zustand with persist middleware) で、読み込んだYAMLのパース結果（4つのDSLオブジェクト）を一元管理。各エディタビューはこのストアからデータを読み書きする。 |
+| **エディタモジュール** | @xyflow/react (React Flow) および Material-UI (MUI)。各エディタはシェルから動的にロードされるコンポーネントとして開発。 |
 | **DSL管理** | YAMLパーサー (js-yaml), JSON Schemaバリデーター (ajv) を共通パッケージとして管理。 |
 | **共通UIキット** | エディタ間で共通のボタン、パネル、アイコンなどをまとめたUIコンポーネントライブラリを開発。 |
-| **OSSライセンス** | MIT License または Apache License 2.0 |
+| **OSSライセンス** | MIT License |
 
 -----
 
@@ -764,10 +541,10 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 - タスクをドラッグ&ドロップで接続すると、起点タスクの`link_to`配列に終点タスクのIDが追加されます
 - 1つのタスクから複数のタスクへ矢印を引くことができます（`link_to`は配列）
 
-##### Outcome Editorでのドラッグ&ドロップ
-- 一度にドラッグ&ドロップできるのは1つのSBP Taskのみ
-- 既にCSFが設定されている状態で再度D&Dした場合、「既存のCSFを上書きしますか？」といった確認ダイアログを表示します
-- ユーザーの承認後、`primary_csf.source_id`が更新されます
+##### Outcome EditorでのCSF設定
+- SBPタスクカードをクリックすることで、そのタスクを`primary_csf.source_id`として設定します
+- CSFが設定されると、PropertyPanelが自動的に開き、CSFの説明やKPI情報を入力できます
+- フェーズフィルタボタンで特定のCJMフェーズに関連するSBPタスクのみを表示できます
 
 ##### EM Editorの階層表示
 - UIでは `Outcome → CJMフェーズ → CJMアクション → SBPタスク → EMアクション群 → skills, knowledge, tools` の階層で表示します

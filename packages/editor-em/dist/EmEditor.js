@@ -1,69 +1,57 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useAppStore } from '@enablement-map-studio/store';
-import { EmCanvas } from './components/EmCanvas';
-import { PropertyPanel } from './components/PropertyPanel';
+import { generateId } from '@enablement-map-studio/dsl';
+import { EmCanvasCard } from './components/EmCanvasCard';
+import { EmTable } from './components/EmTable';
+import { PropertyPanelNew } from './components/PropertyPanelNew';
 export function EmEditor() {
     const em = useAppStore((state) => state.em);
     const outcome = useAppStore((state) => state.outcome);
     const sbp = useAppStore((state) => state.sbp);
     const cjm = useAppStore((state) => state.cjm);
     const updateEm = useAppStore((state) => state.updateEm);
-    const [selectedItem, setSelectedItem] = useState(null);
-    if (!em) {
-        return (_jsx(Box, { sx: { display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }, children: _jsx(Typography, { color: "text.secondary", children: "No EM data loaded. Please load a YAML file." }) }));
-    }
-    const handleActionUpdate = (updatedAction) => {
-        const updatedActions = em.actions.map((action) => action.id === updatedAction.id ? updatedAction : action);
-        updateEm({ ...em, actions: updatedActions });
-        setSelectedItem({ type: 'action', item: updatedAction });
-    };
-    const handleSkillUpdate = (updatedSkill) => {
-        const updatedSkills = (em.skills || []).map((skill) => skill.id === updatedSkill.id ? updatedSkill : skill);
-        updateEm({ ...em, skills: updatedSkills });
-        setSelectedItem({ type: 'skill', item: updatedSkill });
-    };
-    const handleKnowledgeUpdate = (updatedKnowledge) => {
-        const updatedKnowledge_ = (em.knowledge || []).map((k) => k.id === updatedKnowledge.id ? updatedKnowledge : k);
-        updateEm({ ...em, knowledge: updatedKnowledge_ });
-        setSelectedItem({ type: 'knowledge', item: updatedKnowledge });
-    };
-    const handleToolUpdate = (updatedTool) => {
-        const updatedTools = (em.tools || []).map((tool) => tool.id === updatedTool.id ? updatedTool : tool);
-        updateEm({ ...em, tools: updatedTools });
-        setSelectedItem({ type: 'tool', item: updatedTool });
-    };
-    const handleDelete = () => {
-        if (!selectedItem)
-            return;
-        if (selectedItem.type === 'action') {
-            const updatedActions = em.actions.filter((a) => a.id !== selectedItem.item.id);
-            // Also delete associated resources
-            const updatedSkills = (em.skills || []).filter((s) => s.action_id !== selectedItem.item.id);
-            const updatedKnowledge = (em.knowledge || []).filter((k) => k.action_id !== selectedItem.item.id);
-            const updatedTools = (em.tools || []).filter((t) => t.action_id !== selectedItem.item.id);
-            updateEm({
-                ...em,
-                actions: updatedActions,
-                skills: updatedSkills,
-                knowledge: updatedKnowledge,
-                tools: updatedTools,
-            });
+    const [selectedAction, setSelectedAction] = useState(null);
+    // Auto-initialize EM if empty but other data exists
+    useEffect(() => {
+        if (!em && outcome && sbp && cjm) {
+            const initialEm = {
+                kind: 'em',
+                version: '1.0',
+                id: generateId('em', 'em'),
+                outcomes: [
+                    {
+                        id: generateId('em', 'outcome'),
+                        source_id: outcome.primary_kpi.id,
+                    },
+                ],
+                actions: [],
+                skills: [],
+                knowledge: [],
+                tools: [],
+            };
+            updateEm(initialEm);
         }
-        else if (selectedItem.type === 'skill') {
-            const updatedSkills = (em.skills || []).filter((s) => s.id !== selectedItem.item.id);
-            updateEm({ ...em, skills: updatedSkills });
-        }
-        else if (selectedItem.type === 'knowledge') {
-            const updatedKnowledge = (em.knowledge || []).filter((k) => k.id !== selectedItem.item.id);
-            updateEm({ ...em, knowledge: updatedKnowledge });
-        }
-        else if (selectedItem.type === 'tool') {
-            const updatedTools = (em.tools || []).filter((t) => t.id !== selectedItem.item.id);
-            updateEm({ ...em, tools: updatedTools });
-        }
-        setSelectedItem(null);
-    };
-    return (_jsxs(Box, { sx: { display: 'flex', height: '100%' }, children: [_jsx(Box, { sx: { flex: 1, overflow: 'auto' }, children: _jsx(EmCanvas, { em: em, outcome: outcome, sbp: sbp, cjm: cjm, selectedItem: selectedItem, onSelectItem: setSelectedItem }) }), _jsx(PropertyPanel, { selectedItem: selectedItem, onActionUpdate: handleActionUpdate, onSkillUpdate: handleSkillUpdate, onKnowledgeUpdate: handleKnowledgeUpdate, onToolUpdate: handleToolUpdate, onDelete: handleDelete, onClose: () => setSelectedItem(null) })] }));
+    }, [em, outcome, sbp, cjm, updateEm]);
+    return (_jsxs(Box, { sx: { display: 'flex', height: '100%' }, children: [_jsx(Box, { sx: { flex: 1, overflow: 'hidden' }, onClick: () => {
+                    if (selectedAction) {
+                        setSelectedAction(null);
+                    }
+                }, children: _jsxs(PanelGroup, { direction: "vertical", children: [_jsx(Panel, { defaultSize: 70, minSize: 30, children: _jsx(EmCanvasCard, { em: em, outcome: outcome, sbp: sbp, cjm: cjm, onEmUpdate: updateEm, onActionSelect: setSelectedAction }) }), _jsx(PanelResizeHandle, { style: {
+                                height: '8px',
+                                background: '#e0e0e0',
+                                cursor: 'row-resize',
+                                position: 'relative',
+                            }, children: _jsx(Box, { sx: {
+                                    position: 'absolute',
+                                    left: '50%',
+                                    top: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    width: 40,
+                                    height: 4,
+                                    bgcolor: 'grey.400',
+                                    borderRadius: 2,
+                                } }) }), _jsx(Panel, { defaultSize: 30, minSize: 10, children: _jsx(EmTable, { em: em, outcome: outcome, sbp: sbp, cjm: cjm }) })] }) }), _jsx(PropertyPanelNew, { selectedAction: selectedAction, em: em, onEmUpdate: updateEm, onClose: () => setSelectedAction(null) })] }));
 }

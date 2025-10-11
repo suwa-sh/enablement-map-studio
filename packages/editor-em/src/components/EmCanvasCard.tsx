@@ -34,24 +34,58 @@ export function EmCanvasCard({
 
   // When CSF filter is active, derive related elements
   const csfRelatedData = useMemo(() => {
-    if (!csfFilterActive || !csfTask || !cjm || !em) return null;
+    if (!csfFilterActive || !csfTask || !cjm || !em || !sbp) return null;
 
     // Get CJM action linked to CSF task
     const cjmAction = csfTask.readonly
       ? cjm.actions.find((a) => a.id === csfTask.id)
       : cjm.actions.find((a) => a.id === csfTask.source_id);
 
-    // Get EM actions linked to CSF task
-    const emActions = em.actions.filter((a) => a.source_id === csfTask.id);
+    // Get all tasks connected to CSF task via edges (graph traversal)
+    // IMPORTANT: connections are stored in sbp.connections array, not task.connections
+    const connectedTaskIds = new Set<string>([csfTask.id]);
+    const toVisit = [csfTask.id];
+    const visited = new Set<string>();
+
+    while (toVisit.length > 0) {
+      const currentTaskId = toVisit.pop()!;
+      if (visited.has(currentTaskId)) continue;
+      visited.add(currentTaskId);
+
+      // Find all connections where this task is the source (outgoing edges)
+      sbp.connections.forEach((conn) => {
+        if (conn.source === currentTaskId && !connectedTaskIds.has(conn.target)) {
+          connectedTaskIds.add(conn.target);
+          toVisit.push(conn.target);
+        }
+      });
+
+      // Find all connections where this task is the target (incoming edges)
+      sbp.connections.forEach((conn) => {
+        if (conn.target === currentTaskId && !connectedTaskIds.has(conn.source)) {
+          connectedTaskIds.add(conn.source);
+          toVisit.push(conn.source);
+        }
+      });
+    }
+
+    // Get EM actions linked to any connected task
+    const emActionIds = new Set<string>();
+    connectedTaskIds.forEach((taskId) => {
+      em.actions.forEach((action) => {
+        if (action.source_id === taskId) {
+          emActionIds.add(action.id);
+        }
+      });
+    });
 
     return {
       cjmActionId: cjmAction?.id || null,
       cjmPhaseId: cjmAction?.phase || null,
-      sbpLaneId: csfTask.lane,
-      sbpTaskId: csfTask.id,
-      emActionIds: new Set(emActions.map((a) => a.id)),
+      connectedTaskIds, // All tasks connected to CSF task
+      emActionIds,
     };
-  }, [csfFilterActive, csfTask, cjm, em]);
+  }, [csfFilterActive, csfTask, cjm, em, sbp]);
 
   // Get visible lanes based on CSF filter and lane selection
   const visibleLanes = useMemo(() => {
@@ -59,10 +93,8 @@ export function EmCanvasCard({
 
     let lanes = sbp.lanes;
 
-    // CSF filter: show only CSF's lane
-    if (csfRelatedData) {
-      lanes = lanes.filter((lane) => lane.id === csfRelatedData.sbpLaneId);
-    }
+    // CSF filter: show all lanes (don't filter by lane)
+    // Users want to see all lanes, not just the CSF task's lane
 
     // Lane selection: show only selected lane
     if (selectedLaneId) {
@@ -70,7 +102,7 @@ export function EmCanvasCard({
     }
 
     return lanes;
-  }, [sbp, csfRelatedData, selectedLaneId]);
+  }, [sbp, selectedLaneId]);
 
   // Get visible tasks based on CSF filter and phase selection
   const visibleTaskIds = useMemo(() => {
@@ -78,9 +110,9 @@ export function EmCanvasCard({
 
     let taskIds: string[] = [];
 
-    // CSF filter: show only CSF task
+    // CSF filter: show all tasks connected to CSF task
     if (csfRelatedData) {
-      taskIds = [csfRelatedData.sbpTaskId];
+      taskIds = Array.from(csfRelatedData.connectedTaskIds);
     }
     // Phase filter: show tasks for selected phase
     else if (selectedPhaseId && cjm) {

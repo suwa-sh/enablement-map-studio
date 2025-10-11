@@ -1,13 +1,24 @@
-import React, { useRef } from 'react';
+import React, { useRef, useImperativeHandle, forwardRef } from 'react';
 import { Box, Button, Stack } from '@mui/material';
 import { UploadFile, Download, MenuBook, DeleteSweep } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@enablement-map-studio/store';
 
-export const FileOperations: React.FC = () => {
+export interface FileOperationsRef {
+  openFileDialog: () => void;
+}
+
+export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 外部からファイルダイアログを開けるようにする
+  useImperativeHandle(ref, () => ({
+    openFileDialog: () => {
+      fileInputRef.current?.click();
+    },
+  }));
   const navigate = useNavigate();
-  const { loadYaml, exportYaml, reset, cjm, sbp, outcome, em } = useAppStore();
+  const { loadYaml, exportYaml, reset, state } = useAppStore();
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -82,7 +93,7 @@ export const FileOperations: React.FC = () => {
     }
   };
 
-  const hasData = cjm || sbp || outcome || em;
+  const hasData = state.cjm || state.sbp || state.outcome || state.em;
 
   return (
     <Stack direction="row" spacing={1}>
@@ -108,4 +119,4 @@ export const FileOperations: React.FC = () => {
       </Button>
     </Stack>
   );
-};
+});

@@ -1,276 +1,412 @@
 kind: cjm
 version: '1.0'
-id: cjm:example:001
+id: cjm:sysdev-lifecycle
 persona:
-  name: Web申込者
+  name: 事業部門のシステム利用ユーザー
 phases:
-  - id: cjm:phase:awareness
-    name: 認知
-  - id: cjm:phase:consideration
-    name: 検討
-  - id: cjm:phase:application
-    name: 申込
-  - id: cjm:phase:usage
-    name: 利用
+  - id: cjm:phase:requirement
+    name: 要件定義
+  - id: cjm:phase:design-review
+    name: 設計確認
+  - id: cjm:phase:uat
+    name: UAT (受け入れテスト)
+  - id: cjm:phase:go-live
+    name: 本番稼働
+  - id: cjm:phase:operation
+    name: 運用保守
 actions:
-  - id: cjm:action:search
-    name: サービス検索
-    phase: cjm:phase:awareness
+  - id: cjm:action:communicate-requirements
+    name: システムの要件を開発チームに伝える
+    phase: cjm:phase:requirement
     touchpoints:
-      - 検索エンジン
-      - SNS広告
+      - 定例会議
+      - ドキュメント共有システム (Confluenceなど)
     thoughts_feelings:
-      - 他社と比較したい
-      - 信頼できるサービスか確認したい
+      - 正しく意図が伝わるか不安だ
+      - 専門用語が多くて理解が難しい
+    emotion_score: -1
+  - id: cjm:action:review-design
+    name: 設計書をレビューする
+    phase: cjm:phase:design-review
+    touchpoints:
+      - 画面設計書
+      - データモデル図
+      - レビュー会議
+    thoughts_feelings:
+      - 業務フローが正しく反映されているか確認したい
+      - 技術的な説明が難しい
     emotion_score: 0
-  - id: cjm:action:compare
-    name: サービス比較
-    phase: cjm:phase:consideration
+  - id: cjm:action:execute-uat
+    name: 開発されたシステムをテストする
+    phase: cjm:phase:uat
     touchpoints:
-      - 公式サイト
-      - 口コミサイト
+      - テスト環境
+      - 操作マニュアル
+      - QAチーム
     thoughts_feelings:
-      - 料金は適正か
-      - 本当に自分に合っているか
-    emotion_score: -1
-  - id: cjm:action:apply
-    name: 申込手続き
-    phase: cjm:phase:application
+      - 思った通りに動くか心配
+      - 不具合を見つけなければ、というプレッシャーがある
+    emotion_score: 0
+  - id: cjm:action:start-using
+    name: 本番環境でシステムを使い始める
+    phase: cjm:phase:go-live
     touchpoints:
-      - 申込フォーム
-      - 本人確認
+      - 本番環境
+      - 操作トレーニング
+      - ヘルプデスク
     thoughts_feelings:
-      - 手続きは簡単か
-      - 個人情報は安全か
+      - 本番でトラブルが起きないか不安
+      - 新しい操作に慣れるまで時間がかかりそう
     emotion_score: -1
-  - id: cjm:action:use-service
-    name: サービス利用開始
-    phase: cjm:phase:usage
+  - id: cjm:action:daily-operation
+    name: 日常業務でシステムを利用する
+    phase: cjm:phase:operation
     touchpoints:
-      - マイページ
+      - 本番環境
+      - 運用マニュアル
       - サポート窓口
     thoughts_feelings:
-      - 使いやすい
-      - 期待通りの価値を得られている
+      - 問題が起きたときにすぐ対応してほしい
+      - システムが安定して動いて安心
     emotion_score: 1
-  - id: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
-    name: サービス活用
-    phase: cjm:phase:usage
-    emotion_score: 2
-    touchpoints:
-      - カスタマーサクセス
-      - チャット
-    thoughts_feelings:
-      - 伴走してくれる
-      - 反応が早い
 ---
 kind: sbp
 version: '1.0'
-id: sbp:example:001
+id: sbp:sysdev-support
 lanes:
-  - id: sbp:lane:customer
-    name: 顧客
+  - id: sbp:lane:cjm
+    name: System User
     kind: cjm
-  - id: sbp:lane:frontend
-    name: フロントエンド
-    kind: system
-  - id: sbp:lane:backend
-    name: バックエンド
-    kind: system
-  - id: sbp:lane:support
-    name: カスタマーサクセス
+    position:
+      x: -381
+      'y': 98.17596566523605
+    size:
+      width: 2135
+      height: 172
+  - id: sbp:lane:dev-team
+    name: Development Team
     kind: team
+    position:
+      x: -380
+      'y': 320
+    size:
+      width: 2134
+      height: 300
+  - id: sbp:lane:infra-team
+    name: Infrastructure Team
+    kind: team
+    position:
+      x: -379
+      'y': 640
+    size:
+      width: 2133
+      height: 150
+  - id: sbp:lane:support-team
+    name: Support Team
+    kind: team
+    position:
+      x: -377.6909871244635
+      'y': 812.0815450643777
+    size:
+      width: 2133
+      height: 150
 tasks:
-  - id: sbp:task:display-search
-    lane: sbp:lane:frontend
-    name: 検索結果表示
+  - id: sbp:task:gather-requirements
+    lane: sbp:lane:dev-team
+    name: 要件をヒアリングし仕様書にまとめる
+    source_id: cjm:action:communicate-requirements
     position:
-      x: 100
+      x: 45.108215818516214
       'y': 50
-    source_id: cjm:action:search
-  - id: sbp:task:fetch-data
-    lane: sbp:lane:backend
-    name: データ取得
+  - id: sbp:task:design-system
+    lane: sbp:lane:dev-team
+    name: システム設計を行う
     position:
-      x: 100
-      'y': 50
-  - id: sbp:task:show-comparison
-    lane: sbp:lane:frontend
-    name: 比較表示
+      x: 92.60821581851621
+      'y': 219.9153893316983
+  - id: sbp:task:review-with-user
+    lane: sbp:lane:dev-team
+    name: 設計内容をユーザーと確認する
+    source_id: cjm:action:review-design
     position:
-      x: 320
-      'y': 50
-    source_id: cjm:action:compare
-  - id: sbp:task:validate-form
-    lane: sbp:lane:frontend
-    name: 入力検証
+      x: 359.63304721030045
+      'y': 219.9153893316983
+  - id: sbp:task:implement-system
+    lane: sbp:lane:dev-team
+    name: システムを実装する
     position:
-      x: 540
-      'y': 50
-    source_id: cjm:action:apply
-  - id: sbp:task:process-application
-    lane: sbp:lane:backend
-    name: 申込処理
+      x: 662.5009196811773
+      'y': 219.9153893316983
+  - id: sbp:task:support-uat
+    lane: sbp:lane:dev-team
+    name: UAT環境を準備する
+    source_id: cjm:action:execute-uat
     position:
-      x: 540
-      'y': 50
-  - id: sbp:task:verify-identity
-    lane: sbp:lane:backend
-    name: 本人確認
+      x: 874.1321275291233
+      'y': 63
+  - id: sbp:task:prepare-test-env
+    lane: sbp:lane:infra-team
+    name: テスト環境を構築する
     position:
-      x: 781.1111111111111
+      x: 662.5009196811773
       'y': 50
-    source_id: cjm:action:use-service
+  - id: sbp:task:prepare-prod-env
+    lane: sbp:lane:infra-team
+    name: 本番環境を構築する
+    position:
+      x: 1144.200490496628
+      'y': 50
+  - id: sbp:task:deploy-to-prod
+    lane: sbp:lane:infra-team
+    name: 本番環境にデプロイする
+    source_id: cjm:action:start-using
+    position:
+      x: 1434.0548743102395
+      'y': 50
+  - id: sbp:task:monitor-system
+    lane: sbp:lane:infra-team
+    name: システムを監視する
+    position:
+      x: 1679.8503985285101
+      'y': 50
+  - id: sbp:task:provide-training
+    lane: sbp:lane:support-team
+    name: ユーザートレーニングを実施する
+    position:
+      x: 1405.0548743102395
+      'y': 50
   - id: sbp:task:provide-support
-    lane: sbp:lane:support
-    name: サポート提供
+    lane: sbp:lane:support-team
+    name: 日常的なサポートを提供する
+    source_id: cjm:action:daily-operation
     position:
-      x: 970.9722222222222
-      'y': 64.55555555555554
-    source_id: cjm:action:use-service
-  - id: sbp:task:427720f8-ae87-4a3f-9662-e8b35a47cafa
-    name: チャット
-    lane: sbp:lane:frontend
+      x: 1867.3473329245862
+      'y': 50
+  - id: sbp:task:63a173f8-2e8e-4daa-844f-fdb269bc23ed
+    name: UATを支援する
+    lane: sbp:lane:dev-team
     connections: []
     position:
-      x: 1189.861111111111
-      'y': 50
-    source_id: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
-  - id: cjm:action:search
-    lane: sbp:lane:customer
-    name: サービス検索
+      x: 1144.200490496628
+      'y': 63
+    source_id: cjm:action:execute-uat
+  - id: cjm:action:communicate-requirements
+    lane: sbp:lane:cjm
+    name: システムの要件を開発チームに伝える
     readonly: true
     position:
-      x: 100
-      'y': 55.55555555555554
-  - id: cjm:action:compare
-    lane: sbp:lane:customer
-    name: サービス比較
+      x: 47.608215818516214
+      'y': 53
+  - id: cjm:action:review-design
+    lane: sbp:lane:cjm
+    name: 設計書をレビューする
     readonly: true
     position:
-      x: 320
-      'y': 55.55555555555554
-  - id: cjm:action:apply
-    lane: sbp:lane:customer
-    name: 申込手続き
+      x: 385.13304721030045
+      'y': 53
+  - id: cjm:action:execute-uat
+    lane: sbp:lane:cjm
+    name: 開発されたシステムをテストする
     readonly: true
     position:
-      x: 540
-      'y': 55.55555555555554
-  - id: cjm:action:use-service
-    lane: sbp:lane:customer
-    name: サービス利用開始
+      x: 1112.200490496628
+      'y': 53
+  - id: cjm:action:start-using
+    lane: sbp:lane:cjm
+    name: 本番環境でシステムを使い始める
     readonly: true
     position:
-      x: 970.9722222222222
-      'y': 55.55555555555554
-  - id: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
-    lane: sbp:lane:customer
-    name: サービス活用
+      x: 1408.5548743102395
+      'y': 53
+  - id: cjm:action:daily-operation
+    lane: sbp:lane:cjm
+    name: 日常業務でシステムを利用する
     readonly: true
     position:
-      x: 1189.861111111111
-      'y': 55.55555555555554
+      x: 1863.8473329245862
+      'y': 54
 connections:
-  - source: sbp:task:display-search
-    target: sbp:task:fetch-data
+  - source: cjm:action:communicate-requirements
+    target: sbp:task:gather-requirements
     sourceHandle: bottom
     targetHandle: top
-  - source: sbp:task:validate-form
-    target: sbp:task:process-application
-    sourceHandle: bottom
-    targetHandle: top
-  - source: sbp:task:process-application
-    target: sbp:task:verify-identity
+  - source: sbp:task:review-with-user
+    target: sbp:task:implement-system
     sourceHandle: right
     targetHandle: left
-  - source: cjm:action:apply
-    target: sbp:task:validate-form
+  - source: sbp:task:implement-system
+    target: sbp:task:prepare-test-env
     sourceHandle: bottom
     targetHandle: top
-  - source: cjm:action:compare
-    target: sbp:task:show-comparison
-    sourceHandle: bottom
-    targetHandle: top
-  - source: cjm:action:search
-    target: sbp:task:display-search
-    sourceHandle: bottom
-    targetHandle: top
-  - source: sbp:task:verify-identity
-    target: cjm:action:use-service
-    sourceHandle: top
+  - source: sbp:task:prepare-prod-env
+    target: sbp:task:deploy-to-prod
+    sourceHandle: right
     targetHandle: left
-  - source: cjm:action:use-service
+  - source: sbp:task:deploy-to-prod
+    target: sbp:task:provide-training
+    sourceHandle: bottom
+    targetHandle: top
+  - source: sbp:task:deploy-to-prod
+    target: sbp:task:monitor-system
+    sourceHandle: right
+    targetHandle: left
+  - source: cjm:action:daily-operation
     target: sbp:task:provide-support
     sourceHandle: bottom
     targetHandle: top
-  - source: cjm:action:b420089c-9d9b-4f11-97c8-7dd2f20e88e1
-    target: sbp:task:427720f8-ae87-4a3f-9662-e8b35a47cafa
+  - source: sbp:task:deploy-to-prod
+    target: cjm:action:start-using
+    sourceHandle: top
+    targetHandle: bottom
+  - source: cjm:action:execute-uat
+    target: sbp:task:63a173f8-2e8e-4daa-844f-fdb269bc23ed
     sourceHandle: bottom
     targetHandle: top
+  - source: sbp:task:review-with-user
+    target: cjm:action:review-design
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:gather-requirements
+    target: sbp:task:design-system
+    sourceHandle: bottom
+    targetHandle: top
+  - source: sbp:task:design-system
+    target: sbp:task:review-with-user
+    sourceHandle: right
+    targetHandle: left
+  - source: sbp:task:prepare-test-env
+    target: sbp:task:support-uat
+    sourceHandle: right
+    targetHandle: bottom
+  - source: sbp:task:support-uat
+    target: cjm:action:execute-uat
+    sourceHandle: top
+    targetHandle: left
 ---
 kind: outcome
 version: '1.0'
-id: outcome:example:001
+id: oc:sysdev-quality
 kgi:
-  id: outcome:kgi:001
-  name: サービス利用率向上
+  id: oc:kgi
+  name: 開発サイクルの迅速化と品質向上
 primary_csf:
-  id: outcome:csf:001
-  kgi_id: outcome:kgi:001
-  source_id: sbp:task:validate-form
-  rationale: 入力項目の最適化とエラーメッセージの改善により、離脱を防ぐ
+  id: oc:csf
+  kgi_id: oc:kgi
+  source_id: sbp:task:support-uat
+  rationale: UATの手戻りを削減することが、リリース速度向上に直結する
 primary_kpi:
-  id: outcome:kpi:conversion
-  csf_id: outcome:csf:001
-  name: 申込完了率
-  definition: 申込開始から完了までの達成率
+  id: oc:kpi
+  csf_id: oc:csf
+  name: UAT初回合格率
+  definition: 初回UATで合格した件数 / UAT実施件数
   unit: '%'
-  target: 75
+  target: 90
 ---
 kind: em
 version: '1.0'
-id: em:example:001
+id: em:sysdev-enablement
 outcomes:
-  - id: em:outcome:conversion
-    source_id: outcome:kpi:conversion
+  - id: em:outcome:uat-pass-rate
+    source_id: oc:kpi
 actions:
-  - id: em:action:validate
-    name: 入力検証の実装
-    source_id: sbp:task:validate-form
-  - id: em:action:support
-    name: サポート対応
-    source_id: sbp:task:provide-support
+  - id: em:act:testcase-design
+    name: UATシナリオに基づきテストケースを設計する
+    source_id: sbp:task:support-uat
+  - id: em:act:prepare-test-data
+    name: UAT用のテストデータを準備する
+    source_id: sbp:task:support-uat
+  - id: em:act:setup-test-env
+    name: テスト環境のセットアップ手順を文書化する
+    source_id: sbp:task:prepare-test-env
+  - id: em:act:create-operation-manual
+    name: 運用手順書を作成する
+    source_id: sbp:task:monitor-system
 skills:
-  - id: em:skill:validation
-    name: フロントエンド検証スキル
-    action_id: em:action:validate
+  - id: em:skill:test-design
+    name: テスト設計スキル
+    action_id: em:act:testcase-design
     learnings:
-      - title: React Hook Form入門
-        url: https://react-hook-form.com/get-started
-      - title: Zodバリデーション
-        url: https://zod.dev/
-  - id: em:skill:support
-    name: カスタマーサポートスキル
-    action_id: em:action:support
+      - title: テスト設計技法トレーニング
+        url: https://lms.local/courses/test-design
+      - title: テストケース作成実践ワークショップ
+        url: https://lms.local/workshops/testcase-creation
+  - id: em:skill:sql-scripting
+    name: テストデータ抽出のためのSQLスクリプト作成スキル
+    action_id: em:act:prepare-test-data
     learnings:
-      - title: 効果的なサポート対応
-        url: https://example.com/support-training
+      - title: 実践SQLクエリトレーニング
+        url: https://lms.local/courses/sql-training
+      - title: データベース基礎講座
+        url: https://lms.local/courses/database-basics
+  - id: em:skill:infra-setup
+    name: インフラ環境構築スキル
+    action_id: em:act:setup-test-env
+    learnings:
+      - title: Docker基礎トレーニング
+        url: https://lms.local/courses/docker-basics
+      - title: CI/CDパイプライン構築
+        url: https://lms.local/courses/cicd-pipeline
+  - id: em:skill:technical-writing
+    name: 技術文書作成スキル
+    action_id: em:act:create-operation-manual
+    learnings:
+      - title: わかりやすい技術文書の書き方
+        url: https://lms.local/courses/technical-writing
 knowledge:
-  - id: em:knowledge:ux
-    name: UXデザイン原則
-    action_id: em:action:validate
-    url: https://www.nngroup.com/articles/
-  - id: em:knowledge:crm
-    name: CRM運用ガイド
-    action_id: em:action:support
-    url: https://example.com/crm-guide
+  - id: em:knowledge:testcase-template
+    name: テストケース設計テンプレート
+    action_id: em:act:testcase-design
+    url: https://sharepoint.local/templates/test-case
+  - id: em:knowledge:test-strategy
+    name: テスト戦略ガイドライン
+    action_id: em:act:testcase-design
+    url: https://confluence.local/test-strategy
+  - id: em:knowledge:db-schema-document
+    name: テスト対象DBのスキーマ定義書
+    action_id: em:act:prepare-test-data
+    url: https://confluence.local/db-schema
+  - id: em:knowledge:test-data-generation
+    name: テストデータ生成ツール利用ガイド
+    action_id: em:act:prepare-test-data
+    url: https://wiki.local/test-data-tools
+  - id: em:knowledge:infra-standards
+    name: インフラ構築標準手順
+    action_id: em:act:setup-test-env
+    url: https://confluence.local/infra-standards
+  - id: em:knowledge:env-config
+    name: 環境別設定一覧
+    action_id: em:act:setup-test-env
+    url: https://sharepoint.local/env-config
+  - id: em:knowledge:operation-template
+    name: 運用手順書テンプレート
+    action_id: em:act:create-operation-manual
+    url: https://sharepoint.local/templates/operation-manual
+  - id: em:knowledge:incident-response
+    name: インシデント対応フロー
+    action_id: em:act:create-operation-manual
+    url: https://wiki.local/incident-response
 tools:
-  - id: em:tool:formik
-    name: React Hook Form
-    action_id: em:action:validate
-    url: https://react-hook-form.com/
-  - id: em:tool:zendesk
-    name: Zendesk
-    action_id: em:action:support
-    url: https://www.zendesk.com/
+  - id: em:tool:jira
+    name: JIRA (テスト管理)
+    action_id: em:act:testcase-design
+    url: https://jira.local/
+  - id: em:tool:testlink
+    name: TestLink (テストケース管理)
+    action_id: em:act:testcase-design
+    url: https://testlink.local/
+  - id: em:tool:dbeaver
+    name: DBeaver (データベースツール)
+    action_id: em:act:prepare-test-data
+    url: https://dbeaver.io/
+  - id: em:tool:docker
+    name: Docker
+    action_id: em:act:setup-test-env
+    url: https://www.docker.com/
+  - id: em:tool:ansible
+    name: Ansible (環境構築自動化)
+    action_id: em:act:setup-test-env
+    url: https://www.ansible.com/
+  - id: em:tool:confluence
+    name: Confluence (ドキュメント管理)
+    action_id: em:act:create-operation-manual
+    url: https://confluence.local/

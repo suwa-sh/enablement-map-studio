@@ -1,1 +1,1 @@
-export declare function OutcomeEditor(): import("react/jsx-runtime").JSX.Element;
+export declare function OutcomeEditor(): import("react/jsx-runtime").JSX.Element | null;

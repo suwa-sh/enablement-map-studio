@@ -8,7 +8,7 @@ export interface FlowData {
 }
 
 // レーンの高さとY座標マッピング
-export const LANE_HEIGHT = 200;
+export const LANE_HEIGHT = 300; // 1.5倍に拡大（200 → 300）縦に2タスク繋げられる高さ
 export const LANE_SPACING = 20;
 export const LANE_WIDTH = 1400;
 
@@ -30,19 +30,24 @@ export function dslToFlow(sbp: SbpDsl, cjm: CjmDsl | null): FlowData {
 
   // レーンをグループノードとして追加
   sbp.lanes.forEach((lane, index) => {
+    // DSLに保存された位置・サイズがあれば使用、なければデフォルト値
+    const position = lane.position || { x: 0, y: getLaneY(index) };
+    const size = lane.size || { width: LANE_WIDTH, height: LANE_HEIGHT };
+
     nodes.push({
       id: `lane:${lane.id}`,
       type: 'laneNode',
-      position: { x: 0, y: getLaneY(index) },
+      position,
       style: {
-        width: LANE_WIDTH,
-        height: LANE_HEIGHT,
+        width: size.width,
+        height: size.height,
       },
       data: {
         lane,
       },
       draggable: true,
       selectable: true,
+      expandParent: false,
     });
   });
 
@@ -172,6 +177,23 @@ export function updateDslFromFlow(
   nodes: Node[],
   edges: Edge[]
 ): SbpDsl {
+  // レーンノードから位置・サイズ情報を取得
+  const laneNodes = nodes.filter((node) => node.type === 'laneNode');
+  const updatedLanes: SbpLane[] = sbp.lanes.map((lane) => {
+    const laneNode = laneNodes.find((node) => node.id === `lane:${lane.id}`);
+    if (laneNode) {
+      return {
+        ...lane,
+        position: laneNode.position,
+        size: {
+          width: (laneNode.measured?.width ?? laneNode.width ?? (laneNode.style?.width as number)) || LANE_WIDTH,
+          height: (laneNode.measured?.height ?? laneNode.height ?? (laneNode.style?.height as number)) || LANE_HEIGHT,
+        },
+      };
+    }
+    return lane;
+  });
+
   // タスクノードを通常タスクとCJM readonlyノードに分けて処理
   const normalTaskNodes = nodes.filter(
     (node) => node.type === 'taskNode' && !node.id.startsWith('cjm-readonly-')
@@ -217,6 +239,7 @@ export function updateDslFromFlow(
 
   return {
     ...sbp,
+    lanes: updatedLanes,
     tasks: updatedTasks,
     connections,
   };

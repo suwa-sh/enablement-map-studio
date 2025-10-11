@@ -8,7 +8,7 @@ import { CjmCanvas } from './components/CjmCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 
 export function CjmEditor() {
-  const cjm = useAppStore((state) => state.cjm);
+  const cjm = useAppStore((state) => state.state.cjm);
   const updateCjm = useAppStore((state) => state.updateCjm);
 
   const [selectedAction, setSelectedAction] = useState<CjmAction | null>(null);

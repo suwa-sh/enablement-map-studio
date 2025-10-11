@@ -1,20 +1,63 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { Box, AppBar, Toolbar, Typography, IconButton, Stack } from '@mui/material';
 import { Undo, Redo } from '@mui/icons-material';
 import { Navigation } from './Navigation';
-import { FileOperations } from './FileOperations';
+import { FileOperations, FileOperationsRef } from './FileOperations';
+import { useUndoableStore } from '@enablement-map-studio/store';
 
 export interface AppShellProps {
   children: ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
-  // Undo/Redo機能は一時的に無効化
-  // TODO: zundoのtemporal APIの正しい使い方を調査して再実装
-  const undo = () => console.log('Undo (未実装)');
-  const redo = () => console.log('Redo (未実装)');
-  const canUndo = false;
-  const canRedo = false;
+  // Undo/Redo機能をuse-undoから取得
+  const { undo, redo, canUndo, canRedo } = useUndoableStore();
+
+  // FileOperationsのrefを取得
+  const fileOperationsRef = useRef<FileOperationsRef>(null);
+
+  // キーボードショートカット: Ctrl+Z/Cmd+Z (Undo), Ctrl+Shift+Z/Cmd+Shift+Z (Redo)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 入力フィールド内での操作は除外（通常のundo/redoを優先）
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Ctrl (Windows/Linux) または Cmd (macOS) が押されているかチェック
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+
+      if (isCtrlOrCmd && e.shiftKey && key === 'z') {
+        // Ctrl+Shift+Z または Cmd+Shift+Z → Redo
+        e.preventDefault();
+        if (canRedo) {
+          redo();
+        }
+      } else if (isCtrlOrCmd && !e.shiftKey && key === 'z') {
+        // Ctrl+Z または Cmd+Z → Undo
+        e.preventDefault();
+        if (canUndo) {
+          undo();
+        }
+      } else if (isCtrlOrCmd && key === 'o') {
+        // Ctrl+O または Cmd+O → Load YAML
+        e.preventDefault();
+        fileOperationsRef.current?.openFileDialog();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [undo, redo, canUndo, canRedo]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
@@ -32,7 +75,7 @@ export function AppShell({ children }: AppShellProps) {
             <IconButton onClick={redo} disabled={!canRedo} size="small" title="Redo (やり直し)">
               <Redo />
             </IconButton>
-            <FileOperations />
+            <FileOperations ref={fileOperationsRef} />
           </Stack>
         </Toolbar>
       </AppBar>

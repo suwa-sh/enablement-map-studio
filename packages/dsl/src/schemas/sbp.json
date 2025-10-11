@@ -27,7 +27,23 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "kind": { "enum": ["cjm", "human", "team", "system"] }
+        "kind": { "enum": ["cjm", "human", "team", "system"] },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          },
+          "required": ["x", "y"]
+        },
+        "size": {
+          "type": "object",
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          },
+          "required": ["width", "height"]
+        }
       },
       "required": ["id", "name", "kind"]
     },

@@ -11,6 +11,8 @@ export interface SbpLane {
   id: string;
   name: string;
   kind: 'cjm' | 'human' | 'team' | 'system';
+  position?: { x: number; y: number }; // Lane position in canvas
+  size?: { width: number; height: number }; // Lane size in canvas
 }
 
 export interface SbpTask {

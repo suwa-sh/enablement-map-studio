@@ -40,7 +40,7 @@ pnpm test             # Vitestでテストを実行
 packages/
 ├── dsl/           # DSL型定義、パーサー、バリデーター、参照チェック
 ├── store/         # localStorageによる永続化を持つZustandストア
-├── ui/            # 共有UIコンポーネント (Tailwindデザインシステム)
+├── ui/            # 共有UIコンポーネント
 apps/
 └── studio/        # メインVite+Reactアプリケーション
 ```
@@ -50,7 +50,7 @@ apps/
 - **フロントエンド**: React 18+ + TypeScript + Vite
 - **状態管理**: Zustand with persist middleware
 - **ルーティング**: React Router v6
-- **スタイリング**: Material-UI (MUI) v7 + Tailwind CSS
+- **スタイリング**: Material-UI (MUI) v7
 - **DSL処理**: js-yaml (parser), ajv (JSON Schema validation)
 - **エディタUI**:
   - CJM Editor: MUIテーブル + Recharts (感情曲線) + @dnd-kit (ドラッグ&ドロップ)
@@ -231,8 +231,15 @@ apps/
 **レーン管理**:
 - レーンノード: `id: "lane:{laneId}"`, `type: "laneNode"`
 - レーン種別: `cjm` (readonly), `human`, `team`, `system`
+- レーン初期サイズ: 幅1400px、高さ300px (`LANE_WIDTH`, `LANE_HEIGHT`)
 - レーン追加時の自動配置: Y座標 = `index * (LANE_HEIGHT + LANE_SPACING)`
 - DELETEキー・ボタンによる削除を即時DSLに反映
+- **レーンの位置・サイズ永続化**:
+  - `SbpLane`に`position?: { x: number; y: number }`と`size?: { width: number; height: number }`を追加
+  - `dslToFlow()`: 保存された位置・サイズを読み込み、なければデフォルト値を使用
+  - `updateDslFromFlow()`: React Flowノードから位置・サイズを抽出してDSLに保存
+  - NodeResizerのサイズは`node.measured?.width/height`, `node.width/height`, `node.style?.width/height`の優先順で取得
+  - `expandParent: false`で親ノードの自動リサイズを防止
 - **空状態からの直接作成**: SBPがnullの場合
   - CJMが存在する場合: 自動的にCJMレーンを含むSBPを初期化（useEffectで実行）
   - CJMが存在しない場合: "CJMを作成する か YAML をロードしてください" メッセージ表示
@@ -255,10 +262,15 @@ apps/
   - エッジ削除時に`source_id`も自動削除
 
 **UX改善機能**:
-- **アライメントガイド**: ドラッグ中に他のタスクとの中央揃えガイド（破線）を表示
-  - 水平・垂直の中央位置が近い場合（閾値10px）に表示
+- **タスクノードのアライメントガイド**: ドラッグ中に他のタスクとの中央揃えガイド（破線）を表示
+  - 水平・垂直の中央位置が近い場合（閾値5px）に表示
   - スナップ機能: ガイド表示時に自動的に位置を調整
   - D&D終了後に破線を即座に非表示
+- **レーンリサイズのアライメントガイド**: リサイズ中に他のレーン・タスクの端に吸着
+  - 他のレーン・タスクの右端・下端との距離が10px以内で破線ガイドを表示
+  - リサイズ終了時にスナップ位置を確定
+  - `handleLaneResize()`, `handleLaneResizeEnd()` で実装
+  - `resizeAlignmentLines` state でガイド線の状態管理
 - **接続ハンドル**: タスクノードの4方向すべてに接続ハンドル
   - ホバー時に灰色の丸ハンドルを表示
   - クリック&ドラッグで接続開始
@@ -272,13 +284,15 @@ apps/
 
 **技術的詳細**:
 - `flowConverter.ts`: DSL ⇔ React Flow 形式の相互変換
-  - `dslToFlow()`: connections配列からエッジ生成、CJM readonly node IDに`cjm-readonly-`プレフィックス付与
-  - `updateDslFromFlow()`: エッジからconnections配列生成、CJM readonly nodeの位置情報も保存
+  - `dslToFlow()`: connections配列からエッジ生成、CJM readonly node IDに`cjm-readonly-`プレフィックス付与、レーン位置・サイズ読み込み
+  - `updateDslFromFlow()`: エッジからconnections配列生成、CJM readonly nodeの位置情報も保存、レーン位置・サイズ保存
 - `handleNodesChange`: レーン削除も含めたDSL更新
 - `handleEdgesDelete`: エッジ削除時にCJM接続の`source_id`をクリア
 - `handleConnect`: D&D接続時のsource/target入れ替えとCJM `source_id`自動設定
-- `useAlignmentGuides`: アライメントガイドとスナップ機能のカスタムフック
-- `LANE_HEIGHT=200`, `LANE_SPACING=20`, `LANE_WIDTH=1400`
+- `useAlignmentGuides`: タスクノードドラッグ時のアライメントガイドとスナップ機能のカスタムフック
+- `handleLaneResize`: レーンリサイズ中のアライメントガイド表示（`resizeAlignmentLines` state更新）
+- `handleLaneResizeEnd`: レーンリサイズ終了時のスナップ位置確定とガイド非表示
+- `LANE_HEIGHT=300`, `LANE_SPACING=20`, `LANE_WIDTH=1400`
 
 ### Outcome Editorの実装詳細
 

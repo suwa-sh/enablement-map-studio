@@ -5,6 +5,7 @@ interface OutcomeCanvasProps {
     cjm: CjmDsl | null;
     selectedPhaseId: string | null;
     onPhaseSelect: (phaseId: string | null) => void;
+    onTaskClick: (taskId: string) => void;
 }
-export declare function OutcomeCanvas({ outcome, sbp, cjm, selectedPhaseId, onPhaseSelect, }: OutcomeCanvasProps): import("react/jsx-runtime").JSX.Element;
+export declare function OutcomeCanvas({ outcome, sbp, cjm, selectedPhaseId, onPhaseSelect, onTaskClick, }: OutcomeCanvasProps): import("react/jsx-runtime").JSX.Element;
 export {};

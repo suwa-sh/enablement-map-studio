@@ -25,8 +25,10 @@ A unified web application for designing end-to-end processes from customer exper
 - React Flowベースのフローダイアグラム
 - CJM連動（CJMアクションを自動的にreadonly タスクとして表示）
 - レーン種別（CJM, Human, Team, System）対応
+- レーンリサイズ + アライメントガイド（他レーン・タスクの端に吸着）
+- レーン位置・サイズの永続化
 - タスク追加ダイアログ（レーン選択 + 名前入力）
-- 4方向接続ハンドル + アライメントガイド
+- 4方向接続ハンドル + タスクアライメントガイド（中央位置で吸着）
 - ドラッグ&ドロップによるタスク接続とCJM `source_id` 自動設定
 
 ### Outcome Editor
@@ -58,7 +60,7 @@ A unified web application for designing end-to-end processes from customer exper
 - **ビルドツール**: Vite
 - **状態管理**: Zustand (with persist middleware)
 - **ルーティング**: React Router v6
-- **スタイリング**: Material-UI (MUI) v7 + Tailwind CSS
+- **スタイリング**: Material-UI (MUI) v7
 - **エディタUI**:
   - CJM: MUIテーブル + Recharts + @dnd-kit (ドラッグ&ドロップ)
   - SBP: @xyflow/react (フローダイアグラム)

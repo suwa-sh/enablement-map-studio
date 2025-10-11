@@ -1,25 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { temporal } from 'zundo';
 import { parseYaml, exportYaml, checkReferenceIntegrity, } from '@enablement-map-studio/dsl';
 const initialState = {
     cjm: null,
     sbp: null,
     outcome: null,
     em: null,
-    referenceCheck: null,
 };
-export const useAppStore = create()(persist(temporal((set, get) => ({
-    ...initialState,
+const storeImpl = (set, get) => ({
+    state: initialState,
+    referenceCheck: null,
     loadYaml: (content) => {
         try {
             const parsed = parseYaml(content);
             const refCheck = checkReferenceIntegrity(parsed);
             set({
-                cjm: parsed.cjm,
-                sbp: parsed.sbp,
-                outcome: parsed.outcome,
-                em: parsed.em,
+                state: {
+                    cjm: parsed.cjm,
+                    sbp: parsed.sbp,
+                    outcome: parsed.outcome,
+                    em: parsed.em,
+                },
                 referenceCheck: refCheck,
             });
             if (!refCheck.valid) {
@@ -32,51 +33,37 @@ export const useAppStore = create()(persist(temporal((set, get) => ({
         }
     },
     exportYaml: () => {
-        const { cjm, sbp, outcome, em } = get();
-        return exportYaml({ cjm, sbp, outcome, em });
+        const { state } = get();
+        return exportYaml(state);
     },
     updateCjm: (cjm) => {
-        set({ cjm });
+        set((store) => ({ state: { ...store.state, cjm } }));
         get().checkReferences();
     },
     updateSbp: (sbp) => {
-        set({ sbp });
+        set((store) => ({ state: { ...store.state, sbp } }));
         get().checkReferences();
     },
     updateOutcome: (outcome) => {
-        set({ outcome });
+        set((store) => ({ state: { ...store.state, outcome } }));
         get().checkReferences();
     },
     updateEm: (em) => {
-        set({ em });
+        set((store) => ({ state: { ...store.state, em } }));
         get().checkReferences();
     },
     checkReferences: () => {
-        const { cjm, sbp, outcome, em } = get();
-        const refCheck = checkReferenceIntegrity({ cjm, sbp, outcome, em });
+        const { state } = get();
+        const refCheck = checkReferenceIntegrity(state);
         set({ referenceCheck: refCheck });
         return refCheck;
     },
-    reset: () => set(initialState),
-}), {
-    limit: 50,
-    equality: (a, b) => JSON.stringify(a) === JSON.stringify(b),
-    partialize: (state) => ({
-        cjm: state.cjm,
-        sbp: state.sbp,
-        outcome: state.outcome,
-        em: state.em,
-    }),
-}), {
+    reset: () => set({ state: initialState, referenceCheck: null }),
+});
+export const useAppStore = create()(persist(storeImpl, {
     name: 'enablement-map-studio-storage',
+    partialize: (store) => ({
+        state: store.state,
+        referenceCheck: store.referenceCheck,
+    }),
 }));
-// Temporal store用のリアクティブフック
-export const useTemporalStore = (selector, equality) => {
-    // useAppStore.temporalはストアなので、そのまま使える
-    // zundoのドキュメントに従い、useStoreWithEqualityFnを使う代わりに
-    // Zustandの標準的な方法でサブスクライブ
-    if (equality) {
-        return useAppStore.temporal(selector, equality);
-    }
-    return useAppStore.temporal(selector);
-};

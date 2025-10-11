@@ -5,6 +5,8 @@ import type { SbpLane } from '@enablement-map-studio/dsl';
 
 export interface LaneNodeData {
   lane: SbpLane;
+  onResize?: (event: React.MouseEvent | React.TouchEvent, params: { width: number; height: number; x: number; y: number }) => void;
+  onResizeEnd?: (event: React.MouseEvent | React.TouchEvent, params: { width: number; height: number; x: number; y: number }) => void;
 }
 
 const LANE_COLORS: Record<string, string> = {
@@ -15,7 +17,7 @@ const LANE_COLORS: Record<string, string> = {
 };
 
 export const LaneNode = memo(({ data, selected }: NodeProps) => {
-  const { lane } = data as unknown as LaneNodeData;
+  const { lane, onResize, onResizeEnd } = data as unknown as LaneNodeData;
   const bgColor = LANE_COLORS[lane.kind] || '#f5f5f5';
 
   return (
@@ -27,6 +29,8 @@ export const LaneNode = memo(({ data, selected }: NodeProps) => {
         isVisible={selected}
         color="#1976d2"
         lineStyle={{ borderWidth: 2 }}
+        onResize={onResize}
+        onResizeEnd={onResizeEnd}
       />
       <Box
         sx={{

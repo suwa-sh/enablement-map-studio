@@ -8,8 +8,8 @@ import { SbpCanvas } from './components/SbpCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 
 export function SbpEditor() {
-  const sbp = useAppStore((state) => state.sbp);
-  const cjm = useAppStore((state) => state.cjm);
+  const sbp = useAppStore((state) => state.state.sbp);
+  const cjm = useAppStore((state) => state.state.cjm);
   const updateSbp = useAppStore((state) => state.updateSbp);
 
   const [selectedTask, setSelectedTask] = useState<SbpTask | null>(null);
