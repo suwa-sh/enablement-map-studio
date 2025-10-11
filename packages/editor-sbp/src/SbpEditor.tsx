@@ -3,7 +3,7 @@ import { Box, Typography, Stack, Button } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import { useAppStore } from '@enablement-map-studio/store';
 import { generateId } from '@enablement-map-studio/dsl';
-import type { SbpTask, SbpLane, SbpDsl } from '@enablement-map-studio/dsl';
+import type { SbpTask, SbpLane } from '@enablement-map-studio/dsl';
 import { SbpCanvas } from './components/SbpCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 
@@ -29,6 +29,7 @@ export function SbpEditor() {
       updateSbp({
         kind: 'sbp',
         version: '1.0',
+        id: `sbp:${Date.now()}`,
         lanes: [cjmLane],
         tasks: [],
         connections: [],
@@ -82,7 +83,9 @@ export function SbpEditor() {
 
 
   const handleSbpUpdate = (updatedSbp: typeof sbp) => {
-    updateSbp(updatedSbp);
+    if (updatedSbp) {
+      updateSbp(updatedSbp);
+    }
   };
 
   const handleLaneAdd = () => {
@@ -97,6 +100,7 @@ export function SbpEditor() {
       updateSbp({
         kind: 'sbp',
         version: '1.0',
+        id: `sbp:${Date.now()}`,
         lanes: [newLane],
         tasks: [],
         connections: [],
@@ -118,7 +122,6 @@ export function SbpEditor() {
       id: generateId('sbp', 'task'),
       name: taskName,
       lane: laneId,
-      connections: [],
       position: { x: 100, y: 100 },
     };
     updateSbp({ ...sbp, tasks: [...sbp.tasks, newTask] });

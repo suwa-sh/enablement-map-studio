@@ -8,6 +8,14 @@ import { EmCanvasCard } from './components/EmCanvasCard';
 import { EmTable } from './components/EmTable';
 import { PropertyPanelNew } from './components/PropertyPanelNew';
 
+// Legacy type for backward compatibility with unused components
+export type SelectedItem =
+  | { type: 'action'; item: EmAction }
+  | { type: 'skill'; item: { id: string; name: string } }
+  | { type: 'knowledge'; item: { id: string; name: string } }
+  | { type: 'tool'; item: { id: string; name: string } }
+  | null;
+
 export function EmEditor() {
   const em = useAppStore((state) => state.state.em);
   const outcome = useAppStore((state) => state.state.outcome);
@@ -23,7 +31,7 @@ export function EmEditor() {
       const initialEm: EmDsl = {
         kind: 'em',
         version: '1.0',
-        id: generateId('em', 'em'),
+        id: `em:${Date.now()}`,
         outcomes: [
           {
             id: generateId('em', 'outcome'),

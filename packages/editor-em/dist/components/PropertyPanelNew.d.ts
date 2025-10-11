@@ -1,7 +1,7 @@
 import type { EmAction, EmDsl } from '@enablement-map-studio/dsl';
 interface PropertyPanelNewProps {
     selectedAction: EmAction | null;
-    em: EmDsl;
+    em: EmDsl | null;
     onEmUpdate: (em: EmDsl) => void;
     onClose: () => void;
 }

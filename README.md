@@ -16,6 +16,7 @@ A unified web application for designing end-to-end processes from customer exper
 ## 主な機能
 
 ### CJM Editor
+- **ペルソナ表示・編集**: テーブル上部にペルソナカードを表示、クリックでPropertyPanelを開いて編集（ペルソナ名・説明を複数行テキストで入力可能）
 - フェーズとアクションのドラッグ&ドロップによる並び替え
 - 感情スコア (-2 ~ +2) による感情曲線の可視化
 - タッチポイント・思考感情の複数行入力対応
@@ -41,7 +42,7 @@ A unified web application for designing end-to-end processes from customer exper
 ### EM Editor
 - カードベースレイアウト（求める成果/CJMフェーズ/SBPレーン・タスク/EM行動）
 - フィルタリング機能（CSF/CJMフェーズ/SBPレーン）
-- リソース一覧テーブル（ソート・検索・CSF強調表示）
+- **リソース一覧テーブル**: Paper elevation={2}でカードラップ、ソート・検索・CSF強調表示
 - PropertyPanel（スキル/ナレッジ/ツール編集、学習コンテンツ対応）
 - 「必要な行動を追加」ボタンで新規EM Action作成
 - クリック外で閉じる機能

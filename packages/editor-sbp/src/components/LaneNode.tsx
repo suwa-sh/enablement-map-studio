@@ -1,12 +1,12 @@
 import { memo } from 'react';
-import { NodeResizer, type NodeProps } from '@xyflow/react';
+import { NodeResizer, type NodeProps, type OnResize, type OnResizeEnd } from '@xyflow/react';
 import { Box, Typography } from '@mui/material';
 import type { SbpLane } from '@enablement-map-studio/dsl';
 
 export interface LaneNodeData {
   lane: SbpLane;
-  onResize?: (event: React.MouseEvent | React.TouchEvent, params: { width: number; height: number; x: number; y: number }) => void;
-  onResizeEnd?: (event: React.MouseEvent | React.TouchEvent, params: { width: number; height: number; x: number; y: number }) => void;
+  onResize?: OnResize;
+  onResizeEnd?: OnResizeEnd;
 }
 
 const LANE_COLORS: Record<string, string> = {

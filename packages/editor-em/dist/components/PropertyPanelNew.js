@@ -9,13 +9,13 @@ export function PropertyPanelNew({ selectedAction, em, onEmUpdate, onClose, }) {
         setEditedAction(selectedAction);
     }, [selectedAction]);
     const handleSave = () => {
-        if (!editedAction)
+        if (!editedAction || !em)
             return;
         const updatedActions = em.actions.map((a) => a.id === editedAction.id ? editedAction : a);
         onEmUpdate({ ...em, actions: updatedActions });
     };
     const handleDelete = () => {
-        if (!editedAction)
+        if (!editedAction || !em)
             return;
         if (!window.confirm('この行動を削除しますか?'))
             return;
@@ -34,7 +34,7 @@ export function PropertyPanelNew({ selectedAction, em, onEmUpdate, onClose, }) {
         onClose();
     };
     const handleAddSkill = () => {
-        if (!editedAction)
+        if (!editedAction || !em)
             return;
         const newSkill = {
             id: generateId('em', 'skill'),
@@ -48,7 +48,7 @@ export function PropertyPanelNew({ selectedAction, em, onEmUpdate, onClose, }) {
         });
     };
     const handleAddKnowledge = () => {
-        if (!editedAction)
+        if (!editedAction || !em)
             return;
         const newKnowledge = {
             id: generateId('em', 'knowledge'),
@@ -62,7 +62,7 @@ export function PropertyPanelNew({ selectedAction, em, onEmUpdate, onClose, }) {
         });
     };
     const handleAddTool = () => {
-        if (!editedAction)
+        if (!editedAction || !em)
             return;
         const newTool = {
             id: generateId('em', 'tool'),
@@ -75,7 +75,7 @@ export function PropertyPanelNew({ selectedAction, em, onEmUpdate, onClose, }) {
             tools: [...(em.tools || []), newTool],
         });
     };
-    if (!editedAction)
+    if (!editedAction || !em)
         return null;
     const relatedSkills = (em.skills || []).filter((s) => s.action_id === editedAction.id);
     const relatedKnowledge = (em.knowledge || []).filter((k) => k.action_id === editedAction.id);

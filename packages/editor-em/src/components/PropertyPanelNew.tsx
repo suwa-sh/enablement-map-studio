@@ -19,7 +19,7 @@ import { generateId } from '@enablement-map-studio/dsl';
 
 interface PropertyPanelNewProps {
   selectedAction: EmAction | null;
-  em: EmDsl;
+  em: EmDsl | null;
   onEmUpdate: (em: EmDsl) => void;
   onClose: () => void;
 }
@@ -37,7 +37,7 @@ export function PropertyPanelNew({
   }, [selectedAction]);
 
   const handleSave = () => {
-    if (!editedAction) return;
+    if (!editedAction || !em) return;
 
     const updatedActions = em.actions.map((a) =>
       a.id === editedAction.id ? editedAction : a
@@ -47,7 +47,7 @@ export function PropertyPanelNew({
   };
 
   const handleDelete = () => {
-    if (!editedAction) return;
+    if (!editedAction || !em) return;
     if (!window.confirm('この行動を削除しますか?')) return;
 
     // Delete action and related resources
@@ -68,7 +68,7 @@ export function PropertyPanelNew({
   };
 
   const handleAddSkill = () => {
-    if (!editedAction) return;
+    if (!editedAction || !em) return;
 
     const newSkill = {
       id: generateId('em', 'skill'),
@@ -84,7 +84,7 @@ export function PropertyPanelNew({
   };
 
   const handleAddKnowledge = () => {
-    if (!editedAction) return;
+    if (!editedAction || !em) return;
 
     const newKnowledge = {
       id: generateId('em', 'knowledge'),
@@ -100,7 +100,7 @@ export function PropertyPanelNew({
   };
 
   const handleAddTool = () => {
-    if (!editedAction) return;
+    if (!editedAction || !em) return;
 
     const newTool = {
       id: generateId('em', 'tool'),
@@ -115,7 +115,7 @@ export function PropertyPanelNew({
     });
   };
 
-  if (!editedAction) return null;
+  if (!editedAction || !em) return null;
 
   const relatedSkills = (em.skills || []).filter((s) => s.action_id === editedAction.id);
   const relatedKnowledge = (em.knowledge || []).filter((k) => k.action_id === editedAction.id);

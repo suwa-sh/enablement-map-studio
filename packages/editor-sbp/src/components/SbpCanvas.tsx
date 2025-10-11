@@ -76,8 +76,8 @@ export function SbpCanvas({
   // DSLからReact Flow形式に変換
   const initialFlow = useMemo(() => dslToFlow(sbp, cjm), [sbp, cjm]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialFlow.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialFlow.edges);
+  const [nodes, setNodes] = useNodesState(initialFlow.nodes);
+  const [edges, setEdges] = useEdgesState(initialFlow.edges);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   // タスク追加ダイアログの状態管理

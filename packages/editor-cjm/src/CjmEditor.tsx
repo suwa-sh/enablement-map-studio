@@ -3,7 +3,7 @@ import { Box, Typography, Stack, Button } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import { useAppStore } from '@enablement-map-studio/store';
 import { generateId } from '@enablement-map-studio/dsl';
-import type { CjmAction, CjmPhase, CjmDsl } from '@enablement-map-studio/dsl';
+import type { CjmAction, CjmPhase, CjmPersona } from '@enablement-map-studio/dsl';
 import { CjmCanvas } from './components/CjmCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 
@@ -13,6 +13,7 @@ export function CjmEditor() {
 
   const [selectedAction, setSelectedAction] = useState<CjmAction | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<CjmPhase | null>(null);
+  const [selectedPersona, setSelectedPersona] = useState<CjmPersona | null>(null);
 
   const handleActionUpdate = (updatedAction: CjmAction) => {
     if (!cjm) return;
@@ -68,7 +69,7 @@ export function CjmEditor() {
       updateCjm({
         kind: 'cjm',
         version: '1.0',
-        id: generateId('cjm', 'cjm'),
+        id: `cjm:${Date.now()}`,
         phases: [newPhase],
         actions: [newAction],
       });
@@ -106,12 +107,22 @@ export function CjmEditor() {
     updateCjm({ ...cjm, phases: reorderedPhases });
   };
 
-  const handlePersonaUpdate = (personaName: string) => {
+  const handlePersonaSelect = () => {
+    if (!cjm) return;
+    // Clear other selections
+    setSelectedAction(null);
+    setSelectedPhase(null);
+    // Set persona (create if doesn't exist)
+    setSelectedPersona(cjm.persona || { name: '' });
+  };
+
+  const handlePersonaUpdate = (updatedPersona: CjmPersona) => {
     if (!cjm) return;
     updateCjm({
       ...cjm,
-      persona: personaName.trim() ? { name: personaName.trim() } : undefined,
+      persona: updatedPersona.name.trim() ? updatedPersona : undefined,
     });
+    setSelectedPersona(updatedPersona);
   };
 
   // 空状態の表示
@@ -148,25 +159,36 @@ export function CjmEditor() {
           cjm={cjm}
           selectedAction={selectedAction}
           selectedPhase={selectedPhase}
-          onActionSelect={setSelectedAction}
-          onPhaseSelect={setSelectedPhase}
+          onActionSelect={(action) => {
+            setSelectedAction(action);
+            setSelectedPhase(null);
+            setSelectedPersona(null);
+          }}
+          onPhaseSelect={(phase) => {
+            setSelectedPhase(phase);
+            setSelectedAction(null);
+            setSelectedPersona(null);
+          }}
+          onPersonaSelect={handlePersonaSelect}
           onAddPhase={handleAddPhase}
           onAddAction={handleAddAction}
           onReorderActions={handleReorderActions}
           onReorderPhases={handleReorderPhases}
-          onPersonaUpdate={handlePersonaUpdate}
         />
       </Box>
       <PropertyPanel
         selectedAction={selectedAction}
         selectedPhase={selectedPhase}
+        selectedPersona={selectedPersona}
         onActionUpdate={handleActionUpdate}
         onPhaseUpdate={handlePhaseUpdate}
+        onPersonaUpdate={handlePersonaUpdate}
         onActionDelete={handleActionDelete}
         onPhaseDelete={handlePhaseDelete}
         onClose={() => {
           setSelectedAction(null);
           setSelectedPhase(null);
+          setSelectedPersona(null);
         }}
       />
     </Box>

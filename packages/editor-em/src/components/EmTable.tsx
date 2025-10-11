@@ -46,14 +46,11 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [filterText, setFilterText] = useState('');
 
-  const csfTaskId = outcome?.primary_csf.source_id;
-
   // Build flat resource list
   const rows = useMemo((): ResourceRow[] => {
     if (!em || !outcome || !sbp || !cjm) return [];
 
     const result: ResourceRow[] = [];
-    const csfTask = sbp.tasks.find((t) => t.id === outcome.primary_csf.source_id);
 
     em.actions.forEach((action) => {
       const sbpTask = sbp.tasks.find((t) => t.id === action.source_id);

@@ -9,6 +9,7 @@ export interface CjmDsl {
 
 export interface CjmPersona {
   name: string;
+  description?: string;
 }
 
 export interface CjmPhase {

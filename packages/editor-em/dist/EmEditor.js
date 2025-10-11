@@ -20,7 +20,7 @@ export function EmEditor() {
             const initialEm = {
                 kind: 'em',
                 version: '1.0',
-                id: generateId('em', 'em'),
+                id: `em:${Date.now()}`,
                 outcomes: [
                     {
                         id: generateId('em', 'outcome'),
@@ -53,5 +53,5 @@ export function EmEditor() {
                                     height: 4,
                                     bgcolor: 'grey.400',
                                     borderRadius: 2,
-                                } }) }), _jsx(Panel, { defaultSize: 30, minSize: 10, children: _jsx(EmTable, { em: em, outcome: outcome, sbp: sbp, cjm: cjm }) })] }) }), _jsx(PropertyPanelNew, { selectedAction: selectedAction, em: em, onEmUpdate: updateEm, onClose: () => setSelectedAction(null) })] }));
+                                } }) }), _jsx(Panel, { defaultSize: 30, minSize: 10, children: _jsx(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: _jsx(EmTable, { em: em, outcome: outcome, sbp: sbp, cjm: cjm }) }) })] }) }), _jsx(PropertyPanelNew, { selectedAction: selectedAction, em: em, onEmUpdate: updateEm, onClose: () => setSelectedAction(null) })] }));
 }

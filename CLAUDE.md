@@ -80,6 +80,9 @@ apps/
 各DSLは `kind` 識別子と `version` フィールドを持ちます (現在すべて "1.0"):
 
 1. **CJM DSL** (`kind: 'cjm'`): カスタマージャーニーマップ
+   - `persona`: ペルソナ情報 (オプション)
+     - `name`: ペルソナ名 (必須)
+     - `description`: ペルソナの説明 (オプション、複数行テキスト)
    - `phases[]`: ジャーニーフェーズ
    - `actions[]`: `emotion_score` (-2 から 2) を持つ顧客アクション
    - アクションは `phase` フィールド経由でフェーズを参照
@@ -174,10 +177,15 @@ apps/
 
 **UI構成**:
 - MUIテーブルベースのレイアウト
+- **ペルソナカード**: テーブル上部にペルソナ情報を表示
+  - Paper elevation={2}、cursor: pointer、ホバー時に背景色変化
+  - 表示内容: "ペルソナ: {name}" のみ（説明は非表示）
+  - クリックでPropertyPanelが開き、ペルソナ編集が可能
 - フェーズとアクションをドラッグ&ドロップで並び替え可能
 - 感情曲線をRechartsで可視化（高さ240px）
 
 **操作**:
+- **ペルソナ編集**: ペルソナカードクリック → PropertyPanel表示 → ペルソナ名・説明を編集 → SAVE
 - フェーズ追加時、自動的に「アクション 1」を作成
 - アクション追加はダイアログでフェーズ選択+名前入力
 - ドラッグハンドル（≡）とクリックターゲットを分離（activationConstraint: 8px）
@@ -187,10 +195,17 @@ apps/
 
 **プロパティパネル**:
 - 幅: 画面の33vw（最小400px）
-- アクション編集順: アクション → タッチポイント → 思考・感情 → 感情スコア
+- **ペルソナ編集**:
+  - タイトル: "ペルソナ"
+  - ペルソナ名: TextField（1行）
+  - 説明: TextField multiline（rows=6、複数行テキスト）
+  - SAVE のみ（DELETEボタンなし、ペルソナは削除不可）
+- **アクション編集順**: アクション → タッチポイント → 思考・感情 → 感情スコア
+- **フェーズ編集**: フェーズ名のみ
 - すべてのラベルを日本語化
 - SAVEとDELETEボタンは同じサイズ（flex: 1）
 - **タッチポイント・思考感情フィールド**: 改行可能（`.filter(Boolean)` を除去）
+- アクション・フェーズ・ペルソナは排他的に表示（同時には表示されない）
 
 **技術的詳細**:
 - @dnd-kit/core, @dnd-kit/sortableでドラッグ&ドロップ実装
@@ -335,6 +350,8 @@ apps/
   - SBPレーン・タスクカード（レーンフィルタボタン付き）
   - EM行動カード（クリックでPropertyPanel表示）
 - **リソース一覧ペイン** (下部): react-resizable-panelsによるリサイズ可能なテーブル
+  - **カードレイアウト**: Paper elevation={2} でラップ、padding 24px、grey.50背景色
+  - エディタ領域の「求める成果」カードと同じ構造（カード内にテーブルを配置）
   - CSF/CJMフェーズ/CJMアクション/SBPレーン/SBPタスク/必要な行動/リンクタイプ/名前/URLカラム
   - CSF行（true）を緑色＋チェックボックスで強調表示
   - 全カラムでソート可能（昇順/降順）
@@ -396,20 +413,22 @@ apps/
   - KPI表示フォーマット: `{名前}: {目標値}{ユニット}` （例: "申込完了率: 75%"）
   - レーンフィルタボタン群: `selectedLaneId`で管理、"すべて"ボタン付き
   - 行動カードクリック: `e.stopPropagation()`でパネル閉じを防止
-- **EmTable.tsx**: ソート・フィルタリング機能付きテーブル
+- **EmTable.tsx**: ソート・フィルタリング機能付きテーブル、Paper elevation={2}でラップ
   - `sortColumn`, `sortOrder`, `filterText`で状態管理
   - `isCSF: boolean`でCSF行を判定（以前は`csfName: string`）
   - Checkbox表示: `<Checkbox checked={row.isCSF} disabled size="small" />`
   - 背景色: `index % 2 === 0 ? 'white' : 'grey.50'`（互い違い）
   - ヘッダー背景色: `grey.300`（明るいグレー）
   - CSF行強調: 背景色 `#c8e6c9`、太字
+  - TableContainer: `maxHeight: 'calc(100vh - 500px)'`でスクロール対応
 - **PropertyPanelNew.tsx**: 学習コンテンツの`title`フィールド使用、インデックスベース更新
   - 学習コンテンツ: `learning.title`（`name`ではない）
   - 更新関数: `handleLearningChange(learningIndex: number, field: 'title' | 'url', value: string)`
   - インデックスベースの更新: `learnings.map((l, idx) => idx === learningIndex ? {...l, [field]: value} : l)`
-- **EmEditor.tsx**: メインコンテナ、クリック外で閉じる機能
+- **EmEditor.tsx**: メインコンテナ、クリック外で閉じる機能、リソース一覧ペインのレイアウト管理
   - onClick handler: PropertyPanel以外のクリックで`setSelectedAction(null)`
   - PanelGroup (react-resizable-panels): エディタペインとリソース一覧ペインのリサイズ対応
+  - リソース一覧ペイン: `<Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>` でEmTableをラップ（padding 24pxで視覚的分離）
 
 ### 開発ワークフロー
 

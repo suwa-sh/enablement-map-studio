@@ -3,6 +3,9 @@ version: '1.0'
 id: cjm:sysdev-lifecycle
 persona:
   name: 事業部門のシステム利用ユーザー
+  description: >-
+    業務部門でシステムを日常的に利用し、新規開発や改善要望を持つユーザー。
+    システムの使いやすさや業務効率化に関心が高く、開発チームとのコミュニケーションを通じて要件を伝える役割を担う。
 phases:
   - id: cjm:phase:requirement
     name: 要件定義

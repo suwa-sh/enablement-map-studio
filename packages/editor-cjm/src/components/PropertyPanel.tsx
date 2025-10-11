@@ -10,13 +10,15 @@ import {
   Slider,
 } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
-import type { CjmAction, CjmPhase } from '@enablement-map-studio/dsl';
+import type { CjmAction, CjmPhase, CjmPersona } from '@enablement-map-studio/dsl';
 
 interface PropertyPanelProps {
   selectedAction: CjmAction | null;
   selectedPhase: CjmPhase | null;
+  selectedPersona: CjmPersona | null;
   onActionUpdate: (action: CjmAction) => void;
   onPhaseUpdate: (phase: CjmPhase) => void;
+  onPersonaUpdate: (persona: CjmPersona) => void;
   onActionDelete: (actionId: string) => void;
   onPhaseDelete: (phaseId: string) => void;
   onClose: () => void;
@@ -25,14 +27,17 @@ interface PropertyPanelProps {
 export function PropertyPanel({
   selectedAction,
   selectedPhase,
+  selectedPersona,
   onActionUpdate,
   onPhaseUpdate,
+  onPersonaUpdate,
   onActionDelete,
   onPhaseDelete,
   onClose,
 }: PropertyPanelProps) {
   const [editedAction, setEditedAction] = useState<CjmAction | null>(null);
   const [editedPhase, setEditedPhase] = useState<CjmPhase | null>(null);
+  const [editedPersona, setEditedPersona] = useState<CjmPersona | null>(null);
 
   useEffect(() => {
     setEditedAction(selectedAction);
@@ -42,11 +47,17 @@ export function PropertyPanel({
     setEditedPhase(selectedPhase);
   }, [selectedPhase]);
 
+  useEffect(() => {
+    setEditedPersona(selectedPersona);
+  }, [selectedPersona]);
+
   const handleSave = () => {
     if (editedAction) {
       onActionUpdate(editedAction);
     } else if (editedPhase) {
       onPhaseUpdate(editedPhase);
+    } else if (editedPersona) {
+      onPersonaUpdate(editedPersona);
     }
   };
 
@@ -60,17 +71,51 @@ export function PropertyPanel({
     }
   };
 
-  const open = Boolean(selectedAction || selectedPhase);
+  const open = Boolean(selectedAction || selectedPhase || selectedPersona);
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose} variant="temporary">
       <Box sx={{ width: '33vw', minWidth: 400, p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6">Properties</Typography>
+          <Typography variant="h6">
+            {editedPersona ? 'ペルソナ' : 'Properties'}
+          </Typography>
           <IconButton onClick={onClose} size="small">
             <Close />
           </IconButton>
         </Box>
+
+        {editedPersona && (
+          <Stack spacing={3}>
+            <TextField
+              label="ペルソナ名"
+              fullWidth
+              value={editedPersona.name}
+              onChange={(e) => setEditedPersona({ ...editedPersona, name: e.target.value })}
+            />
+
+            <TextField
+              label="説明"
+              fullWidth
+              multiline
+              rows={6}
+              value={editedPersona.description || ''}
+              onChange={(e) =>
+                setEditedPersona({ ...editedPersona, description: e.target.value })
+              }
+              placeholder="ペルソナの説明を入力"
+            />
+
+            <Button
+              variant="contained"
+              startIcon={<Save />}
+              onClick={handleSave}
+              fullWidth
+            >
+              Save
+            </Button>
+          </Stack>
+        )}
 
         {editedPhase && (
           <Stack spacing={3}>
