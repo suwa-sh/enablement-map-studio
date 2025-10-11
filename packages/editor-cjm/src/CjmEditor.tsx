@@ -68,6 +68,7 @@ export function CjmEditor() {
       updateCjm({
         kind: 'cjm',
         version: '1.0',
+        id: generateId('cjm', 'cjm'),
         phases: [newPhase],
         actions: [newAction],
       });
@@ -103,6 +104,14 @@ export function CjmEditor() {
   const handleReorderPhases = (reorderedPhases: CjmPhase[]) => {
     if (!cjm) return;
     updateCjm({ ...cjm, phases: reorderedPhases });
+  };
+
+  const handlePersonaUpdate = (personaName: string) => {
+    if (!cjm) return;
+    updateCjm({
+      ...cjm,
+      persona: personaName.trim() ? { name: personaName.trim() } : undefined,
+    });
   };
 
   // 空状態の表示
@@ -145,6 +154,7 @@ export function CjmEditor() {
           onAddAction={handleAddAction}
           onReorderActions={handleReorderActions}
           onReorderPhases={handleReorderPhases}
+          onPersonaUpdate={handlePersonaUpdate}
         />
       </Box>
       <PropertyPanel

@@ -52,6 +52,7 @@ interface CjmCanvasProps {
   onAddAction: (phaseId: string, actionName: string) => void;
   onReorderActions: (actions: CjmAction[]) => void;
   onReorderPhases: (phases: CjmPhase[]) => void;
+  onPersonaUpdate: (personaName: string) => void;
 }
 
 interface SortableActionCellProps {
@@ -236,10 +237,13 @@ export function CjmCanvas({
   onAddAction,
   onReorderActions,
   onReorderPhases,
+  onPersonaUpdate,
 }: CjmCanvasProps) {
   const [addActionDialogOpen, setAddActionDialogOpen] = useState(false);
   const [newActionName, setNewActionName] = useState('');
   const [selectedPhaseForNewAction, setSelectedPhaseForNewAction] = useState('');
+  const [isEditingPersona, setIsEditingPersona] = useState(false);
+  const [personaName, setPersonaName] = useState(cjm.persona?.name || '');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -319,6 +323,11 @@ export function CjmCanvas({
     }
   };
 
+  const handlePersonaSave = () => {
+    onPersonaUpdate(personaName);
+    setIsEditingPersona(false);
+  };
+
   return (
     <Box sx={{ p: 3, height: '100%', overflow: 'auto' }}>
       {/* ツールバー */}
@@ -338,6 +347,65 @@ export function CjmCanvas({
           アクション追加
         </Button>
       </Stack>
+
+      {/* ペルソナカード */}
+      <Paper elevation={2} sx={{ mb: 2, p: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ minWidth: 100 }}>
+            ペルソナ:
+          </Typography>
+          {isEditingPersona ? (
+            <>
+              <TextField
+                fullWidth
+                size="small"
+                value={personaName}
+                onChange={(e) => setPersonaName(e.target.value)}
+                placeholder="ペルソナ名を入力"
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePersonaSave();
+                  }
+                }}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handlePersonaSave}
+              >
+                保存
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setPersonaName(cjm.persona?.name || '');
+                  setIsEditingPersona(false);
+                }}
+              >
+                キャンセル
+              </Button>
+            </>
+          ) : (
+            <>
+              <Typography
+                variant="body1"
+                sx={{
+                  flex: 1,
+                  cursor: 'pointer',
+                  p: 1,
+                  borderRadius: 1,
+                  '&:hover': { bgcolor: 'grey.100' },
+                }}
+                onClick={() => setIsEditingPersona(true)}
+              >
+                {cjm.persona?.name || '（未設定 - クリックして編集）'}
+              </Typography>
+            </>
+          )}
+        </Stack>
+      </Paper>
 
       <TableContainer component={Paper} elevation={2} sx={{ overflowX: 'auto' }}>
         <Table sx={{ minWidth: 650 }}>

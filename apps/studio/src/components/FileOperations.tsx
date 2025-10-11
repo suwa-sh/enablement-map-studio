@@ -3,6 +3,9 @@ import { Box, Button, Stack } from '@mui/material';
 import { UploadFile, Download, MenuBook, DeleteSweep } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@enablement-map-studio/store';
+import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmDialogContext';
+import { useError } from '../contexts/ErrorDialogContext';
 
 export interface FileOperationsRef {
   openFileDialog: () => void;
@@ -10,6 +13,11 @@ export interface FileOperationsRef {
 
 export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const { loadYaml, exportYaml, reset, state } = useAppStore();
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
+  const { showError } = useError();
 
   // 外部からファイルダイアログを開けるようにする
   useImperativeHandle(ref, () => ({
@@ -17,8 +25,6 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       fileInputRef.current?.click();
     },
   }));
-  const navigate = useNavigate();
-  const { loadYaml, exportYaml, reset, state } = useAppStore();
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -33,12 +39,15 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       try {
         const content = e.target?.result as string;
         loadYaml(content);
-        alert('YAML file loaded successfully!');
+        showToast('YAMLファイルを読み込みました', 'success');
         // CJMエディタに遷移
         navigate('/cjm');
       } catch (error) {
         console.error('Failed to load YAML:', error);
-        alert(`Failed to load YAML: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        showError({
+          message: 'YAMLの読み込みに失敗しました',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
     };
     reader.readAsText(file);
@@ -51,7 +60,9 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
     try {
       const yamlContent = exportYaml();
       if (!yamlContent) {
-        alert('No data to export');
+        showError({
+          message: 'エクスポートするデータがありません',
+        });
         return;
       }
 
@@ -64,9 +75,13 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      showToast('YAMLファイルをエクスポートしました', 'success');
     } catch (error) {
       console.error('Failed to export YAML:', error);
-      alert(`Failed to export YAML: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError({
+        message: 'YAMLのエクスポートに失敗しました',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   };
 
@@ -78,17 +93,29 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       }
       const content = await response.text();
       loadYaml(content);
+      showToast('サンプルファイルを読み込みました', 'success');
       // CJMエディタに遷移
       navigate('/cjm');
     } catch (error) {
       console.error('Failed to load sample:', error);
-      alert(`Failed to load sample: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError({
+        message: 'サンプルファイルの読み込みに失敗しました',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   };
 
-  const handleClearCanvas = () => {
-    if (window.confirm('すべてのデータをクリアしてもよろしいですか？この操作は元に戻せません。')) {
+  const handleClearCanvas = async () => {
+    const confirmed = await confirm({
+      title: '確認',
+      message: 'すべてのデータをクリアしてもよろしいですか？この操作は元に戻せません。',
+      confirmText: 'クリア',
+      cancelText: 'キャンセル',
+    });
+
+    if (confirmed) {
       reset();
+      showToast('すべてのデータをクリアしました', 'info');
       navigate('/');
     }
   };

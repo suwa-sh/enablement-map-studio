@@ -1,16 +1,17 @@
+import { Box, Typography } from '@mui/material';
 import { OutcomeEditor } from '@enablement-map-studio/editor-outcome';
 
 export function OutcomeEditorPage() {
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: 3, py: 2 }}>
+        <Typography variant="h4" component="h1" fontWeight="bold">
           Outcome Editor
-        </h1>
-      </div>
-      <div className="flex-1 overflow-hidden">
+        </Typography>
+      </Box>
+      <Box sx={{ flex: 1, overflow: 'hidden' }}>
         <OutcomeEditor />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Box,
+  Paper,
   Table,
   TableBody,
   TableCell,
@@ -166,16 +167,16 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
 
   if (!em || !outcome || !sbp || !cjm) {
     return (
-      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'white' }}>
+      <Paper elevation={2} sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'white' }}>
         <Typography color="text.secondary">データがありません</Typography>
-      </Box>
+      </Paper>
     );
   }
 
   return (
-    <Box sx={{ height: '100%', bgcolor: 'white', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <Paper elevation={2} sx={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: 'white' }}>
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">リソース一覧</Typography>
           <TextField
             size="small"
@@ -193,7 +194,7 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
           />
         </Box>
       </Box>
-      <TableContainer sx={{ flex: 1 }}>
+      <TableContainer sx={{ maxHeight: 'calc(100vh - 500px)' }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow sx={{ '& .MuiTableCell-head': { bgcolor: 'grey.300', color: 'black', fontWeight: 'bold' } }}>
@@ -317,6 +318,6 @@ export function EmTable({ em, outcome, sbp, cjm }: EmTableProps) {
           </TableBody>
         </Table>
       </TableContainer>
-    </Box>
+    </Paper>
   );
 }

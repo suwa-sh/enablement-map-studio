@@ -6,9 +6,9 @@ import { generateId } from '@enablement-map-studio/dsl';
 import { OutcomeCanvas } from './components/OutcomeCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
 export function OutcomeEditor() {
-    const outcome = useAppStore((state) => state.outcome);
-    const sbp = useAppStore((state) => state.sbp);
-    const cjm = useAppStore((state) => state.cjm);
+    const outcome = useAppStore((state) => state.state.outcome);
+    const sbp = useAppStore((state) => state.state.sbp);
+    const cjm = useAppStore((state) => state.state.cjm);
     const updateOutcome = useAppStore((state) => state.updateOutcome);
     const [selectedPhaseId, setSelectedPhaseId] = useState(null);
     const [showPropertyPanel, setShowPropertyPanel] = useState(false);

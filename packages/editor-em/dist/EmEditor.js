@@ -8,10 +8,10 @@ import { EmCanvasCard } from './components/EmCanvasCard';
 import { EmTable } from './components/EmTable';
 import { PropertyPanelNew } from './components/PropertyPanelNew';
 export function EmEditor() {
-    const em = useAppStore((state) => state.em);
-    const outcome = useAppStore((state) => state.outcome);
-    const sbp = useAppStore((state) => state.sbp);
-    const cjm = useAppStore((state) => state.cjm);
+    const em = useAppStore((state) => state.state.em);
+    const outcome = useAppStore((state) => state.state.outcome);
+    const sbp = useAppStore((state) => state.state.sbp);
+    const cjm = useAppStore((state) => state.state.cjm);
     const updateEm = useAppStore((state) => state.updateEm);
     const [selectedAction, setSelectedAction] = useState(null);
     // Auto-initialize EM if empty but other data exists

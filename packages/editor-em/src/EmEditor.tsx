@@ -86,7 +86,9 @@ export function EmEditor() {
 
           {/* Table Panel (bottom) */}
           <Panel defaultSize={30} minSize={10}>
-            <EmTable em={em} outcome={outcome} sbp={sbp} cjm={cjm} />
+            <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
+              <EmTable em={em} outcome={outcome} sbp={sbp} cjm={cjm} />
+            </Box>
           </Panel>
         </PanelGroup>
       </Box>
