@@ -13,7 +13,7 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
-import { Star, ExpandMore, FilterList } from '@mui/icons-material';
+import { ExpandMore, FilterList } from '@mui/icons-material';
 import type { OutcomeDsl, SbpDsl, CjmDsl } from '@enablement-map-studio/dsl';
 
 interface OutcomeCanvasProps {
@@ -41,18 +41,34 @@ export function OutcomeCanvas({
       .filter((action) => action.phase === selectedPhaseId)
       .map((action) => action.id);
 
-    const taskIds = sbp.tasks
-      .filter((task) => {
-        // Show CJM readonly tasks for this phase
-        if (task.readonly && phaseActions.includes(task.id)) return true;
-        // Show regular tasks linked to this phase's actions
-        if (task.source_id && phaseActions.includes(task.source_id)) return true;
-        return false;
-      })
-      .map((task) => task.id);
+    // Step 1: Find tasks directly linked to the selected phase's actions
+    const directTaskIds = new Set(
+      sbp.tasks
+        .filter((task) => {
+          // Show CJM readonly tasks for this phase
+          if (task.readonly && phaseActions.includes(task.id)) return true;
+          // Show regular tasks linked to this phase's actions
+          if (task.source_id && phaseActions.includes(task.source_id)) return true;
+          return false;
+        })
+        .map((task) => task.id)
+    );
 
-    return new Set(taskIds);
-  }, [selectedPhaseId, cjm, sbp.tasks]);
+    // Step 2: Find tasks connected to the direct tasks via connections
+    const allTaskIds = new Set(directTaskIds);
+    sbp.connections.forEach((conn) => {
+      // If source task is visible, include target task
+      if (directTaskIds.has(conn.source)) {
+        allTaskIds.add(conn.target);
+      }
+      // If target task is visible, include source task
+      if (directTaskIds.has(conn.target)) {
+        allTaskIds.add(conn.source);
+      }
+    });
+
+    return allTaskIds;
+  }, [selectedPhaseId, cjm, sbp.tasks, sbp.connections]);
 
   // Count visible items for filter summary
   const visibleCjmActionsCount = cjm
@@ -60,8 +76,8 @@ export function OutcomeCanvas({
     : 0;
 
   return (
-    <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
-      {/* Filter accordion - right aligned, 50% width, sticky */}
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
+      {/* Filter accordion - sticky header */}
       {cjm && (
         <Box
           sx={{
@@ -69,10 +85,13 @@ export function OutcomeCanvas({
             top: 0,
             zIndex: 10,
             bgcolor: 'grey.50',
-            pt: 0,
+            px: 3,
+            pt: 3,
             pb: 2,
             display: 'flex',
             justifyContent: 'flex-end',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
           }}
         >
           <Accordion sx={{ width: '50%', maxWidth: 800 }}>
@@ -123,7 +142,10 @@ export function OutcomeCanvas({
         </Box>
       )}
 
-      {/* CJM actions */}
+      {/* Scrollable content area */}
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        <Box sx={{ p: 3, pt: cjm ? 2 : 3 }}>
+          {/* CJM actions */}
       {cjm && (
         <Paper elevation={2} sx={{ mb: 2, p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>CJM</Typography>
@@ -131,12 +153,19 @@ export function OutcomeCanvas({
           {/* CJM Actions - horizontal layout with frame */}
           <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, border: 1, borderColor: 'divider' }}>
             <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
-              アクション ({visibleCjmActionsCount}件)
+              アクション
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
-              {cjm.actions
-                .filter((action) => selectedPhaseId === null || action.phase === selectedPhaseId)
-                .map((action) => (
+              {(() => {
+                const phaseOrder = new Map(cjm.phases.map((p, idx) => [p.id, idx]));
+                return [...cjm.actions]
+                  .filter((action) => selectedPhaseId === null || action.phase === selectedPhaseId)
+                  .sort((a, b) => {
+                    const phaseA = phaseOrder.get(a.phase) ?? 0;
+                    const phaseB = phaseOrder.get(b.phase) ?? 0;
+                    return phaseA - phaseB;
+                  })
+                  .map((action) => (
                   <Paper
                     key={action.id}
                     elevation={1}
@@ -151,7 +180,8 @@ export function OutcomeCanvas({
                   >
                     <Typography variant="body2" fontWeight="medium">{action.name}</Typography>
                   </Paper>
-                ))}
+                ));
+              })()}
             </Box>
           </Box>
         </Paper>
@@ -159,7 +189,10 @@ export function OutcomeCanvas({
 
       {/* SBP swimlanes (read-only) - skip first lane */}
       <Paper elevation={2} sx={{ mb: 2, p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>SBP</Typography>
+        <Typography variant="h6" sx={{ mb: 1 }}>SBP</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          タスクの中から、CSFを選択してください。
+        </Typography>
         <Stack spacing={2}>
           {sbp.lanes.slice(1).map((lane) => {
             const laneTasks = sbp.tasks
@@ -179,7 +212,7 @@ export function OutcomeCanvas({
                     return (
                       <Paper
                         key={task.id}
-                        elevation={isCsfTask ? 4 : 1}
+                        elevation={1}
                         onClick={(e) => {
                           e.stopPropagation();
                           onTaskClick(task.id);
@@ -189,18 +222,17 @@ export function OutcomeCanvas({
                           flexShrink: 0,
                           p: 2,
                           border: 2,
-                          borderColor: isCsfTask ? 'primary.main' : 'grey.300',
-                          bgcolor: isCsfTask ? 'primary.lighter' : 'white',
+                          borderColor: 'grey.300',
+                          bgcolor: 'white',
                           cursor: 'pointer',
                           '&:hover': {
-                            bgcolor: isCsfTask ? 'primary.light' : 'grey.100',
+                            bgcolor: 'grey.100',
                           },
                         }}
                       >
                         <Typography variant="body2" fontWeight="medium">{task.name}</Typography>
                         {isCsfTask && (
                           <Chip
-                            icon={<Star />}
                             label="CSF"
                             size="small"
                             color="primary"
@@ -218,8 +250,16 @@ export function OutcomeCanvas({
       </Paper>
 
       {/* 組織の求める成果 Card */}
-      <Paper elevation={2} sx={{ p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>組織の求める成果</Typography>
+      <Paper
+        elevation={2}
+        sx={{
+          p: 2,
+          bgcolor: '#e8f5e9'
+        }}
+      >
+        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+          組織の求める成果
+        </Typography>
         <Stack direction="row" spacing={2}>
           {/* KGI Card */}
           <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
@@ -234,9 +274,21 @@ export function OutcomeCanvas({
             <Typography variant="caption" fontWeight="bold" color="text.secondary">
               CSF
             </Typography>
-            <Typography variant="body2">
-              {outcome.primary_csf.rationale || '（未設定）'}
-            </Typography>
+            {(() => {
+              const csfTask = sbp.tasks.find((t) => t.id === outcome.primary_csf.source_id);
+              return (
+                <>
+                  <Typography variant="body2" fontWeight="medium">
+                    {csfTask?.name || '（未設定）'}
+                  </Typography>
+                  {outcome.primary_csf.rationale && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      {outcome.primary_csf.rationale}
+                    </Typography>
+                  )}
+                </>
+              );
+            })()}
           </Paper>
 
           {/* KPI Card */}
@@ -254,6 +306,8 @@ export function OutcomeCanvas({
           </Paper>
         </Stack>
       </Paper>
+        </Box>
+      </Box>
     </Box>
   );
 }

@@ -16,7 +16,7 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import { Add, Star, ExpandMore, FilterList } from '@mui/icons-material';
+import { Add, ExpandMore, FilterList } from '@mui/icons-material';
 import type { EmDsl, OutcomeDsl, SbpDsl, CjmDsl, EmAction } from '@enablement-map-studio/dsl';
 import { generateId } from '@enablement-map-studio/dsl';
 
@@ -259,6 +259,19 @@ export function EmCanvasCard({
     return em.actions;
   }, [em, csfRelatedData, visibleTaskIds, selectedTaskId]);
 
+  // Group actions by SBP task
+  const groupedActions = useMemo(() => {
+    const groups = new Map<string, EmAction[]>();
+    visibleActions.forEach((action) => {
+      const taskId = action.source_id;
+      if (!groups.has(taskId)) {
+        groups.set(taskId, []);
+      }
+      groups.get(taskId)!.push(action);
+    });
+    return groups;
+  }, [visibleActions]);
+
   // Calculate visible CJM actions count for display
   const visibleCjmActionsCount = useMemo(() => {
     if (!cjm) return 0;
@@ -299,19 +312,40 @@ export function EmCanvasCard({
     onActionSelect(newAction);
   }, [em, sbp, selectedTaskId, onEmUpdate, onActionSelect]);
 
-  if (!outcome || !sbp || !cjm) {
+  if (!outcome) {
     return (
       <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography color="text.secondary">
-          Outcome、SBP、CJM データをロードしてください
+          Outcomeを作成するか YAML をロードしてください
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!sbp || !cjm) {
+    return (
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography color="text.secondary">
+          SBP、CJM データをロードしてください
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Show initial display if CSF is not linked to any SBP task
+  if (!outcome.primary_csf.source_id) {
+    return (
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography color="text.secondary">
+          Outcomeを作成するか YAML をロードしてください
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
-      {/* Button area and Filter panel - horizontal layout, sticky */}
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'grey.50' }}>
+      {/* Button area and Filter panel - sticky header */}
       <Stack
         direction="row"
         spacing={2}
@@ -322,8 +356,11 @@ export function EmCanvasCard({
           top: 0,
           zIndex: 10,
           bgcolor: 'grey.50',
-          pt: 0,
+          px: 3,
+          pt: 3,
           pb: 2,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
         {/* Button area */}
@@ -421,6 +458,9 @@ export function EmCanvasCard({
       </Accordion>
       </Stack>
 
+      {/* Scrollable content area */}
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        <Box sx={{ p: 3, pt: 2 }}>
       {/* Two-column layout: Organization outcome (left) and Customer (right) */}
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         {/* Left: Outcome card */}
@@ -440,9 +480,21 @@ export function EmCanvasCard({
               <Typography variant="caption" fontWeight="bold" color="text.secondary">
                 CSF
               </Typography>
-              <Typography variant="body2">
-                {outcome.primary_csf.rationale || '（未設定）'}
-              </Typography>
+              {(() => {
+                const csfTask = sbp.tasks.find((t) => t.id === outcome.primary_csf.source_id);
+                return (
+                  <>
+                    <Typography variant="body2" fontWeight="medium">
+                      {csfTask?.name || '（未設定）'}
+                    </Typography>
+                    {outcome.primary_csf.rationale && (
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        {outcome.primary_csf.rationale}
+                      </Typography>
+                    )}
+                  </>
+                );
+              })()}
             </Paper>
 
             <Paper elevation={1} sx={{ flex: 1, p: 2, bgcolor: 'grey.50' }}>
@@ -497,19 +549,26 @@ export function EmCanvasCard({
         {/* CJM Actions - horizontal layout with frame */}
         <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, border: 1, borderColor: 'divider' }}>
           <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
-            アクション ({visibleCjmActionsCount}件)
+            アクション
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
-            {cjm.actions
-              .filter((action) => {
-                // CSF filter: show only CSF-related action
-                if (csfRelatedData) {
-                  return action.id === csfRelatedData.cjmActionId;
-                }
-                // Phase filter
-                return selectedPhaseId === null || action.phase === selectedPhaseId;
-              })
-              .map((action) => (
+            {(() => {
+              const phaseOrder = new Map(cjm.phases.map((p, idx) => [p.id, idx]));
+              return [...cjm.actions]
+                .filter((action) => {
+                  // CSF filter: show only CSF-related action
+                  if (csfRelatedData) {
+                    return action.id === csfRelatedData.cjmActionId;
+                  }
+                  // Phase filter
+                  return selectedPhaseId === null || action.phase === selectedPhaseId;
+                })
+                .sort((a, b) => {
+                  const phaseA = phaseOrder.get(a.phase) ?? 0;
+                  const phaseB = phaseOrder.get(b.phase) ?? 0;
+                  return phaseA - phaseB;
+                })
+                .map((action) => (
                 <Paper
                   key={action.id}
                   elevation={1}
@@ -524,15 +583,19 @@ export function EmCanvasCard({
                 >
                   <Typography variant="body2" fontWeight="medium">{action.name}</Typography>
                 </Paper>
-              ))}
+              ));
+            })()}
           </Box>
         </Box>
       </Paper>
 
       {/* SBP area */}
       <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ mb: 1 }}>
           組織の価値提供プロセス
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          タスクを選択して、「必要な行動を追加」ボタンをクリックしてください。
         </Typography>
 
         <Stack spacing={2}>
@@ -557,25 +620,24 @@ export function EmCanvasCard({
                     return (
                       <Paper
                         key={task.id}
-                        elevation={isCsfTask ? 4 : isSelected ? 3 : 1}
+                        elevation={isSelected ? 3 : 1}
                         onClick={() => setSelectedTaskId(task.id === selectedTaskId ? null : task.id)}
                         sx={{
                           minWidth: 200,
                           flexShrink: 0,
                           p: 2,
                           border: 2,
-                          borderColor: isCsfTask ? 'primary.main' : isSelected ? 'primary.main' : 'grey.300',
-                          bgcolor: isCsfTask ? 'primary.lighter' : isSelected ? 'primary.lighter' : 'white',
+                          borderColor: isSelected ? 'primary.main' : 'grey.300',
+                          bgcolor: isSelected ? 'primary.lighter' : 'white',
                           cursor: 'pointer',
                           '&:hover': {
-                            bgcolor: isCsfTask ? 'primary.light' : isSelected ? 'primary.light' : 'grey.100',
+                            bgcolor: isSelected ? 'primary.light' : 'grey.100',
                           },
                         }}
                       >
                         <Typography variant="body2" fontWeight="medium">{task.name}</Typography>
                         {isCsfTask && (
                           <Chip
-                            icon={<Star />}
                             label="CSF"
                             size="small"
                             color="primary"
@@ -594,50 +656,68 @@ export function EmCanvasCard({
 
       {/* Required Actions area - full width below */}
       <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>必要な行動 ({visibleActions.length}件)</Typography>
+        <Typography variant="h6" sx={{ mb: 2 }}>必要な行動</Typography>
         {visibleActions.length === 0 ? (
           <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
             行動がありません。「必要な行動を追加」ボタンから追加してください。
           </Typography>
         ) : (
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {visibleActions.map((action) => {
-              const sourceTask = sbp.tasks.find((t) => t.id === action.source_id);
+          <Stack spacing={2}>
+            {Array.from(groupedActions.entries()).map(([taskId, actions]) => {
+              const task = sbp.tasks.find((t) => t.id === taskId);
+              if (!task) return null;
 
               return (
                 <Paper
-                  key={action.id}
+                  key={taskId}
                   elevation={1}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onActionSelect(action);
-                  }}
                   sx={{
-                    minWidth: 200,
                     p: 2,
-                    cursor: 'pointer',
+                    bgcolor: 'grey.50',
                     border: 1,
-                    borderColor: 'divider',
-                    '&:hover': {
-                      bgcolor: 'grey.100',
-                      borderColor: 'primary.main',
-                    },
+                    borderColor: 'divider'
                   }}
                 >
-                  <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                    {action.name}
+                  <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
+                    {task.name}
                   </Typography>
-                  {sourceTask && (
-                    <Typography variant="caption" color="text.secondary">
-                      タスク: {sourceTask.name}
-                    </Typography>
-                  )}
+
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    {actions.map((action) => (
+                      <Paper
+                        key={action.id}
+                        elevation={1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onActionSelect(action);
+                        }}
+                        sx={{
+                          minWidth: 200,
+                          p: 2,
+                          cursor: 'pointer',
+                          border: 1,
+                          borderColor: 'divider',
+                          bgcolor: 'white',
+                          '&:hover': {
+                            bgcolor: 'grey.100',
+                            borderColor: 'primary.main',
+                          },
+                        }}
+                      >
+                        <Typography variant="body2" fontWeight="medium">
+                          {action.name}
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
                 </Paper>
               );
             })}
-          </Box>
+          </Stack>
         )}
       </Paper>
+        </Box>
+      </Box>
     </Box>
   );
 }

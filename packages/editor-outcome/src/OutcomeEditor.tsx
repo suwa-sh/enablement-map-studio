@@ -15,10 +15,9 @@ export function OutcomeEditor() {
   const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null);
   const [showPropertyPanel, setShowPropertyPanel] = useState(false);
 
-  // SBPが存在し、Outcomeがnullの場合は自動初期化
+  // SBPが存在し、タスクがあり、Outcomeがnullの場合は自動初期化
   useEffect(() => {
-    if (!outcome && sbp) {
-      const firstTask = sbp.tasks[0];
+    if (!outcome && sbp && sbp.tasks.length > 0) {
       const kgiId = generateId('outcome', 'kgi');
       const csfId = generateId('outcome', 'csf');
       const kpiId = generateId('outcome', 'kpi');
@@ -34,7 +33,7 @@ export function OutcomeEditor() {
         primary_csf: {
           id: csfId,
           kgi_id: kgiId,
-          source_id: firstTask?.id || '',
+          source_id: '',
           rationale: '',
         },
         primary_kpi: {
@@ -46,15 +45,15 @@ export function OutcomeEditor() {
       };
 
       updateOutcome(initialOutcome);
-      setShowPropertyPanel(true);
+      // Do not auto-open property panel
     }
   }, [outcome, sbp, updateOutcome]);
 
-  // 空状態の表示（SBPが存在しない場合）
-  if (!sbp) {
+  // 空状態の表示（SBPが存在しない、またはSBPにタスクがない場合）
+  if (!sbp || sbp.tasks.length === 0) {
     return (
       <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography color="text.secondary">CJMとSBPを作成する か YAML をロードしてください</Typography>
+        <Typography color="text.secondary">SBPを作成するか YAML をロードしてください</Typography>
       </Box>
     );
   }

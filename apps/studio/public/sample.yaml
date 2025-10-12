@@ -12,24 +12,24 @@ phases:
   - id: cjm:phase:design-review
     name: 設計確認
   - id: cjm:phase:uat
-    name: UAT (受け入れテスト)
+    name: UAT
   - id: cjm:phase:go-live
     name: 本番稼働
   - id: cjm:phase:operation
     name: 運用保守
 actions:
   - id: cjm:action:communicate-requirements
-    name: システムの要件を開発チームに伝える
+    name: 要求を伝える
     phase: cjm:phase:requirement
     touchpoints:
       - 定例会議
-      - ドキュメント共有システム (Confluenceなど)
+      - ドキュメント共有システム
     thoughts_feelings:
       - 正しく意図が伝わるか不安だ
       - 専門用語が多くて理解が難しい
     emotion_score: -1
   - id: cjm:action:review-design
-    name: 設計書をレビューする
+    name: 設計レビュー
     phase: cjm:phase:design-review
     touchpoints:
       - 画面設計書
@@ -40,7 +40,7 @@ actions:
       - 技術的な説明が難しい
     emotion_score: 0
   - id: cjm:action:execute-uat
-    name: 開発されたシステムをテストする
+    name: 動きを確認する
     phase: cjm:phase:uat
     touchpoints:
       - テスト環境
@@ -51,7 +51,7 @@ actions:
       - 不具合を見つけなければ、というプレッシャーがある
     emotion_score: 0
   - id: cjm:action:start-using
-    name: 本番環境でシステムを使い始める
+    name: 業務で使い始める
     phase: cjm:phase:go-live
     touchpoints:
       - 本番環境
@@ -62,7 +62,7 @@ actions:
       - 新しい操作に慣れるまで時間がかかりそう
     emotion_score: -1
   - id: cjm:action:daily-operation
-    name: 日常業務でシステムを利用する
+    name: 日常業務で利用する
     phase: cjm:phase:operation
     touchpoints:
       - 本番環境
@@ -72,211 +72,195 @@ actions:
       - 問題が起きたときにすぐ対応してほしい
       - システムが安定して動いて安心
     emotion_score: 1
+  - id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
+    name: 要件定義レビュー
+    phase: cjm:phase:requirement
+    emotion_score: -1
+    touchpoints:
+      - 定例会議
+      - ドキュメント共有システム
+    thoughts_feelings:
+      - 離した内容は記載されている
+      - これで良いのかはわからない
 ---
 kind: sbp
 version: '1.0'
 id: sbp:sysdev-support
 lanes:
   - id: sbp:lane:cjm
-    name: System User
+    name: Customer Journey
     kind: cjm
     position:
       x: -381
       'y': 98.17596566523605
     size:
-      width: 2135
-      height: 172
+      width: 1936
+      height: 150
   - id: sbp:lane:dev-team
-    name: Development Team
+    name: 開発チーム
     kind: team
     position:
       x: -380
       'y': 320
     size:
-      width: 2134
-      height: 300
+      width: 1934
+      height: 263
   - id: sbp:lane:infra-team
-    name: Infrastructure Team
+    name: インフラチーム
     kind: team
     position:
       x: -379
-      'y': 640
+      'y': 608.6593727040895
     size:
-      width: 2133
-      height: 150
+      width: 1932
+      height: 166
   - id: sbp:lane:support-team
-    name: Support Team
+    name: ユーザーサポートチーム
     kind: team
     position:
-      x: -377.6909871244635
-      'y': 812.0815450643777
+      x: -378.67038172746095
+      'y': 802.8983267160388
     size:
-      width: 2133
+      width: 1930
       height: 150
 tasks:
   - id: sbp:task:gather-requirements
     lane: sbp:lane:dev-team
-    name: 要件をヒアリングし仕様書にまとめる
-    source_id: cjm:action:communicate-requirements
+    name: 機能定義を整理
+    source_id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
     position:
-      x: 45.108215818516214
-      'y': 50
+      x: 185.51058035661606
+      'y': 63
   - id: sbp:task:design-system
     lane: sbp:lane:dev-team
-    name: システム設計を行う
+    name: 設計を作成
     position:
-      x: 92.60821581851621
-      'y': 219.9153893316983
+      x: 427.35121204598516
+      'y': 163.8960042464439
   - id: sbp:task:review-with-user
     lane: sbp:lane:dev-team
-    name: 設計内容をユーザーと確認する
+    name: 設計を説明
     source_id: cjm:action:review-design
     position:
-      x: 359.63304721030045
-      'y': 219.9153893316983
+      x: 561.0316844828253
+      'y': 63
   - id: sbp:task:implement-system
     lane: sbp:lane:dev-team
-    name: システムを実装する
+    name: システムを実装
     position:
-      x: 662.5009196811773
-      'y': 219.9153893316983
+      x: 738.02186362409
+      'y': 156.41639708079344
   - id: sbp:task:support-uat
     lane: sbp:lane:dev-team
-    name: UAT環境を準備する
+    name: UATの準備
     source_id: cjm:action:execute-uat
     position:
-      x: 874.1321275291233
+      x: 871.6389251405731
       'y': 63
   - id: sbp:task:prepare-test-env
     lane: sbp:lane:infra-team
-    name: テスト環境を構築する
+    name: テスト環境を構築
     position:
-      x: 662.5009196811773
+      x: 738.02186362409
       'y': 50
   - id: sbp:task:prepare-prod-env
     lane: sbp:lane:infra-team
-    name: 本番環境を構築する
+    name: 本番環境を構築
     position:
-      x: 1144.200490496628
-      'y': 50
-  - id: sbp:task:deploy-to-prod
-    lane: sbp:lane:infra-team
-    name: 本番環境にデプロイする
-    source_id: cjm:action:start-using
-    position:
-      x: 1434.0548743102395
+      x: 1083.532565708573
       'y': 50
   - id: sbp:task:monitor-system
     lane: sbp:lane:infra-team
     name: システムを監視する
     position:
-      x: 1679.8503985285101
+      x: 1476.1363211050923
       'y': 50
   - id: sbp:task:provide-training
     lane: sbp:lane:support-team
-    name: ユーザートレーニングを実施する
+    name: トレーニングを実施
     position:
-      x: 1405.0548743102395
+      x: 1472.6331019170461
       'y': 50
   - id: sbp:task:provide-support
     lane: sbp:lane:support-team
-    name: 日常的なサポートを提供する
+    name: 日常的なサポート
     source_id: cjm:action:daily-operation
     position:
-      x: 1867.3473329245862
+      x: 1694.973882797079
       'y': 50
   - id: sbp:task:63a173f8-2e8e-4daa-844f-fdb269bc23ed
     name: UATを支援する
     lane: sbp:lane:dev-team
     connections: []
     position:
-      x: 1144.200490496628
+      x: 1083.532565708573
       'y': 63
     source_id: cjm:action:execute-uat
+  - id: sbp:task:0d8cfa63-23d3-466b-bf5c-c96f6699f4f0
+    name: 非機能要件を整理
+    lane: sbp:lane:infra-team
+    position:
+      x: 185.51058035661606
+      'y': 50
+    source_id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
+  - id: sbp:task:79a461a9-2db2-4e98-8efa-73862b057ae0
+    name: 本番環境にデプロイ
+    lane: sbp:lane:dev-team
+    position:
+      x: 1303.1314520646079
+      'y': 156.41639708079344
+    source_id: cjm:action:start-using
   - id: cjm:action:communicate-requirements
     lane: sbp:lane:cjm
-    name: システムの要件を開発チームに伝える
+    name: 要求を伝える
     readonly: true
     position:
       x: 47.608215818516214
       'y': 53
+  - id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
+    lane: sbp:lane:cjm
+    name: 要件定義レビュー
+    readonly: true
+    position:
+      x: 317.65030694977645
+      'y': 50
   - id: cjm:action:review-design
     lane: sbp:lane:cjm
-    name: 設計書をレビューする
+    name: 設計レビュー
     readonly: true
     position:
-      x: 385.13304721030045
-      'y': 53
+      x: 561.0316844828253
+      'y': 50
   - id: cjm:action:execute-uat
     lane: sbp:lane:cjm
-    name: 開発されたシステムをテストする
+    name: 動きを確認する
     readonly: true
     position:
-      x: 1112.200490496628
-      'y': 53
+      x: 1083.532565708573
+      'y': 50
   - id: cjm:action:start-using
     lane: sbp:lane:cjm
-    name: 本番環境でシステムを使い始める
+    name: 業務で使い始める
     readonly: true
     position:
-      x: 1408.5548743102395
-      'y': 53
+      x: 1303.1314520646079
+      'y': 50
   - id: cjm:action:daily-operation
     lane: sbp:lane:cjm
-    name: 日常業務でシステムを利用する
+    name: 日常業務で利用する
     readonly: true
     position:
-      x: 1863.8473329245862
-      'y': 54
+      x: 1694.973882797079
+      'y': 50
 connections:
-  - source: cjm:action:communicate-requirements
-    target: sbp:task:gather-requirements
-    sourceHandle: bottom
-    targetHandle: top
-  - source: sbp:task:review-with-user
-    target: sbp:task:implement-system
-    sourceHandle: right
-    targetHandle: left
-  - source: sbp:task:implement-system
-    target: sbp:task:prepare-test-env
-    sourceHandle: bottom
-    targetHandle: top
-  - source: sbp:task:prepare-prod-env
-    target: sbp:task:deploy-to-prod
-    sourceHandle: right
-    targetHandle: left
-  - source: sbp:task:deploy-to-prod
-    target: sbp:task:provide-training
-    sourceHandle: bottom
-    targetHandle: top
-  - source: sbp:task:deploy-to-prod
-    target: sbp:task:monitor-system
-    sourceHandle: right
-    targetHandle: left
   - source: cjm:action:daily-operation
     target: sbp:task:provide-support
     sourceHandle: bottom
     targetHandle: top
-  - source: sbp:task:deploy-to-prod
-    target: cjm:action:start-using
-    sourceHandle: top
-    targetHandle: bottom
   - source: cjm:action:execute-uat
     target: sbp:task:63a173f8-2e8e-4daa-844f-fdb269bc23ed
     sourceHandle: bottom
     targetHandle: top
-  - source: sbp:task:review-with-user
-    target: cjm:action:review-design
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:gather-requirements
-    target: sbp:task:design-system
-    sourceHandle: bottom
-    targetHandle: top
-  - source: sbp:task:design-system
-    target: sbp:task:review-with-user
-    sourceHandle: right
-    targetHandle: left
   - source: sbp:task:prepare-test-env
     target: sbp:task:support-uat
     sourceHandle: right
@@ -284,6 +268,50 @@ connections:
   - source: sbp:task:support-uat
     target: cjm:action:execute-uat
     sourceHandle: top
+    targetHandle: left
+  - source: sbp:task:review-with-user
+    target: cjm:action:review-design
+    sourceHandle: top
+    targetHandle: bottom
+  - source: cjm:action:communicate-requirements
+    target: sbp:task:gather-requirements
+    sourceHandle: bottom
+    targetHandle: left
+  - source: sbp:task:design-system
+    target: sbp:task:review-with-user
+    sourceHandle: right
+    targetHandle: bottom
+  - source: cjm:action:communicate-requirements
+    target: sbp:task:0d8cfa63-23d3-466b-bf5c-c96f6699f4f0
+    sourceHandle: bottom
+    targetHandle: left
+  - source: sbp:task:gather-requirements
+    target: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
+    sourceHandle: right
+    targetHandle: bottom
+  - source: sbp:task:0d8cfa63-23d3-466b-bf5c-c96f6699f4f0
+    target: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
+    sourceHandle: right
+    targetHandle: bottom
+  - source: sbp:task:implement-system
+    target: sbp:task:support-uat
+    sourceHandle: right
+    targetHandle: bottom
+  - source: sbp:task:79a461a9-2db2-4e98-8efa-73862b057ae0
+    target: cjm:action:start-using
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:prepare-prod-env
+    target: sbp:task:79a461a9-2db2-4e98-8efa-73862b057ae0
+    sourceHandle: top
+    targetHandle: left
+  - source: sbp:task:79a461a9-2db2-4e98-8efa-73862b057ae0
+    target: sbp:task:monitor-system
+    sourceHandle: bottom
+    targetHandle: left
+  - source: sbp:task:79a461a9-2db2-4e98-8efa-73862b057ae0
+    target: sbp:task:provide-training
+    sourceHandle: bottom
     targetHandle: left
 ---
 kind: outcome

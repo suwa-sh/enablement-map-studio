@@ -78,7 +78,7 @@ export function PropertyPanel({
 
         {/* Content */}
         <Box sx={{ flex: 1, overflow: 'auto' }}>
-          <Stack spacing={3}>
+          <Stack spacing={4.5}>
             {/* KGI Section */}
             <Box>
               <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
