@@ -64,27 +64,45 @@ export function OutcomeCanvas({
     : 0;
 
   return (
-    <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3 }}>
-      {/* Filter accordion - right aligned, 50% width */}
+    <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
+      {/* Filter accordion - right aligned, 50% width, sticky */}
       {cjm && (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Accordion defaultExpanded sx={{ width: '50%', maxWidth: 800 }}>
+        <Box
+          sx={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            bgcolor: 'grey.50',
+            pt: 0,
+            pb: 2,
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <Accordion sx={{ width: '50%', maxWidth: 800 }}>
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <FilterList fontSize="small" />
                 <Typography variant="button">フィルター</Typography>
+                {selectedPhaseId && (
+                  <Chip
+                    label={visibleTaskIds?.size || sbp.tasks.length}
+                    size="small"
+                    color="primary"
+                  />
+                )}
               </Stack>
             </AccordionSummary>
             <AccordionDetails>
               <Stack spacing={2}>
                 {/* CJM Phase Filter */}
                 <FormControl fullWidth>
-                  <InputLabel id="phase-filter-label">顧客の意思決定プロセス</InputLabel>
+                  <InputLabel id="phase-filter-label">CJM フェーズ</InputLabel>
                   <Select
                     labelId="phase-filter-label"
                     value={selectedPhaseId || ''}
                     onChange={(e) => onPhaseSelect(e.target.value || null)}
-                    label="顧客の意思決定プロセス"
+                    label="CJM フェーズ"
                   >
                     <MenuItem value="">すべて</MenuItem>
                     {cjm.phases.map((phase) => (
@@ -99,7 +117,7 @@ export function OutcomeCanvas({
                 {selectedPhaseId && (
                   <Paper elevation={1} sx={{ p: 2, bgcolor: 'grey.50', border: 1, borderColor: 'grey.300' }}>
                     <Typography variant="body2" color="text.primary">
-                      フィルタ中: 顧客の意思決定プロセス {visibleCjmActionsCount}件 → 組織の価値提供プロセス {visibleTaskIds?.size || sbp.tasks.length}件
+                      フィルタ中: CJM アクション {visibleCjmActionsCount}件 → SBP タスク {visibleTaskIds?.size || sbp.tasks.length}件
                     </Typography>
                   </Paper>
                 )}

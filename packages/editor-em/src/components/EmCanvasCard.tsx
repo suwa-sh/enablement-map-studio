@@ -311,21 +311,41 @@ export function EmCanvasCard({
 
   return (
     <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
-      {/* Button area and Filter panel - horizontal layout */}
-      <Stack direction="row" spacing={2} alignItems="flex-start" justifyContent="space-between" sx={{ mb: 2 }}>
+      {/* Button area and Filter panel - horizontal layout, sticky */}
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="flex-start"
+        justifyContent="space-between"
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          bgcolor: 'grey.50',
+          pt: 0,
+          pb: 2,
+        }}
+      >
         {/* Button area */}
         <Button variant="contained" startIcon={<Add />} onClick={handleAddAction}>
           必要な行動を追加
         </Button>
 
         {/* Filter panel */}
-        <Accordion defaultExpanded sx={{ width: '50%', maxWidth: 800 }}>
+        <Accordion sx={{ width: '50%', maxWidth: 800 }}>
         <AccordionSummary
           expandIcon={<ExpandMore />}
         >
           <Stack direction="row" spacing={1} alignItems="center">
             <FilterList fontSize="small" />
             <Typography variant="button">フィルター</Typography>
+            {(csfFilterActive || selectedPhaseId || selectedLaneId) && (
+              <Chip
+                label={visibleActions.length}
+                size="small"
+                color="primary"
+              />
+            )}
           </Stack>
         </AccordionSummary>
         <AccordionDetails>
