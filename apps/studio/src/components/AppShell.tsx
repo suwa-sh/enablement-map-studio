@@ -70,9 +70,14 @@ export function AppShell({ children }: AppShellProps) {
             {/* Top Header Bar */}
             <AppBar position="static" color="default" elevation={1} sx={{ zIndex: 1 }}>
               <Toolbar sx={{ justifyContent: 'space-between' }}>
-                <Typography variant="h6" component="h1" fontWeight="semibold">
-                  Enablement Map Studio
-                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Box
+                    component="img"
+                    src="/logo.png"
+                    alt="Enablement Map Studio"
+                    sx={{ height: 52, width: 'auto' }}
+                  />
+                </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
                   {/* Undo/Redo ボタン */}
                   <IconButton onClick={undo} disabled={!canUndo} size="small" title="Undo (元に戻す)">

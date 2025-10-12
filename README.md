@@ -1,6 +1,6 @@
 # Enablement Map Studio
 
-A unified web application for designing end-to-end processes from customer experience to outcome creation.
+![](./docs/images/hero.png)
 
 [イネーブルメントで人材育成を成果につなげる](https://note.com/suwash/n/n02fa7e60d409)で紹介しているイネーブルメントのサイクルの内、整理ステージを支援するビジュアルエディタです。
 
