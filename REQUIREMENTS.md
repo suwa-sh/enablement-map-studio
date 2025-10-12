@@ -402,7 +402,12 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
     - TIME行、EVIDENCE行は不要（仕様から削除）
   - **操作**:
     - レーン追加: 左上の「レーン追加」ボタンから即座に追加
-    - レーン削除: DELETEキー、またはプロパティパネルのDELETEボタン
+    - レーン削除: 3つの方法で削除可能
+      - DELETEボタン: プロパティパネルのDELETEボタン（確認ダイアログ表示）
+      - Deleteキー: レーン選択時にDeleteキーで削除（PropertyPanelが開いていても動作）
+      - Backspaceキー: レーン選択時にBackspaceキーで削除（PropertyPanelが開いていても動作）
+      - すべての方法で共通の削除ロジック（`deleteLaneWithRelatedData()`）を使用
+      - レーン削除時に関連タスクと接続も自動削除、即座にDSLに反映
     - レーン並び替え: レーンノードをドラッグして上下移動
     - レーンリサイズ: レーン選択時に表示されるNodeResizerハンドルでサイズ変更
       - 最小幅800px、最小高さ150px、最大高さ400px
@@ -434,6 +439,12 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
   - **技術的詳細**:
     - ID-based状態管理: `selectedLaneId`でstale closure回避
     - 選択的useEffect更新: レーン・タスク・CJM readonlyを独立して同期
+    - `deletion.ts`: 削除ロジックの共通ユーティリティ関数
+      - `isInputFocused()`: 入力フィールドにフォーカスがあるかチェック
+      - `deleteLaneWithRelatedData()`: レーンと関連タスク・接続を削除した新しいSBPを返す（純粋関数）
+      - `deleteTaskWithRelatedData()`: タスクと関連接続を削除した新しいSBPを返す（純粋関数）
+      - すべての削除操作（DELETEボタン、Delete/Backspaceキー）が共通関数を使用
+      - メリット: コード削減（約65行）、バグ修正が容易、テスト可能、DRY原則遵守
     - `flowConverter.ts`: DSL ⇔ React Flow形式の相互変換
       - `convertDslToFlow()`: DSLからReact Flow形式に変換、`connections[]`を`edges`に変換、レーン位置・サイズ読み込み
       - `updateDslFromFlow()`: React Flow形式からDSLに変換、`edges`を`connections[]`に変換、レーン位置・サイズ保存
@@ -454,13 +465,20 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
   - **技術スタック**: MUI Paper/Stack/Button + PropertyPanel (Drawer)
   - **中央エリア**:
     - **レイアウト順序**: CJM → SBP → 組織の求める成果
+    - **初期表示**: SBP未定義時は「SBPを作成するか YAML をロードしてください」を表示
+    - **フィルタリング機能**:
+      - フィルターアコーディオン（デフォルト閉じた状態、スティッキー表示）
+      - **フィルター有効時にバッジ表示**: MUI Chip (`size="small"`, `color="primary"`) でフィルタリング後のSBPタスク件数を表示
     - **CJM領域**: フェーズフィルタボタン＋CJMアクション表示
       - フェーズごとにグルーピングしてアクション表示
       - 選択フェーズのアクションのみ表示（フィルタリング時）
     - **SBP領域**: レーンごとにカード形式でタスクを表示
+      - 説明テキスト「CSFをタスクの中から選択してください。」を表示
       - フェーズフィルタに連動してタスクをフィルタ表示
     - **CSF設定**: SBPタスクカードをクリックして`primary_csf.source_id`を設定
-    - **組織の求める成果カード**: KGI/CSF/KPI個別カード表示（カード内にネスト）
+    - **組織の求める成果カード（強調表示）**: KGI/CSF/KPI個別カード表示（カード内にネスト）
+      - elevation=3、border=2、borderColor='primary.main'、bgcolor='grey.100'
+      - 見出しを太字（fontWeight="bold"）で強調
   - **PropertyPanel** (右ペイン):
     - 幅: 33vw（最小400px）
     - KGI名入力
@@ -474,6 +492,10 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
   - **技術スタック**: MUI Paper/Stack/Button + react-resizable-panels + TableSortLabel
   - **エディタペイン** (上部):
     - **レイアウト順序**: 組織の求める成果 → 顧客 → 顧客の意思決定プロセス → 組織の価値提供プロセス → 必要な行動
+    - **初期表示**: Outcome未定義時は「Outcomeを作成するか YAML をロードしてください」を表示
+    - **フィルタリング機能**:
+      - フィルターアコーディオン（デフォルト閉じた状態、スティッキー表示）
+      - **フィルター有効時にバッジ表示**: MUI Chip (`size="small"`, `color="primary"`) でフィルタリング後のEM行動件数を表示
     - **組織の求める成果カード**: KGI/CSF/KPI表示（KPI: `{名前}: {目標値}{ユニット}` 形式）
       - CSFフィルタボタン: CSFに紐づくCJMアクション、SBPレーン・タスク、EM行動のみ表示
     - **顧客カード**: CJMペルソナ表示（ペルソナ名＋説明、複数行テキスト対応）
@@ -483,9 +505,14 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
       - フィルタ連動: CJMアクション → SBPタスク → EM行動
     - **組織の価値提供プロセスカード**: SBPレーンフィルタ＋タスク表示
       - レーン選択で関連タスク・行動をフィルタ
-    - **必要な行動カード**: EM行動カード（クリックでPropertyPanel表示）
+    - **必要な行動カード（SBPタスクでグルーピング）**: タスクごとにEM行動をグループ化して表示
+      - タスク名をグループ見出しとして表示、行動件数をChipで表示
+      - 各グループ内に行動カードを配置（クリックでPropertyPanel表示）
+      - 行動カード内にはタスク名を表示しない（グループ見出しに表示されているため）
   - **リソース一覧ペイン** (下部):
+    - Paper elevation={2}でカードラップ（padding 24px）
     - リサイズ可能なテーブル（react-resizable-panels）
+    - CSVダウンロード機能
     - カラム: CSF（チェックボックス）/CJMフェーズ/CJMアクション/SBPレーン/SBPタスク/必要な行動/リンクタイプ/名前/URL
     - CSF行の強調表示（緑色背景 `#c8e6c9`、太字）
     - 全カラムでソート可能（TableSortLabel）
@@ -536,6 +563,90 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 | **DSL管理** | YAMLパーサー (js-yaml), JSON Schemaバリデーター (ajv) を共通パッケージとして管理。 |
 | **共通UIキット** | エディタ間で共通のボタン、パネル、アイコンなどをまとめたUIコンポーネントライブラリを開発。 |
 | **OSSライセンス** | MIT License |
+
+-----
+
+### 6.1. デザインシステム
+
+#### カラーパレット
+
+アプリケーション全体で統一されたカラーパレットを使用します。
+
+| カラー名 | カラーコード | Material Design | 用途 |
+| :--- | :--- | :--- | :--- |
+| **プライマリカラー** | `#2e7d32` | Green 800 | ボタン、アクティブ状態、リンク、ヘッダー |
+| **セカンダリカラー** | `#66bb6a` | Green 400 | 補助的なUI要素、ホバー状態 |
+| **テキストカラー** | `#424242` | Grey 800 | 本文、見出し（純粋な黒より目に優しい） |
+| **セカンダリテキスト** | `#616161` | Grey 700 | 補足テキスト、ラベル |
+
+**MUIテーマ設定** ([apps/studio/src/main.tsx](apps/studio/src/main.tsx)):
+```typescript
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#2e7d32',      // Green 800
+      light: '#60ad5e',
+      dark: '#005005',
+      contrastText: '#ffffff',
+    },
+    secondary: {
+      main: '#66bb6a',      // Green 400
+      light: '#98ee99',
+      dark: '#338a3e',
+      contrastText: '#000000',
+    },
+    text: {
+      primary: '#424242',   // Grey 800
+      secondary: '#616161', // Grey 700
+    },
+  },
+  typography: {
+    allVariants: {
+      color: '#424242',
+    },
+  },
+})
+```
+
+#### ブランドアセット
+
+| アセット | ファイル | 配置 | サイズ | 説明 |
+| :--- | :--- | :--- | :--- | :--- |
+| **ロゴ** | `/logo.png` | ヘッダー左側 | 高さ40px | 緑の三角形ロゴ、プライマリカラーと統一 |
+| **アイコン** | `/icon.png` | favicon | - | ブラウザタブに表示 |
+
+**ロゴの実装** ([apps/studio/src/components/AppShell.tsx](apps/studio/src/components/AppShell.tsx)):
+```tsx
+<Box
+  component="img"
+  src="/logo.png"
+  alt="Enablement Map Studio"
+  sx={{ height: 40, width: 'auto' }}
+/>
+```
+
+#### UIコンポーネント規則
+
+**フィルターバッジ仕様** (Outcome/EMエディタ):
+- コンポーネント: MUI Chip
+- 表示条件: フィルター有効時のみ表示
+- プロパティ: `size="small"`, `color="primary"`, `sx={{ ml: 1 }}`
+- 表示内容:
+  - Outcome Editor: フィルタリング後のSBPタスク件数
+  - EM Editor: フィルタリング後のEM行動件数
+
+**実装例**:
+```tsx
+{selectedPhaseId && (
+  <Chip
+    label={filteredTasks.length}
+    size="small"
+    color="primary"
+    sx={{ ml: 1 }}
+  />
+)}
+```
 
 -----
 
@@ -648,7 +759,48 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
     - 操作中は中間状態の履歴作成をスキップし、操作終了時に一括でDSL更新
     - useEffect hooks でDSL変更をReact Flowノードに同期（position/sizeを含む）
 
-#### 8.2. 今後の改善予定
+#### 8.2. 最新のUI/UX改善（2025年1月）
+
+##### スティッキーヘッダーの透過問題解決
+- ✅ Outcome/EM Editorのボタン・フィルター領域のstickyで固定時の透過問題を解決
+  - DOM構造をFlexレイアウトに変更し、sticky領域をpadding外に配置
+  - [OutcomeCanvas.tsx](packages/editor-outcome/src/components/OutcomeCanvas.tsx:63-131)
+  - [EmCanvasCard.tsx](packages/editor-em/src/components/EmCanvasCard.tsx:347-463)
+
+##### CSF表示の統一
+- ✅ CSFタスクの強調表示をバッジ（Chip）のみに統一
+  - 枠線の色変更・背景色変更・elevation変更を廃止
+  - 選択状態（クリック時の枠線強調）とCSF状態を明確に区別
+  - Outcome Editor: [OutcomeCanvas.tsx](packages/editor-outcome/src/components/OutcomeCanvas.tsx:189-219)
+  - EM Editor: [EmCanvasCard.tsx](packages/editor-em/src/components/EmCanvasCard.tsx:612-640)
+
+##### CJMアクションの表示順序統一
+- ✅ すべてのエディタ（CJM/Outcome/EM）でCJMアクションの表示順序を統一
+  - `phases`配列のインデックス順でソート
+  - CJM Editor: [EmotionCurve.tsx](packages/editor-cjm/src/components/EmotionCurve.tsx:180-184)
+  - Outcome Editor: [OutcomeCanvas.tsx](packages/editor-outcome/src/components/OutcomeCanvas.tsx:143-152)
+  - EM Editor: [EmCanvasCard.tsx](packages/editor-em/src/components/EmCanvasCard.tsx:555-571)
+
+##### Outcome Editorの改善
+- ✅ CSF自動設定を廃止（初期化時に`source_id: ''`、ユーザーが手動選択）
+  - [OutcomeEditor.tsx](packages/editor-outcome/src/OutcomeEditor.tsx:36)
+- ✅ CSF説明テキストを変更（「タスクの中から、CSFを選択してください。」）
+- ✅ 組織の求める成果カードの背景色を薄い緑に変更（`#e8f5e9`）
+- ✅ CSFカードにソースタスク名（太字）+ 説明を表示
+- ✅ PropertyPanelのKGI/CSF/KPI間隔を1.5倍に拡大（`spacing={4.5}`）
+- ✅ CJMフェーズフィルタリング時にエッジ接続を考慮
+  - 選択フェーズに直接リンクされたタスク + それらのタスクに`sbp.connections`で接続されているタスクも表示
+  - フィルタリング結果がSBP Editorのエッジのつながりと一致
+  - [OutcomeCanvas.tsx](packages/editor-outcome/src/components/OutcomeCanvas.tsx:36-71)
+
+##### EM Editorの改善
+- ✅ 組織の価値提供プロセス領域に説明テキストを追加
+  - 「タスクを選択して、「必要な行動を追加」ボタンをクリックしてください。」
+- ✅ 必要な行動領域のSBPタスクごとのバッジ（行動件数）を廃止
+  - タスク名をグループ見出しとして表示のみ
+  - [EmCanvasCard.tsx](packages/editor-em/src/components/EmCanvasCard.tsx:673-675)
+
+#### 8.3. 今後の改善予定
 
 ##### 共通
 - ⏳ すべてのエディタのUX改善（使いやすさ・見やすさの向上）

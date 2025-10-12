@@ -15,6 +15,7 @@ import {
   type OnNodesChange,
   type OnEdgesChange,
   type OnConnect,
+  type OnNodesDelete,
   type OnEdgesDelete,
   type Edge,
   type Node,
@@ -40,6 +41,7 @@ import { LaneNode } from './LaneNode';
 import { AlignmentGuides } from './AlignmentGuides';
 import { useAlignmentGuides } from '../hooks/useAlignmentGuides';
 import { dslToFlow, updateDslFromFlow, LANE_HEIGHT, LANE_SPACING, LANE_WIDTH } from '../utils/flowConverter';
+import { deleteLaneWithRelatedData } from '../utils/deletion';
 
 interface SbpCanvasProps {
   sbp: SbpDsl;
@@ -831,17 +833,58 @@ export function SbpCanvas({
         // タスクとレーンの更新
         const updatedDsl = updateDslFromFlow(sbp, updatedNodes, edges);
 
-        // レーンノードの削除を検出（updateDslFromFlowで更新されたレーン情報を使用）
-        const currentLaneNodeIds = new Set(
-          updatedNodes.filter((n) => n.type === 'laneNode').map((n) => n.id.replace('lane:', ''))
-        );
-        const filteredLanes = updatedDsl.lanes.filter((lane) => currentLaneNodeIds.has(lane.id));
-
-        // レーン削除も反映
-        onSbpUpdate({
-          ...updatedDsl,
-          lanes: filteredLanes,
+        // 削除されたレーンノードを検出
+        const deletedLaneIds = new Set<string>();
+        changes.forEach((change) => {
+          if (change.type === 'remove' && change.id.startsWith('lane:')) {
+            const laneId = change.id.replace('lane:', '');
+            deletedLaneIds.add(laneId);
+          }
         });
+
+        // レーン削除がある場合は、関連タスクと接続も削除
+        if (deletedLaneIds.size > 0) {
+          // 削除対象のタスクIDを収集
+          const deletedTaskIds = updatedDsl.tasks
+            .filter((task) => deletedLaneIds.has(task.lane))
+            .map((task) => task.id);
+
+          // タスクをフィルタリング
+          const filteredTasks = updatedDsl.tasks.filter(
+            (task) => !deletedLaneIds.has(task.lane)
+          );
+
+          // 接続をフィルタリング（削除されたタスクに関連する接続を除外）
+          const filteredConnections = updatedDsl.connections.filter(
+            (conn) => !deletedTaskIds.includes(conn.source) && !deletedTaskIds.includes(conn.target)
+          );
+
+          // レーンをフィルタリング
+          const currentLaneNodeIds = new Set(
+            updatedNodes.filter((n) => n.type === 'laneNode').map((n) => n.id.replace('lane:', ''))
+          );
+          const filteredLanes = updatedDsl.lanes.filter((lane) => currentLaneNodeIds.has(lane.id));
+
+          // DSLを更新
+          onSbpUpdate({
+            ...updatedDsl,
+            lanes: filteredLanes,
+            tasks: filteredTasks,
+            connections: filteredConnections,
+          });
+        } else {
+          // レーン削除がない場合は、レーンのフィルタリングのみ
+          const currentLaneNodeIds = new Set(
+            updatedNodes.filter((n) => n.type === 'laneNode').map((n) => n.id.replace('lane:', ''))
+          );
+          const filteredLanes = updatedDsl.lanes.filter((lane) => currentLaneNodeIds.has(lane.id));
+
+          // レーン削除も反映
+          onSbpUpdate({
+            ...updatedDsl,
+            lanes: filteredLanes,
+          });
+        }
 
         return updatedNodes;
       });
@@ -930,6 +973,32 @@ export function SbpCanvas({
     [setEdges, setNodes, sbp, onSbpUpdate]
   );
 
+  // ノード削除ハンドラー（Deleteキー）
+  const handleNodesDelete: OnNodesDelete = useCallback(
+    (nodesToDelete: Node[]) => {
+      // 削除されたレーンIDを収集
+      const deletedLaneIds: string[] = [];
+      nodesToDelete.forEach((node) => {
+        if (node.id.startsWith('lane:')) {
+          const laneId = node.id.replace('lane:', '');
+          deletedLaneIds.push(laneId);
+        }
+      });
+
+      // レーン削除がある場合は、関連タスクと接続も削除
+      if (deletedLaneIds.length > 0) {
+        // 複数レーンを削除する場合は順次処理
+        let updatedSbp = sbp;
+        for (const laneId of deletedLaneIds) {
+          updatedSbp = deleteLaneWithRelatedData(updatedSbp, laneId);
+        }
+        onSbpUpdate(updatedSbp);
+      }
+      // タスク削除のみの場合は、handleNodesChangeに任せる
+    },
+    [sbp, onSbpUpdate]
+  );
+
   // 選択状態をノードデータに反映
   const nodesWithSelection = useMemo(() => {
     return nodes.map((node) => ({
@@ -1008,6 +1077,7 @@ export function SbpCanvas({
         edges={edgesWithSelection}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
+        onNodesDelete={handleNodesDelete}
         onEdgesDelete={handleEdgesDelete}
         onConnect={handleConnect}
         onNodeClick={handleNodeClick}

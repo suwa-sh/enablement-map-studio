@@ -6,6 +6,11 @@ import { generateId } from '@enablement-map-studio/dsl';
 import type { SbpTask, SbpLane } from '@enablement-map-studio/dsl';
 import { SbpCanvas } from './components/SbpCanvas';
 import { PropertyPanel } from './components/PropertyPanel';
+import {
+  isInputFocused,
+  deleteLaneWithRelatedData,
+  deleteTaskWithRelatedData,
+} from './utils/deletion';
 
 export function SbpEditor() {
   const sbp = useAppStore((state) => state.state.sbp);
@@ -35,7 +40,36 @@ export function SbpEditor() {
         connections: [],
       });
     }
-  }, [sbp, cjm, updateSbp]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sbp, cjm]);
+
+  // グローバルキーボードイベントリスナー（Delete/Backspaceキーで削除）
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 入力フィールドにフォーカスがある場合は処理しない
+      if (isInputFocused()) {
+        return;
+      }
+
+      // Delete または Backspace キーが押された場合
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedLaneId && sbp) {
+          e.preventDefault();
+          updateSbp(deleteLaneWithRelatedData(sbp, selectedLaneId));
+          setSelectedLaneId(null);
+        } else if (selectedTask && sbp) {
+          e.preventDefault();
+          updateSbp(deleteTaskWithRelatedData(sbp, selectedTask.id));
+          setSelectedTask(null);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedLaneId, selectedTask, sbp, updateSbp]);
 
   const handleTaskUpdate = (updatedTask: SbpTask) => {
     if (!sbp) return;
@@ -57,27 +91,13 @@ export function SbpEditor() {
 
   const handleTaskDelete = (taskId: string) => {
     if (!sbp) return;
-    // Remove task and all connections to it
-    const updatedTasks = sbp.tasks.filter((task) => task.id !== taskId);
-    const updatedConnections = sbp.connections.filter(
-      (conn) => conn.source !== taskId && conn.target !== taskId
-    );
-    updateSbp({ ...sbp, tasks: updatedTasks, connections: updatedConnections });
+    updateSbp(deleteTaskWithRelatedData(sbp, taskId));
     setSelectedTask(null);
   };
 
   const handleLaneDelete = (laneId: string) => {
     if (!sbp) return;
-    // Delete lane and all its tasks
-    const updatedLanes = sbp.lanes.filter((lane) => lane.id !== laneId);
-    const deletedTaskIds = sbp.tasks
-      .filter((task) => task.lane === laneId)
-      .map((task) => task.id);
-    const updatedTasks = sbp.tasks.filter((task) => task.lane !== laneId);
-    const updatedConnections = sbp.connections.filter(
-      (conn) => !deletedTaskIds.includes(conn.source) && !deletedTaskIds.includes(conn.target)
-    );
-    updateSbp({ ...sbp, lanes: updatedLanes, tasks: updatedTasks, connections: updatedConnections });
+    updateSbp(deleteLaneWithRelatedData(sbp, laneId));
     setSelectedLaneId(null);
   };
 
@@ -137,6 +157,7 @@ export function SbpEditor() {
             variant="contained"
             startIcon={<Add />}
             onClick={handleLaneAdd}
+            disabled
           >
             レーン追加
           </Button>

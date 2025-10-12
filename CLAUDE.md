@@ -284,7 +284,13 @@ apps/
 - レーン種別: `cjm` (readonly), `human`, `team`, `system`
 - レーン初期サイズ: 幅1400px、高さ300px (`LANE_WIDTH`, `LANE_HEIGHT`)
 - レーン追加時の自動配置: Y座標 = `index * (LANE_HEIGHT + LANE_SPACING)`
-- DELETEキー・ボタンによる削除を即時DSLに反映
+- **レーン削除機能（3つの方法）**:
+  - **DELETEボタン**: PropertyPanelのDELETEボタンで削除（確認ダイアログ表示）
+  - **Deleteキー**: レーン選択時にDeleteキーで削除（PropertyPanelが開いていても動作）
+  - **Backspaceキー**: レーン選択時にBackspaceキーで削除（PropertyPanelが開いていても動作）
+  - 3つの方法すべてが共通の削除ロジック（`deleteLaneWithRelatedData()`）を使用
+  - レーン削除時に関連タスクと接続も自動削除
+  - 削除後、即座にDSLに反映され、localStorageに永続化
 - **レーンの位置・サイズ永続化**:
   - `SbpLane`に`position?: { x: number; y: number }`と`size?: { width: number; height: number }`を追加
   - `dslToFlow()`: 保存された位置・サイズを読み込み、なければデフォルト値を使用
@@ -335,10 +341,16 @@ apps/
 - **削除確認**: DELETEボタンクリック時に `useConfirm()` で確認ダイアログを表示
 
 **技術的詳細**:
+- `deletion.ts`: 削除ロジックの共通ユーティリティ関数
+  - `isInputFocused()`: 入力フィールドにフォーカスがあるかチェック（Delete/Backspaceキーのガード条件）
+  - `deleteLaneWithRelatedData()`: レーンと関連タスク・接続を削除した新しいSBPを返す（純粋関数）
+  - `deleteTaskWithRelatedData()`: タスクと関連接続を削除した新しいSBPを返す（純粋関数）
+  - すべての削除操作（DELETEボタン、Delete/Backspaceキー）がこれらの関数を使用
 - `flowConverter.ts`: DSL ⇔ React Flow 形式の相互変換
   - `dslToFlow()`: connections配列からエッジ生成、CJM readonly node IDに`cjm-readonly-`プレフィックス付与、レーン位置・サイズ読み込み
   - `updateDslFromFlow()`: エッジからconnections配列生成、CJM readonly nodeの位置情報も保存、レーン位置・サイズ保存
 - `handleNodesChange`: レーン削除も含めたDSL更新
+- `handleNodesDelete`: React FlowのDeleteキーによるレーン削除（`deleteLaneWithRelatedData()`を使用）
 - `handleEdgesDelete`: エッジ削除時にCJM接続の`source_id`をクリア
 - `handleConnect`: D&D接続時のsource/target入れ替えとCJM `source_id`自動設定
 - `useAlignmentGuides`: タスクノードドラッグ時のアライメントガイドとスナップ機能のカスタムフック
@@ -354,21 +366,31 @@ apps/
 - CJMフェーズボタンによるフィルタリング機能
 - SBPタスククリック選択（CSF設定）
 - PropertyPanel（33vw幅、MUI Drawer）
+- **初期表示**: SBP未定義時は「SBPを作成するか YAML をロードしてください」を表示
 
 **主要機能**:
 - **フェーズフィルタリング**: CJMフェーズ選択時、CJMアクションと関連SBPタスクを表示
   - "すべて"ボタンで全アクション・タスク表示
   - フィルタリング時は空のレーンを非表示
+  - **エッジ接続を考慮**: 選択フェーズに直接リンクされたタスク + それらのタスクに`sbp.connections`で接続されているタスクも表示
+  - フィルタリング結果がSBP Editorのエッジのつながりと一致
 - **CJMアクション表示**: CJM領域にフェーズごとにグルーピングして表示
   - 選択フェーズのアクションのみ表示（フィルタリング時）
+  - **フェーズ順ソート**: CJMエディタと同じく、`phases`配列のインデックス順でアクションをソート
   - カード型レイアウト（SBPタスクと同様のスタイル）
-- **CSF設定**: SBPタスククリックで`primary_csf.source_id`を自動設定
+- **SBP領域**: レーン・タスク表示、説明テキスト「タスクの中から、CSFを選択してください。」を表示
+- **CSF設定**: SBPタスククリックで`primary_csf.source_id`を設定（手動選択）
+  - **自動CSF設定を廃止**: 初期化時にデフォルトでCSFを設定しない（`source_id: ''`）
+  - ユーザーが明示的にCSFを選択する必要がある
+- **CSF表示**: CSFタスクにはバッジ（Chip）のみで強調、枠線の色変更・背景色変更・elevation変更は廃止
+  - 選択状態（クリック時の枠線強調）とCSF状態を明確に区別
 - **KGI/CSF/KPI表示**: 「組織の求める成果」カード内に個別カード表示
+  - 背景色: `#e8f5e9`（薄い緑）
   - KGIカード: 名前のみ
-  - CSFカード: ソースタスク名 + 説明
+  - CSFカード: ソースタスク名（太字） + 説明
   - KPIカード: 名前 + 説明 + フォーマット済み目標値
 - **数値フォーマット**: `toLocaleString('ja-JP')`でカンマ区切り、小数点以下は0なら省略
-- **自動初期化**: OutcomeがnullでSBP/CJMが存在する場合、useEffectで自動初期化
+- **自動初期化**: OutcomeがnullでSBP/CJMが存在する場合、useEffectで自動初期化（CSFは未設定）
 
 **PropertyPanel**:
 - KGI名入力
@@ -388,10 +410,18 @@ apps/
 - **エディタペイン** (上部): カード型レイアウトによるフィルタリング＆閲覧
   - レイアウト順序: 組織の求める成果 → 顧客 → 顧客の意思決定プロセス → 組織の価値提供プロセス → 必要な行動
   - 組織の求める成果カード（KGI/CSF/KPI表示）
+    - CSFカード: ソースタスク名（太字） + 説明
   - 顧客カード（ペルソナ表示：名前＋説明、複数行テキスト対応）
   - 顧客の意思決定プロセスカード（CJMフェーズフィルタボタン群＋CJMアクション表示）
+    - **フェーズ順ソート**: CJMエディタと同じく、`phases`配列のインデックス順でアクションをソート
   - 組織の価値提供プロセスカード（SBPレーン・タスクカード、レーンフィルタボタン付き）
-  - EM行動カード（クリックでPropertyPanel表示）
+    - 説明テキスト: 「タスクを選択して、「必要な行動を追加」ボタンをクリックしてください。」
+    - **CSF表示**: CSFタスクにはバッジ（Chip）のみで強調、枠線の色変更・背景色変更・elevation変更は廃止
+  - **必要な行動カード（SBPタスクでグルーピング）**: タスクごとにEM行動をグループ化して表示
+    - タスク名を見出しとして表示（行動件数バッジは廃止）
+    - 各グループ内に行動カードを配置（クリックでPropertyPanel表示）
+    - 行動カード内にはタスク名を表示しない（グループ見出しに表示されているため）
+  - **初期表示**: Outcome未定義時は「Outcomeを作成するか YAML をロードしてください」を表示
 - **リソース一覧ペイン** (下部): react-resizable-panelsによるリサイズ可能なテーブル
   - **カードレイアウト**: Paper elevation={2} でラップ、padding 24px、grey.50背景色
   - エディタ領域の「求める成果」カードと同じ構造（カード内にテーブルを配置）
@@ -480,6 +510,231 @@ apps/
   - PanelGroup (react-resizable-panels): エディタペインとリソース一覧ペインのリサイズ対応
   - リソース一覧ペイン: `<Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>` でEmTableをラップ（padding 24pxで視覚的分離）
 
+## 共通UI/UX仕様
+
+### スティッキーヘッダーの透過問題解決
+
+**問題**: Outcome/EM Editorのボタン・フィルター領域をstickyで固定した際、親要素のpadding分が透過していた
+
+**解決策**: DOM構造を変更
+- **変更前**: 単一コンテナに `p: 3, overflow: 'auto'`
+- **変更後**: Flexレイアウトで分離
+  ```tsx
+  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ position: 'sticky', px: 3, pt: 3, pb: 2 }}>Sticky Header</Box>
+    <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ p: 3, pt: 2 }}>Scrollable Content</Box>
+    </Box>
+  </Box>
+  ```
+
+**実装箇所**:
+- [OutcomeCanvas.tsx](packages/editor-outcome/src/components/OutcomeCanvas.tsx:63-131)
+- [EmCanvasCard.tsx](packages/editor-em/src/components/EmCanvasCard.tsx:347-463)
+
+### CSF（重要成功要因）の表示仕様
+
+**バッジ表示**: CSFに該当するタスクには「CSF」バッジ（Chip）を表示
+- Outcome Editor: SBP領域のタスクカード内にバッジ表示
+- EM Editor: 組織の価値提供プロセス領域のタスクカード内にバッジ表示
+
+**強調表示の廃止**: 以下の強調表示は廃止（選択状態と区別するため）
+- ❌ 枠線の色変更 (`borderColor: 'primary.main'`)
+- ❌ 背景色変更 (`bgcolor: 'primary.lighter'`)
+- ❌ elevation変更 (`elevation: 4`)
+
+**理由**: 選択状態（クリック時の枠線強調）とCSF状態が視覚的に混同されるため、バッジのみで識別
+
+### CJMアクションの表示順序統一
+
+**仕様**: すべてのエディタ（CJM/Outcome/EM）で、CJMアクションの表示順序を統一
+
+**ソート方法**: `phases`配列のインデックス順
+```typescript
+const phaseOrder = new Map(cjm.phases.map((p, idx) => [p.id, idx]));
+return [...cjm.actions]
+  .sort((a, b) => {
+    const phaseA = phaseOrder.get(a.phase) ?? 0;
+    const phaseB = phaseOrder.get(b.phase) ?? 0;
+    return phaseA - phaseB;
+  });
+```
+
+**実装箇所**:
+- CJM Editor: [EmotionCurve.tsx](packages/editor-cjm/src/components/EmotionCurve.tsx:180-184)
+- Outcome Editor: [OutcomeCanvas.tsx](packages/editor-outcome/src/components/OutcomeCanvas.tsx:143-152)
+- EM Editor: [EmCanvasCard.tsx](packages/editor-em/src/components/EmCanvasCard.tsx:555-571)
+
+## デザインシステム
+
+### カラーパレット
+
+**プライマリカラー**: `#2e7d32` (Material Design Green 800)
+- MUIテーマ: `theme.palette.primary.main`
+- 用途: ボタン、アクティブ状態、リンク、ヘッダー
+- ブランドアセットのロゴカラーと統一
+
+**セカンダリカラー**: `#66bb6a` (Material Design Green 400)
+- MUIテーマ: `theme.palette.secondary.main`
+- 用途: 補助的なUI要素、ホバー状態
+
+**テキストカラー**: `#424242` (Material Design Grey 800)
+- MUIテーマ: `theme.palette.text.primary`, `theme.typography.allVariants.color`
+- 純粋な黒（#000000）より目に優しく、視認性を保ちながら柔らかい印象
+- セカンダリテキスト: `#616161` (Material Design Grey 700)
+
+**実装箇所**: [apps/studio/src/main.tsx](apps/studio/src/main.tsx:8-33)
+```typescript
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#2e7d32',
+      light: '#60ad5e',
+      dark: '#005005',
+      contrastText: '#ffffff',
+    },
+    secondary: {
+      main: '#66bb6a',
+      light: '#98ee99',
+      dark: '#338a3e',
+      contrastText: '#000000',
+    },
+    text: {
+      primary: '#424242',
+      secondary: '#616161',
+    },
+  },
+  typography: {
+    allVariants: {
+      color: '#424242',
+    },
+  },
+})
+```
+
+### ブランドアセット
+
+**ロゴ** (`/logo.png`):
+- 配置: ヘッダー左側（AppShell.tsx）
+- サイズ: 高さ40px、幅auto
+- フォーマット: PNG（11KB）
+- 実装:
+```tsx
+<Box
+  component="img"
+  src="/logo.png"
+  alt="Enablement Map Studio"
+  sx={{ height: 40, width: 'auto' }}
+/>
+```
+
+**アイコン** (`/icon.png`):
+- 配置: faviconとしてブラウザタブに表示
+- フォーマット: PNG（57KB）
+- 実装: [apps/studio/index.html](apps/studio/index.html:5) の `<link rel="icon">`
+
+### フィルターUI仕様
+
+**フィルターバッジ** (Outcome/EMエディタ):
+- コンポーネント: MUI Chip
+- 表示条件: フィルター有効時のみ表示
+- 表示内容:
+  - Outcome Editor: フィルタリング後のSBPタスク件数
+  - EM Editor: フィルタリング後のEM行動件数
+- スタイル: `size="small"`, `color="primary"`, `sx={{ ml: 1 }}`
+- 実装例:
+```tsx
+{selectedPhaseId && (
+  <Chip
+    label={filteredTasks.length}
+    size="small"
+    color="primary"
+    sx={{ ml: 1 }}
+  />
+)}
+```
+
+## 開発上のベストプラクティス
+
+### コードの共通化とメンテナンス性
+
+**削除ロジックの共通化** (SBP Editor):
+- **問題**: レーン/タスク削除ロジックが複数箇所に重複
+  - DELETEボタン、Delete/Backspaceキー、React Flow内部処理
+  - 合計5箇所で同様のロジックが実装されていた
+- **解決策**: ユーティリティ関数への集約
+  - `packages/editor-sbp/src/utils/deletion.ts` を作成
+  - `deleteLaneWithRelatedData()`: レーン削除の純粋関数
+  - `deleteTaskWithRelatedData()`: タスク削除の純粋関数
+  - `isInputFocused()`: 入力フィールドチェックの共通化
+- **メリット**:
+  - ✅ コード量削減（約65行削減）
+  - ✅ バグ修正が容易（1箇所を修正すれば全体に反映）
+  - ✅ テストが容易（純粋関数として単体テスト可能）
+  - ✅ DRY原則の遵守
+- **実装箇所**:
+  - `SbpEditor.tsx`: `handleLaneDelete()`, `handleTaskDelete()`, グローバルキーボードリスナー
+  - `SbpCanvas.tsx`: `handleNodesDelete()`
+  - `PropertyPanel.tsx`: DELETEボタン（間接的に共通関数を使用）
+
+**共通化の指針**:
+1. **同じロジックが3箇所以上で使われる場合は共通化を検討**
+2. **純粋関数として実装**（入力に対して同じ出力、副作用なし）
+3. **ユーティリティ関数は `utils/` ディレクトリに配置**
+4. **TypeScript型定義で安全性を保証**
+5. **すべての呼び出し元が同じ関数を使用することを確認**
+
+### .gitignore設定
+
+**ビルド成果物の除外**:
+```gitignore
+# Build outputs
+dist/
+*.tsbuildinfo
+```
+
+**理由**:
+- ビルド成果物は自動生成されるため、バージョン管理不要
+- git rebase時のコンフリクトを防止
+- リポジトリサイズの削減
+
+**その他の推奨除外**:
+```gitignore
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor directories
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+```
+
+**既存ファイルの削除**:
+```bash
+# 既にgit管理下にあるビルド成果物を削除
+git rm -r --cached packages/*/dist packages/*/*.tsbuildinfo
+git commit -m "chore: remove build artifacts from git"
+```
+
+### Git Rebaseでのコンフリクト解決
+
+**ビルド成果物のコンフリクト**:
+- ビルド成果物（`dist/`, `*.tsbuildinfo`）でコンフリクトが発生した場合
+- 常に最新バージョン（HEAD側）を採用:
+```bash
+git checkout --theirs packages/*/dist/*.js packages/*/*.tsbuildinfo
+git add [conflicted files]
+git rebase --continue
+```
+
+**理由**: ビルド成果物は再ビルドで再生成可能なため、最新を維持すればよい
+
 ### 開発ワークフロー
 
 **DSLスキーマの変更**:
@@ -514,18 +769,27 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
   - レーン・タスクの即時CRUD反映
 
 - **Outcome Editor完成**:
-  - CJMフェーズフィルタリング
+  - CJMフェーズフィルタリング（フィルターアコーディオン、デフォルト閉じた状態）
+  - **フィルター有効時にバッジ表示**（SBPタスク件数を表示）
   - SBPタスククリックCSF設定
   - KGI/CSF/KPI個別カード表示（「求める成果」カード内にネスト）
   - 数値フォーマット対応
   - PropertyPanel統合
 - **EM Editor完成** (カードベースレイアウト):
   - エディタペイン: カード型UI、1カラムレイアウト
-  - フィルタリング機能: CSF/CJMフェーズ/SBPレーン
-  - リソース一覧テーブル: Paper elevation={2}でカードラップ、ソート・検索・CSF強調表示
+  - フィルタリング機能: CSF/CJMフェーズ/SBPレーン（フィルターアコーディオン、デフォルト閉じた状態）
+  - **フィルター有効時にバッジ表示**（EM行動件数を表示）
+  - リソース一覧テーブル: Paper elevation={2}でカードラップ、ソート・検索・CSF強調表示、CSVダウンロード機能
   - PropertyPanel: スキル/ナレッジ/ツール編集（学習コンテンツ`title`フィールド対応）
   - クリック外で閉じる機能
   - すべての削除操作に確認ダイアログ統合（5箇所）
+- **デザインシステム確立**:
+  - カラーパレット: 緑系プライマリ (#2e7d32)、濃いグレーテキスト (#424242)
+  - ブランドアセット: ロゴ・アイコン統合（ヘッダー・favicon）
+- **Docker化完了**:
+  - マルチステージビルド、nginxランタイム
+  - GitHub Container Registry (ghcr) への自動公開
+  - タグ戦略: latest, {version}, sha-{commit}
 
 **⏳ 改善予定**:
 - すべてのエディタのUX改善
@@ -535,3 +799,12 @@ sample.yamlをUIで読み込み、ブラウザコンソールで参照チェッ�
 - 詳細仕様: [REQUIREMENTS.md](REQUIREMENTS.md)
 - 開発計画: [tmp/todo.md](tmp/todo.md)
 - イネーブルメントコンセプト: https://note.com/suwash/n/n02fa7e60d409
+
+## 作業ルール
+- README.md, REQUIREMENTS.md を読み込んでください
+- 型エラーはすべて解消してください
+- chrome-devtoolsで画面を確認してから完了を連絡してください
+- 動作確認が完了したら、ボーイスカウトルールに従ってリファクタしてください
+  - 今回修正した範囲のリファクタリング
+  - 今回修正した範囲に関連する既存コードのリファクタリング
+- 作業が完了したら CLAUDE.md, README.md, REQUIREMENTS.md を最新化してください

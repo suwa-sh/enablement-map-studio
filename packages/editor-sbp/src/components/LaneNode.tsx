@@ -10,10 +10,10 @@ export interface LaneNodeData {
 }
 
 const LANE_COLORS: Record<string, string> = {
-  cjm: '#e3f2fd', // Blue (Customer Journey)
-  human: '#fff3e0', // Orange (Human)
-  team: '#f3e5f5', // Purple (Team)
-  system: '#e8f5e9', // Green (System)
+  cjm: '#f5f5f5', // Grey (Customer Journey)
+  team: '#e3f2fd', // Blue (Team)
+  human: '#ffebee', // Red (Human)
+  system: '#f3e5f5', // Purple (System)
 };
 
 export const LaneNode = memo(({ data, selected }: NodeProps) => {

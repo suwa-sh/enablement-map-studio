@@ -108,15 +108,6 @@ export const TaskNode = memo(({ data, selected }: NodeProps) => {
           {task.name}
         </Typography>
 
-        {isReadonly && (
-          <Typography
-            variant="caption"
-            color="text.disabled"
-            sx={{ display: 'block', mt: 0.5 }}
-          >
-            (CJM連動)
-          </Typography>
-        )}
       </Paper>
 
       {/* Bottom Handle */}
