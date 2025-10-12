@@ -111,6 +111,9 @@ apps/
 - メソッド: `loadYaml()`, `exportYaml()`, DSLタイプごとの `update*()`
 - 更新時に参照整合性チェックを自動実行
 - localStorageに永続化: `enablement-map-studio-storage`
+- **Undo/Redo機能**: `use-undo` ライブラリによる履歴管理
+  - すべてのDSL更新操作が自動的に履歴に記録される
+  - Undo/Redoボタンで状態を戻す・やり直すことが可能
 
 **参照チェック** ([packages/dsl/src/utils/reference-check.ts](packages/dsl/src/utils/reference-check.ts)):
 - `checkReferenceIntegrity()`: すべてのDSL間参照を検証
@@ -254,6 +257,17 @@ apps/
   3. CJM readonlyノードの同期 (`[cjm, sbp.lanes, sbp.tasks, setNodes]`)
 - **CJM存在時の自動初期化**: `useEffect`でCJMが存在しSBPがnullの場合、CJMレーンを含むSBPを自動初期化
   - レンダリング中の状態更新を避けるため、必ずuseEffectで実行
+- **Undo/Redo対応の重要な実装**:
+  - **DSL ⇔ React Flow同期**: useEffectでDSLの `position`/`size` 変更をReact Flowノードに反映
+    - レーン: `node.position`, `node.width`, `node.height`, `node.style.width/height` を更新
+    - タスク: `node.position` を更新
+  - **循環更新の防止**: フラグとカウンターで不要なDSL更新をスキップ
+    - `skipNodesChangeRef`: PropertyPanel SAVE時のカウンターベース制御
+    - `isDraggingRef`: ドラッグ操作中のフラグベース制御
+    - `isResizingRef`: リサイズ操作中のフラグベース制御
+  - **操作終了時の一括更新**: ドラッグ/リサイズ終了時に1回だけDSL更新を実行
+    - `handleNodeDragStop`: 常にDSL更新（スナップ条件を削除）
+    - `handleLaneResizeEnd`: 常にDSL更新（スナップ条件を削除）
 
 **CJM連動の詳細**:
 - `kind: 'cjm'` レーンに CJM actions を readonly タスクとして自動表示

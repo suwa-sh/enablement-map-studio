@@ -640,9 +640,15 @@ Enablement Map Studioは、すべてのエディタビューを内包する共�
 - ✅ **MUI通知システム**: Toast（Snackbar + MUI Alert）、ConfirmDialog、ErrorDialog
   - すべての `window.confirm` を `useConfirm()` に置き換え
   - uiパッケージに配置、全エディタから共通利用
+- ✅ **Undo/Redo機能**: すべての編集操作を履歴管理、ボタンで元に戻す・やり直すが可能
+  - Zustand + use-undo による状態管理
+  - **PropertyPanel SAVE操作**: カウンターベースの制御（`skipNodesChangeRef`）で1回のundoで復元
+  - **SBP Editor ドラッグ/リサイズ操作**: フラグベースの制御（`isDraggingRef`, `isResizingRef`）で1回のundoで復元
+    - タスク名変更、タスクドラッグ移動、レーンドラッグ移動、レーンリサイズに対応
+    - 操作中は中間状態の履歴作成をスキップし、操作終了時に一括でDSL更新
+    - useEffect hooks でDSL変更をReact Flowノードに同期（position/sizeを含む）
 
 #### 8.2. 今後の改善予定
 
 ##### 共通
-- ⏳ Undo/Redo機能
 - ⏳ すべてのエディタのUX改善（使いやすさ・見やすさの向上）

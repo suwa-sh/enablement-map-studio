@@ -53,7 +53,9 @@ A unified web application for designing end-to-end processes from customer exper
 - サンプルデータのロード
 - Clear Canvasボタン（データクリア）
 - **MUI通知システム**: Toast（情報・成功・エラー通知）、ConfirmDialog（削除確認など）、ErrorDialog（エラー詳細表示）
-- Undo/Redo機能（実装予定）
+- **Undo/Redo機能**: すべての編集操作を履歴管理、ボタンで元に戻す・やり直すが可能
+  - タスク名変更、タスク・レーンのドラッグ移動、レーンのリサイズ、削除操作などに対応
+  - 各操作で1回のUndoで元の状態に戻る
 
 ## 技術スタック
 
