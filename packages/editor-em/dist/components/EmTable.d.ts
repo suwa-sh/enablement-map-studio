@@ -4,6 +4,7 @@ interface EmTableProps {
     outcome: OutcomeDsl | null;
     sbp: SbpDsl | null;
     cjm: CjmDsl | null;
+    visibleTaskIds: Set<string> | null;
 }
-export declare function EmTable({ em, outcome, sbp, cjm }: EmTableProps): import("react/jsx-runtime").JSX.Element;
+export declare function EmTable({ em, outcome, sbp, cjm, visibleTaskIds }: EmTableProps): import("react/jsx-runtime").JSX.Element;
 export {};

@@ -1,8 +1,8 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useMemo, useState } from 'react';
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Link, TableSortLabel, TextField, InputAdornment, Checkbox, } from '@mui/material';
-import { Search } from '@mui/icons-material';
-export function EmTable({ em, outcome, sbp, cjm }) {
+import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Link, TableSortLabel, TextField, InputAdornment, Checkbox, Button, } from '@mui/material';
+import { Search, Download } from '@mui/icons-material';
+export function EmTable({ em, outcome, sbp, cjm, visibleTaskIds }) {
     const [sortColumn, setSortColumn] = useState('isCSF');
     const [sortOrder, setSortOrder] = useState('desc');
     const [filterText, setFilterText] = useState('');
@@ -14,6 +14,9 @@ export function EmTable({ em, outcome, sbp, cjm }) {
         em.actions.forEach((action) => {
             const sbpTask = sbp.tasks.find((t) => t.id === action.source_id);
             if (!sbpTask)
+                return;
+            // Apply filter: only show resources for visible tasks
+            if (visibleTaskIds !== null && !visibleTaskIds.has(sbpTask.id))
                 return;
             const sbpLane = sbp.lanes.find((l) => l.id === sbpTask.lane);
             // Get CJM action linked to this SBP task
@@ -75,7 +78,7 @@ export function EmTable({ em, outcome, sbp, cjm }) {
             });
         });
         return result;
-    }, [em, outcome, sbp, cjm]);
+    }, [em, outcome, sbp, cjm, visibleTaskIds]);
     // Filter and sort rows
     const filteredAndSortedRows = useMemo(() => {
         let filtered = rows;
@@ -106,12 +109,69 @@ export function EmTable({ em, outcome, sbp, cjm }) {
             setSortOrder('asc');
         }
     };
+    const generateCSV = (rows) => {
+        // CSV escape function
+        const escapeCSV = (value) => {
+            if (value === undefined || value === '')
+                return '';
+            const str = String(value);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        };
+        // Header row
+        const headers = [
+            'CSF',
+            'CJMフェーズ',
+            'CJMアクション',
+            'SBPレーン',
+            'SBPタスク',
+            '必要な行動',
+            'リソースタイプ',
+            'リソース',
+            'URL',
+        ];
+        const headerRow = headers.map(escapeCSV).join(',');
+        // Data rows
+        const dataRows = rows.map((row) => {
+            return [
+                row.isCSF ? '○' : '',
+                row.cjmPhase,
+                row.cjmAction,
+                row.sbpLane,
+                row.sbpTask,
+                row.requiredAction,
+                row.linkType,
+                row.name,
+                row.url || '',
+            ].map(escapeCSV).join(',');
+        });
+        return [headerRow, ...dataRows].join('\n');
+    };
+    const handleDownloadCSV = () => {
+        const csv = generateCSV(filteredAndSortedRows);
+        // Add BOM for Excel UTF-8 support
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        // Generate filename with timestamp
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+        link.download = `リソース一覧_${timestamp}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
     if (!em || !outcome || !sbp || !cjm) {
         return (_jsx(Paper, { elevation: 2, sx: { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'white' }, children: _jsx(Typography, { color: "text.secondary", children: "\u30C7\u30FC\u30BF\u304C\u3042\u308A\u307E\u305B\u3093" }) }));
     }
-    return (_jsxs(Paper, { elevation: 2, sx: { overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: 'white' }, children: [_jsx(Box, { sx: { p: 2, borderBottom: 1, borderColor: 'divider' }, children: _jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, children: [_jsx(Typography, { variant: "h6", children: "\u30EA\u30BD\u30FC\u30B9\u4E00\u89A7" }), _jsx(TextField, { size: "small", placeholder: "\u691C\u7D22...", value: filterText, onChange: (e) => setFilterText(e.target.value), sx: { width: 300 }, InputProps: {
-                                startAdornment: (_jsx(InputAdornment, { position: "start", children: _jsx(Search, { fontSize: "small" }) })),
-                            } })] }) }), _jsx(TableContainer, { sx: { maxHeight: 'calc(100vh - 500px)' }, children: _jsxs(Table, { stickyHeader: true, size: "small", children: [_jsx(TableHead, { children: _jsxs(TableRow, { sx: { '& .MuiTableCell-head': { bgcolor: 'grey.300', color: 'black', fontWeight: 'bold' } }, children: [_jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'isCSF', direction: sortColumn === 'isCSF' ? sortOrder : 'asc', onClick: () => handleSort('isCSF'), children: "CSF" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'cjmPhase', direction: sortColumn === 'cjmPhase' ? sortOrder : 'asc', onClick: () => handleSort('cjmPhase'), children: "CJM\u30D5\u30A7\u30FC\u30BA" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'cjmAction', direction: sortColumn === 'cjmAction' ? sortOrder : 'asc', onClick: () => handleSort('cjmAction'), children: "CJM\u30A2\u30AF\u30B7\u30E7\u30F3" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'sbpLane', direction: sortColumn === 'sbpLane' ? sortOrder : 'asc', onClick: () => handleSort('sbpLane'), children: "SBP\u30EC\u30FC\u30F3" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'sbpTask', direction: sortColumn === 'sbpTask' ? sortOrder : 'asc', onClick: () => handleSort('sbpTask'), children: "SBP\u30BF\u30B9\u30AF" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'requiredAction', direction: sortColumn === 'requiredAction' ? sortOrder : 'asc', onClick: () => handleSort('requiredAction'), children: "\u5FC5\u8981\u306A\u884C\u52D5" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'linkType', direction: sortColumn === 'linkType' ? sortOrder : 'asc', onClick: () => handleSort('linkType'), children: "\u30EA\u30F3\u30AF\u30BF\u30A4\u30D7" }) }), _jsx(TableCell, { children: _jsx(TableSortLabel, { active: sortColumn === 'name', direction: sortColumn === 'name' ? sortOrder : 'asc', onClick: () => handleSort('name'), children: "\u540D\u524D" }) }), _jsx(TableCell, { children: "URL" })] }) }), _jsx(TableBody, { children: filteredAndSortedRows.length === 0 ? (_jsx(TableRow, { children: _jsx(TableCell, { colSpan: 9, align: "center", children: _jsx(Typography, { color: "text.secondary", sx: { py: 3 }, children: filterText ? '検索結果がありません' : 'リソースがありません' }) }) })) : (filteredAndSortedRows.map((row, index) => (_jsxs(TableRow, { hover: true, sx: {
+    return (_jsxs(Paper, { elevation: 2, sx: { overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: 'white' }, children: [_jsx(Box, { sx: { p: 2, borderBottom: 1, borderColor: 'divider' }, children: _jsxs(Box, { sx: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }, children: [_jsx(Typography, { variant: "h6", children: "\u30EA\u30BD\u30FC\u30B9\u4E00\u89A7" }), _jsxs(Box, { sx: { display: 'flex', alignItems: 'center', gap: 2 }, children: [_jsx(Button, { variant: "outlined", size: "small", startIcon: _jsx(Download, {}), onClick: handleDownloadCSV, children: "CSV\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9" }), _jsx(TextField, { size: "small", placeholder: "\u691C\u7D22...", value: filterText, onChange: (e) => setFilterText(e.target.value), sx: { width: 300 }, InputProps: {
+                                        startAdornment: (_jsx(InputAdornment, { position: "start", children: _jsx(Search, { fontSize: "small" }) })),
+                                    } })] })] }) }), _jsx(TableContainer, { sx: { maxHeight: 'calc(100vh - 500px)' }, children: _jsxs(Table, { stickyHeader: true, size: "small", children: [_jsx(TableHead, { children: _jsxs(TableRow, { sx: { '& .MuiTableCell-head': { bgcolor: 'grey.300', color: 'black', fontWeight: 'bold' } }, children: [_jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'isCSF', direction: sortColumn === 'isCSF' ? sortOrder : 'asc', onClick: () => handleSort('isCSF'), children: [_jsx("br", {}), "CSF"] }) }), _jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'cjmPhase', direction: sortColumn === 'cjmPhase' ? sortOrder : 'asc', onClick: () => handleSort('cjmPhase'), children: ["CJM", _jsx("br", {}), "\u30D5\u30A7\u30FC\u30BA"] }) }), _jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'cjmAction', direction: sortColumn === 'cjmAction' ? sortOrder : 'asc', onClick: () => handleSort('cjmAction'), children: ["CJM", _jsx("br", {}), "\u30A2\u30AF\u30B7\u30E7\u30F3"] }) }), _jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'sbpLane', direction: sortColumn === 'sbpLane' ? sortOrder : 'asc', onClick: () => handleSort('sbpLane'), children: ["SBP", _jsx("br", {}), "\u30EC\u30FC\u30F3"] }) }), _jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'sbpTask', direction: sortColumn === 'sbpTask' ? sortOrder : 'asc', onClick: () => handleSort('sbpTask'), children: ["SBP", _jsx("br", {}), "\u30BF\u30B9\u30AF"] }) }), _jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'requiredAction', direction: sortColumn === 'requiredAction' ? sortOrder : 'asc', onClick: () => handleSort('requiredAction'), children: [_jsx("br", {}), "\u5FC5\u8981\u306A\u884C\u52D5"] }) }), _jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'linkType', direction: sortColumn === 'linkType' ? sortOrder : 'asc', onClick: () => handleSort('linkType'), children: ["\u30EA\u30BD\u30FC\u30B9", _jsx("br", {}), "\u30BF\u30A4\u30D7"] }) }), _jsx(TableCell, { children: _jsxs(TableSortLabel, { active: sortColumn === 'name', direction: sortColumn === 'name' ? sortOrder : 'asc', onClick: () => handleSort('name'), children: [_jsx("br", {}), "\u30EA\u30BD\u30FC\u30B9"] }) }), _jsxs(TableCell, { children: [_jsx("br", {}), "URL"] })] }) }), _jsx(TableBody, { children: filteredAndSortedRows.length === 0 ? (_jsx(TableRow, { children: _jsx(TableCell, { colSpan: 9, align: "center", children: _jsx(Typography, { color: "text.secondary", sx: { py: 3 }, children: filterText ? '検索結果がありません' : 'リソースがありません' }) }) })) : (filteredAndSortedRows.map((row, index) => (_jsxs(TableRow, { hover: true, sx: {
                                     '& .MuiTableCell-root': {
                                         bgcolor: index % 2 === 0 ? 'white' : 'grey.50'
                                     }

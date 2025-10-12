@@ -14,6 +14,7 @@ export function EmEditor() {
     const cjm = useAppStore((state) => state.state.cjm);
     const updateEm = useAppStore((state) => state.updateEm);
     const [selectedAction, setSelectedAction] = useState(null);
+    const [visibleTaskIds, setVisibleTaskIds] = useState(null);
     // Auto-initialize EM if empty but other data exists
     useEffect(() => {
         if (!em && outcome && sbp && cjm) {
@@ -39,7 +40,7 @@ export function EmEditor() {
                     if (selectedAction) {
                         setSelectedAction(null);
                     }
-                }, children: _jsxs(PanelGroup, { direction: "vertical", children: [_jsx(Panel, { defaultSize: 70, minSize: 30, children: _jsx(EmCanvasCard, { em: em, outcome: outcome, sbp: sbp, cjm: cjm, onEmUpdate: updateEm, onActionSelect: setSelectedAction }) }), _jsx(PanelResizeHandle, { style: {
+                }, children: _jsxs(PanelGroup, { direction: "vertical", children: [_jsx(Panel, { defaultSize: 70, minSize: 30, children: _jsx(EmCanvasCard, { em: em, outcome: outcome, sbp: sbp, cjm: cjm, onEmUpdate: updateEm, onActionSelect: setSelectedAction, onFilterChange: setVisibleTaskIds }) }), _jsx(PanelResizeHandle, { style: {
                                 height: '8px',
                                 background: '#e0e0e0',
                                 cursor: 'row-resize',
@@ -53,5 +54,5 @@ export function EmEditor() {
                                     height: 4,
                                     bgcolor: 'grey.400',
                                     borderRadius: 2,
-                                } }) }), _jsx(Panel, { defaultSize: 30, minSize: 10, children: _jsx(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: _jsx(EmTable, { em: em, outcome: outcome, sbp: sbp, cjm: cjm }) }) })] }) }), _jsx(PropertyPanel, { selectedAction: selectedAction, em: em, onEmUpdate: updateEm, onClose: () => setSelectedAction(null) })] }));
+                                } }) }), _jsx(Panel, { defaultSize: 30, minSize: 10, children: _jsx(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: _jsx(EmTable, { em: em, outcome: outcome, sbp: sbp, cjm: cjm, visibleTaskIds: visibleTaskIds }) }) })] }) }), _jsx(PropertyPanel, { selectedAction: selectedAction, em: em, onEmUpdate: updateEm, onClose: () => setSelectedAction(null) })] }));
 }

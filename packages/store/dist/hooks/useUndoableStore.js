@@ -13,17 +13,20 @@ export function useUndoableStore() {
     const [undoState, { set: setUndoState, undo, redo, canUndo, canRedo, reset: resetHistory }] = useUndo(state);
     // Track if we're applying undo/redo to avoid circular updates
     const isApplyingHistory = useRef(false);
+    // Track previous state to detect real changes
+    const prevStateRef = useRef(state);
     // Sync Zustand state changes to undo history
     useEffect(() => {
         if (isApplyingHistory.current) {
             isApplyingHistory.current = false;
             return;
         }
-        // Only add to history if state has actually changed
-        if (JSON.stringify(undoState.present) !== JSON.stringify(state)) {
+        // Only add to history if state reference has changed
+        if (prevStateRef.current !== state) {
+            prevStateRef.current = state;
             setUndoState(state);
         }
-    }, [state, setUndoState, undoState.present]);
+    }, [state, setUndoState]);
     // Apply undo
     const handleUndo = () => {
         if (!canUndo)

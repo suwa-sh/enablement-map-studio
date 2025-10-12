@@ -4,6 +4,24 @@ A unified web application for designing end-to-end processes from customer exper
 
 [イネーブルメントで人材育成を成果につなげる](https://note.com/suwash/n/n02fa7e60d409)で紹介しているイネーブルメントのサイクルの内、整理ステージを支援するビジュアルエディタです。
 
+## クイックスタート
+
+### Dockerで利用
+
+```bash
+# イメージを取得（最新バージョン）
+docker pull ghcr.io/suwa-sh/enablement-map-studio:latest
+
+# コンテナを起動
+docker run -p 8080:80 ghcr.io/suwa-sh/enablement-map-studio:latest
+```
+
+アプリケーションは http://localhost:8080 でアクセスできます。
+
+### 開発環境で利用
+
+開発環境のセットアップ方法については、[DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
+
 ## 概要
 
 単一のYAMLファイル（`---`区切りで複数のDSLを含む）を読み込み、以下の4つのエディタビューをシームレスに切り替えながら、一気通貫で計画を立案・編集できます：
@@ -74,81 +92,39 @@ A unified web application for designing end-to-end processes from customer exper
 - **Linter/Formatter**: qlty (biome, prettier, eslint)
 - **パッケージ管理**: pnpm workspaces
 
-## 開発環境のセットアップ
+## Dockerイメージについて
 
-### 前提条件
+### 利用可能なタグ
 
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
+- `latest` - 最新リリースバージョン
+- `{version}` - 特定のバージョン（例: `1.0.0`, `1.0`, `1`）
+- `sha-{commit}` - 特定のコミット
 
-### インストール
-
-```bash
-# リポジトリのクローン
-git clone https://github.com/suwa-sh/enablement-map-studio.git
-cd enablement-map-studio
-
-# 依存関係のインストール
-pnpm install
-
-# 開発サーバーの起動
-pnpm dev
-```
-
-アプリケーションは http://localhost:5173 で起動します。
-
-## プロジェクト構造
-
-```
-enablement-map-studio/
-├── .qlty/                    # qlty設定
-├── apps/
-│   └── studio/              # メインアプリケーション
-├── packages/
-│   ├── dsl/                 # DSL型定義・パーサー
-│   ├── store/               # 状態管理（Zustand）
-│   ├── ui/                  # 共通UIコンポーネント（Toast/ConfirmDialog/ErrorDialog含む）
-│   ├── editor-cjm/          # CJMエディタ
-│   ├── editor-sbp/          # SBPエディタ
-│   ├── editor-outcome/      # Outcomeエディタ
-│   └── editor-em/           # EMエディタ
-├── tmp/                     # 仕様書・計画書
-│   ├── em_studio.md        # 詳細仕様書
-│   └── todo.md             # 開発計画
-└── CLAUDE.md               # Claude Code用ガイド
-```
-
-## 開発コマンド
+### カスタムポート
 
 ```bash
-# 開発サーバー起動
-pnpm dev
+# 別のポートで起動
+docker run -p 3000:80 ghcr.io/suwa-sh/enablement-map-studio:latest
 
-# ビルド
-pnpm build
-
-# Lint実行
-pnpm lint
-
-# フォーマット
-pnpm format
-
-# 型チェック
-pnpm type-check
-
-# テスト実行
-pnpm test
+# 特定のバージョンを指定
+docker run -p 3000:80 ghcr.io/suwa-sh/enablement-map-studio:1.0.0
 ```
+
+### データの永続化
+
+このアプリケーションは**ブラウザのlocalStorage**にデータを保存します。Dockerコンテナを再起動してもブラウザ側のデータは保持されます。
+
+## 開発に参加する
+
+開発環境のセットアップ、ビルド方法、コーディング規約については、[DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
 
 ## ライセンス
 
 MIT License
 
-## 貢献
+## 関連ドキュメント
 
-このプロジェクトへの貢献を歓迎します。
-
-## 関連リンク
-
-- [仕様書](./REQUIREMENTS.md)
-- [実装ガイド](./CLAUDE.md)
+- [DEVELOPMENT.md](./DEVELOPMENT.md) - 開発環境セットアップと開発ガイド
+- [REQUIREMENTS.md](./REQUIREMENTS.md) - 詳細仕様
+- [CLAUDE.md](./CLAUDE.md) - Claude Code用の実装ガイド
+- [イネーブルメントのコンセプト](https://note.com/suwash/n/n02fa7e60d409)

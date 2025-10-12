@@ -69,5 +69,10 @@ export function OutcomeEditor() {
     const handleClosePropertyPanel = () => {
         setShowPropertyPanel(false);
     };
-    return (_jsxs(Box, { sx: { display: 'flex', height: '100%' }, children: [_jsx(Box, { sx: { flex: 1, overflow: 'auto' }, children: _jsx(OutcomeCanvas, { outcome: outcome, sbp: sbp, cjm: cjm, selectedPhaseId: selectedPhaseId, onPhaseSelect: setSelectedPhaseId, onTaskClick: handleTaskClick }) }), _jsx(PropertyPanel, { outcome: showPropertyPanel ? outcome : null, sbp: sbp, onOutcomeUpdate: handleOutcomeUpdate, onClose: handleClosePropertyPanel })] }));
+    return (_jsxs(Box, { sx: { display: 'flex', height: '100%' }, onClick: () => {
+            // Click outside property panel to close it
+            if (showPropertyPanel) {
+                setShowPropertyPanel(false);
+            }
+        }, children: [_jsx(Box, { sx: { flex: 1, overflow: 'auto' }, children: _jsx(OutcomeCanvas, { outcome: outcome, sbp: sbp, cjm: cjm, selectedPhaseId: selectedPhaseId, onPhaseSelect: setSelectedPhaseId, onTaskClick: handleTaskClick }) }), _jsx(PropertyPanel, { outcome: showPropertyPanel ? outcome : null, sbp: sbp, onOutcomeUpdate: handleOutcomeUpdate, onClose: handleClosePropertyPanel })] }));
 }

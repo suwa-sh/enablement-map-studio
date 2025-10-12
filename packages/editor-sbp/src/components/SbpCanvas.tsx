@@ -124,7 +124,7 @@ export function SbpCanvas({
           }
           return true; // タスクノードは保持
         })
-        .map((node) => {
+        .map((node): Node => {
           // 残ったレーンノードのデータを更新
           if (node.type === 'laneNode') {
             const laneId = node.id.replace('lane:', '');
@@ -139,8 +139,8 @@ export function SbpCanvas({
               return {
                 ...node,
                 position,
-                width: size.width,
-                height: size.height,
+                width: size.width as number,
+                height: size.height as number,
                 style: {
                   ...node.style,
                   width: size.width,
@@ -812,7 +812,7 @@ export function SbpCanvas({
       // ノード選択のみの変更、またはデータ更新のみの変更はDSL更新をスキップ
       const hasPositionOrDimensionChanges = changes.some((change) => {
         if (change.type === 'select') return false;
-        if (change.type === 'remove' || change.type === 'add' || change.type === 'reset') return true;
+        if (change.type === 'remove' || change.type === 'add') return true;
         if (change.type === 'position' || change.type === 'dimensions') return true;
         // replace type: データのみの更新はDSL更新不要
         return false;

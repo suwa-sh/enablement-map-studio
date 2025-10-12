@@ -6,6 +6,7 @@ interface EmCanvasCardProps {
     cjm: CjmDsl | null;
     onEmUpdate: (em: EmDsl) => void;
     onActionSelect: (action: EmAction | null) => void;
+    onFilterChange?: (visibleTaskIds: Set<string> | null) => void;
 }
-export declare function EmCanvasCard({ em, outcome, sbp, cjm, onEmUpdate, onActionSelect, }: EmCanvasCardProps): import("react/jsx-runtime").JSX.Element;
+export declare function EmCanvasCard({ em, outcome, sbp, cjm, onEmUpdate, onActionSelect, onFilterChange, }: EmCanvasCardProps): import("react/jsx-runtime").JSX.Element;
 export {};

@@ -235,14 +235,7 @@ export function EmCanvasCard({ em, outcome, sbp, cjm, onEmUpdate, onActionSelect
     if (!outcome || !sbp || !cjm) {
         return (_jsx(Box, { sx: { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }, children: _jsx(Typography, { color: "text.secondary", children: "Outcome\u3001SBP\u3001CJM \u30C7\u30FC\u30BF\u3092\u30ED\u30FC\u30C9\u3057\u3066\u304F\u3060\u3055\u3044" }) }));
     }
-    return (_jsxs(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: [_jsxs(Stack, { direction: "row", spacing: 2, alignItems: "flex-start", justifyContent: "space-between", sx: {
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 10,
-                    bgcolor: 'grey.50',
-                    pt: 0,
-                    pb: 2,
-                }, children: [_jsx(Button, { variant: "contained", startIcon: _jsx(Add, {}), onClick: handleAddAction, children: "\u5FC5\u8981\u306A\u884C\u52D5\u3092\u8FFD\u52A0" }), _jsxs(Accordion, { sx: { width: '50%', maxWidth: 800 }, children: [_jsx(AccordionSummary, { expandIcon: _jsx(ExpandMore, {}), children: _jsxs(Stack, { direction: "row", spacing: 1, alignItems: "center", children: [_jsx(FilterList, { fontSize: "small" }), _jsx(Typography, { variant: "button", children: "\u30D5\u30A3\u30EB\u30BF\u30FC" })] }) }), _jsx(AccordionDetails, { children: _jsxs(Stack, { spacing: 2, children: [_jsxs(Stack, { direction: "row", spacing: 2, alignItems: "flex-start", children: [_jsx(FormControlLabel, { control: _jsx(Switch, { checked: csfFilterActive, onChange: (e) => {
+    return (_jsxs(Box, { sx: { height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }, children: [_jsxs(Stack, { direction: "row", spacing: 2, alignItems: "flex-start", justifyContent: "space-between", sx: { mb: 2 }, children: [_jsx(Button, { variant: "contained", startIcon: _jsx(Add, {}), onClick: handleAddAction, children: "\u5FC5\u8981\u306A\u884C\u52D5\u3092\u8FFD\u52A0" }), _jsxs(Accordion, { defaultExpanded: true, sx: { width: '50%', maxWidth: 800 }, children: [_jsx(AccordionSummary, { expandIcon: _jsx(ExpandMore, {}), children: _jsxs(Stack, { direction: "row", spacing: 1, alignItems: "center", children: [_jsx(FilterList, { fontSize: "small" }), _jsx(Typography, { variant: "button", children: "\u30D5\u30A3\u30EB\u30BF\u30FC" })] }) }), _jsx(AccordionDetails, { children: _jsxs(Stack, { spacing: 2, children: [_jsxs(Stack, { direction: "row", spacing: 2, alignItems: "flex-start", children: [_jsx(FormControlLabel, { control: _jsx(Switch, { checked: csfFilterActive, onChange: (e) => {
                                                             setCsfFilterActive(e.target.checked);
                                                             if (e.target.checked) {
                                                                 // Clear other filters when CSF is activated

@@ -3,7 +3,6 @@ import {
   Box,
   Paper,
   Typography,
-  Button,
   Stack,
   Chip,
   Accordion,
@@ -54,9 +53,6 @@ export function OutcomeCanvas({
 
     return new Set(taskIds);
   }, [selectedPhaseId, cjm, sbp.tasks]);
-
-  // Get the CSF source task
-  const csfTask = sbp.tasks.find((task) => task.id === outcome.primary_csf.source_id);
 
   // Count visible items for filter summary
   const visibleCjmActionsCount = cjm
