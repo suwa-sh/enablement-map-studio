@@ -464,7 +464,7 @@ export function EmCanvasCard({
       {/* Two-column layout: Organization outcome (left) and Customer (right) */}
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         {/* Left: Outcome card */}
-        <Paper elevation={2} sx={{ p: 2, flex: 1 }}>
+        <Paper elevation={2} sx={{ p: 2, flex: 1, bgcolor: '#e8f5e9' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>組織の求める成果</Typography>
 
           {/* KGI/CSF/KPI in one row */}
@@ -594,7 +594,7 @@ export function EmCanvasCard({
         <Typography variant="h6" sx={{ mb: 1 }}>
           組織の価値提供プロセス
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography variant="body2" sx={{ mb: 2, color: '#2e7d32', fontWeight: 'bold' }}>
           タスクを選択して、「必要な行動を追加」ボタンをクリックしてください。
         </Typography>
 
@@ -662,7 +662,7 @@ export function EmCanvasCard({
             行動がありません。「必要な行動を追加」ボタンから追加してください。
           </Typography>
         ) : (
-          <Stack spacing={2}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             {Array.from(groupedActions.entries()).map(([taskId, actions]) => {
               const task = sbp.tasks.find((t) => t.id === taskId);
               if (!task) return null;
@@ -673,16 +673,19 @@ export function EmCanvasCard({
                   elevation={1}
                   sx={{
                     p: 2,
+                    width: 'calc(50% - 8px)',
                     bgcolor: 'grey.50',
                     border: 1,
-                    borderColor: 'divider'
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'column',
                   }}
                 >
                   <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
                     {task.name}
                   </Typography>
 
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
                     {actions.map((action) => (
                       <Paper
                         key={action.id}
@@ -692,8 +695,11 @@ export function EmCanvasCard({
                           onActionSelect(action);
                         }}
                         sx={{
-                          minWidth: 200,
-                          p: 2,
+                          flexShrink: 0,
+                          width: 'fit-content',
+                          minWidth: 100,
+                          maxWidth: 200,
+                          p: 1.5,
                           cursor: 'pointer',
                           border: 1,
                           borderColor: 'divider',
@@ -713,7 +719,7 @@ export function EmCanvasCard({
                 </Paper>
               );
             })}
-          </Stack>
+          </Box>
         )}
       </Paper>
         </Box>

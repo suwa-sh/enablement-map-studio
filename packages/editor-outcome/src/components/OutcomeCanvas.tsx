@@ -190,7 +190,7 @@ export function OutcomeCanvas({
       {/* SBP swimlanes (read-only) - skip first lane */}
       <Paper elevation={2} sx={{ mb: 2, p: 2 }}>
         <Typography variant="h6" sx={{ mb: 1 }}>SBP</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography variant="body2" sx={{ mb: 2, color: '#2e7d32', fontWeight: 'bold' }}>
           タスクの中から、CSFを選択してください。
         </Typography>
         <Stack spacing={2}>
