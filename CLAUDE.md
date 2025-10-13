@@ -391,7 +391,6 @@ DSLのスキーマを変更する場合は、以下の手順に従います。
 ## 7\. 関連ドキュメント
 
   - **GitHub**
-      - [REQUIREMENTS.md](https://www.google.com/search?q=REQUIREMENTS.md)
-      - [tmp/todo.md](https://www.google.com/search?q=tmp/todo.md)
+      - [REQUIREMENTS.md](./REQUIREMENTS.md)
   - **記事**
       - [イネーブルメントコンセプト](https://note.com/suwash/n/n02fa7e60d409)

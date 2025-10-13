@@ -114,9 +114,6 @@ enablement-map-studio/
 │   ├── editor-sbp/         # SBPエディタ
 │   ├── editor-outcome/     # Outcomeエディタ
 │   └── editor-em/          # EMエディタ
-├── tmp/                    # 仕様書・計画書（gitignore対象）
-│   ├── em_studio.md       # 詳細仕様書
-│   └── todo.md            # 開発計画
 ├── Dockerfile              # Docker multi-stage build
 ├── nginx.conf              # Nginx設定（SPA対応）
 ├── CLAUDE.md               # Claude Code用ガイド

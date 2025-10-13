@@ -1,14 +1,14 @@
-## Enablement Map Studio 仕様・設計
+## Enablement Map Studio ルール仕様書
 
 ### 1\. 概要
 
 #### 1.1. 目的
 
-本仕様書は「**Enablement Map Studio**」について定義します。これは、顧客体験の可視化から成果創出までのプロセスを一貫して設計するための、**単一の統合Webアプリケーション**です。単一のYAMLファイル（`---`区切りで複数のDSLを内包）を読み込み、CJM、SBP、Outcome、EMという4つの専用ビュー（エディタ）をシームレスに切り替えながら、一気通貫で計画を立案・編集します。
+「Enablement Map Studio」は、顧客体験の可視化から成果創出までのプロセスを一貫して設計するための、**単一の統合Webアプリケーション**です。単一のYAMLファイルをデータソースとし、CJM、SBP、Outcome、EMという4つの専用ビュー（エディタ）をシームレスに切り替えながら、計画を立案・編集します。
 
 #### 1.2. アプリケーションの全体像
 
-アプリケーションは、左端のナビゲーションバーで4つのエディタビューを切り替えるシングルページアプリケーションとして構成されます。全てのビューは、local storage上の一つのデータソース（読み込まれたYAMLファイル）を共有します。
+本アプリケーションは、左端のナビゲーションバーで4つのエディタビューを切り替えるシングルページアプリケーションとして構成されます。全てのビューは、単一のデータソースを共有します。
 
 ```mermaid
 graph TD
@@ -28,7 +28,7 @@ graph TD
         NavBar -- switches --> M
     end
 
-    subgraph "Data Store (local storage)"
+    subgraph "Data Store"
       direction TB
       YAML_DOC["単一のYAMLドキュメント<br>(---区切り)"]
       YAML_DOC --> CJM_DATA["CJM Data"]
@@ -44,13 +44,11 @@ graph TD
 
 ```
 
------
-
 ### 2\. 全体コンセプト
 
 #### 2.1. 目的
 
-顧客体験の可視化（CJM）、業務プロセスの整理（SBP）、成果の定義（Outcome）、そして成果達成に向けた行動・スキル設計（EM）までを一貫して計画できる、オープンソースのエディタ群を提供します。
+顧客体験の可視化（CJM）、業務プロセスの整理（SBP）、成果の定義（Outcome）、そして成果達成に向けた行動・スキル設計（EM）までを一貫して計画できる、エディタ群を提供します。
 
 #### 2.2. 各エディタの役割
 
@@ -61,21 +59,18 @@ graph TD
 | **Outcome Editor**| ビジネス成果（CSF/KPI）の決定 | Outcome Definition | SBPを参照 |
 | **EM Editor** | 成果に紐づくイネーブルメント構造の設計 | Enablement Map | Outcome, SBP, CJMを参照 |
 
------
-
 ### 3\. データモデル (DSL仕様)
 
-各エディタのデータは、人間が読み書きしやすいYAML形式のDSL（Domain-Specific Language）で定義します。ここでは各DSLのサンプルと、その構造を検証するためのJSON Schemaを併記します。
+各エディタのデータは、YAML形式のDSL（Domain-Specific Language）で定義します。
 
 #### 3.1. 共通仕様
 
-  - **フォーマット**: YAML形式を採用します。`---`区切りにより、1つのファイルに複数のDSLを記述できます。
+  - **フォーマット**: YAML形式。`---`区切りにより、1つのファイルに複数のDSLを記述できます。
   - **種別明示**: ルート要素に`kind`キーを設け、DSLの種別（`cjm`, `sbp`, `outcome`, `em`）を明示します。
+  - **バージョン**: 全てのDSLの`version`は`1.0`とします。
   - **グローバルID**: `id`キーは、エディタ間で情報を参照するためのグローバルな一意識別子として機能します。
 
 #### 3.2. データモデルの全体像 (ER図)
-
-本仕様書で定義する全てのデータエンティティと、その関係性、命名規則は以下のER図に集約されます。
 
 ```mermaid
 erDiagram
@@ -165,16 +160,12 @@ erDiagram
 
 ##### 3.2.1. 外部キー命名規則
 
-データモデルの一貫性を担保するため、外部キー（FK）の命名には以下のルールを適用します。
-
-  - **同一DSL内のID参照**: キー名は `{参照先オブジェクト名}_id` とします。（例: `EM_SKILL` から `EM_ACTION` への参照は `action_id`）
-  - **別DSLへのID参照**: キー名は `source_id` とします。（例: `SBP_TASK` から `CJM_ACTION` への参照は `source_id`）
+  - **同一DSL内のID参照**: キー名は `{参照先オブジェクト名}_id` とします。（例: `EM_SKILL` の `action_id`）
+  - **別DSLへのID参照**: キー名は `source_id` とします。（例: `SBP_TASK` の `source_id`）
 
 #### 3.3. CJM DSL (Customer Journey Map)
 
-顧客（この場合は事業部門のシステム利用者）の体験を、システム開発のフェーズごとに定義します。
-
-##### 3.3.1. YAMLサンプル (v1.0)
+顧客の体験をフェーズごとに定義します。
 
 ```yaml
 kind: cjm
@@ -189,37 +180,15 @@ actions:
   - id: cjm:action:communicate-requirements
     name: "システムの要件を開発チームに伝える"
     phase: cjm:phase:requirement
-    touchpoints:
-      - "定例会議"
-      - "ドキュメント共有システム (Confluenceなど)"
-    thoughts_feelings:
-      - "正しく意図が伝わるか不安だ"
-      - "専門用語が多くて理解が難しい"
+    touchpoints: ["定例会議", "ドキュメント共有システム (Confluenceなど)"]
+    thoughts_feelings: ["正しく意図が伝わるか不安だ", "専門用語が多くて理解が難しい"]
     emotion_score: -1
-  - id: cjm:action:execute-uat
-    name: "開発されたシステムをテストする"
-    phase: cjm:phase:uat
-    touchpoints:
-      - "テスト環境"
-      - "操作マニュアル"
-      - "QAチーム"
-    thoughts_feelings:
-      - "思った通りに動くか心配"
-      - "不具合を見つけなければ、というプレッシャーがある"
-    emotion_score: 0
+  # ... more actions
 ```
-
-##### 3.3.2. JSON Schema定義
-
-CJM DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
-
-[packages/dsl/src/schemas/cjm.json](packages/dsl/src/schemas/cjm.json)
 
 #### 3.4. SBP DSL (Service Blueprint)
 
-CJMで定義されたユーザーの行動を支える、開発チームの業務タスクを定義します。
-
-##### 3.4.1. YAMLサンプル (v1.0)
+CJMで定義されたユーザー行動を支える業務タスクを定義します。
 
 ```yaml
 kind: sbp
@@ -229,7 +198,7 @@ lanes:
   - { id: lane:cjm, name: System User, kind: cjm }
   - { id: lane:dev-team, name: Development Team, kind: team }
 tasks:
-  - id: cjm:action:execute-uat
+  - id: cjm:action:execute-uat # CJM Actionへの参照
     lane: lane:cjm
     name: "開発されたシステムをテストする"
     readonly: true
@@ -237,7 +206,7 @@ tasks:
   - id: sbp:task:support-uat
     lane: lane:dev-team
     name: "UAT環境を準備し、ユーザーを支援する"
-    source_id: "cjm:action:execute-uat"
+    source_id: "cjm:action:execute-uat" # CJM Actionとの関連付け
     position: { x: 100, y: 50 }
 connections:
   - source: cjm:action:execute-uat
@@ -246,17 +215,9 @@ connections:
     targetHandle: top
 ```
 
-##### 3.4.2. JSON Schema定義
-
-SBP DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
-
-[packages/dsl/src/schemas/sbp.json](packages/dsl/src/schemas/sbp.json)
-
 #### 3.5. Outcome DSL (成果定義)
 
-SBPで可視化された開発チームの業務タスクの中から、ビジネス成果に最も影響を与えるCSFとKPIを1つずつ定義します。
-
-##### 3.5.1. YAMLサンプル (v1.0)
+SBPのタスクから、ビジネス成果に影響を与えるCSFとKPIを定義します。
 
 ```yaml
 kind: outcome
@@ -268,7 +229,7 @@ kgi:
 primary_csf:
   id: oc:csf
   kgi_id: "oc:kgi"
-  source_id: "sbp:task:support-uat"
+  source_id: "sbp:task:support-uat" # SBP Taskとの関連付け
   rationale: "UATの手戻りを削減することが、リリース速度向上に直結する"
 primary_kpi:
   id: oc:kpi
@@ -279,17 +240,9 @@ primary_kpi:
   target: 90
 ```
 
-##### 3.5.2. JSON Schema定義
-
-Outcome DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
-
-[packages/dsl/src/schemas/outcome.json](packages/dsl/src/schemas/outcome.json)
-
 #### 3.6. EM DSL (Enablement Map)
 
-定義した成果（UAT初回合格率の向上）を起点とし、それを達成するために開発チームが行うべき具体的行動と、それに必要なスキル・ナレッジを定義します。
-
-##### 3.6.1. YAMLサンプル (v1.0)
+定義した成果を達成するための具体的行動と、それに必要なスキル・ナレッジを定義します。
 
 ```yaml
 kind: em
@@ -297,400 +250,132 @@ version: 1.0
 id: em:sysdev-enablement
 outcomes:
   - id: em:outcome:uat-pass-rate
-    source_id: "oc:kpi"
+    source_id: "oc:kpi" # Outcome KPIとの関連付け
 actions:
   - id: em:act:testcase-design
     name: UATシナリオに基づきテストケースを設計する
-    source_id: "sbp:task:support-uat"
-  - id: em:act:prepare-test-data
-    name: UAT用のテストデータを準備する
-    source_id: "sbp:task:support-uat"
+    source_id: "sbp:task:support-uat" # SBP Taskとの関連付け
 skills:
   - id: em:skill:test-design
     name: テスト設計スキル
     action_id: "em:act:testcase-design"
     learnings:
       - { title: "テスト設計技法トレーニング", url: "https://lms.local/courses/test-design" }
-  - id: em:skill:sql-scripting
-    name: テストデータ抽出のためのSQLスクリプト作成スキル
-    action_id: "em:act:prepare-test-data"
-    learnings:
-      - { title: "実践SQLクエリトレーニング", url: "https://lms.local/courses/sql-training" }
 knowledge:
   - id: em:knowledge:testcase-template
     name: テストケース設計テンプレート
     action_id: "em:act:testcase-design"
     url: "https://sharepoint.local/templates/test-case"
-  - id: em:knowledge:db-schema-document
-    name: テスト対象DBのスキーマ定義書
-    action_id: "em:act:prepare-test-data"
-    url: "https://confluence.local/db-schema"
 tools: []
 ```
 
-##### 3.6.2. JSON Schema定義
-
-EM DSLを検証するためのJSON Schemaは以下のファイルで定義されています。
-
-[packages/dsl/src/schemas/em.json](packages/dsl/src/schemas/em.json)
-
------
-
-### 4\. UI設計
+### 4\. UIルール
 
 #### 4.1. アプリケーションシェル (共通コンテナ)
 
-Enablement Map Studioは、すべてのエディタビューを内包する共通のシェルUIを提供します。
+| UI要素 | 内容 |
+| :--- | :--- |
+| **ナビゲーションバー** | 画面左端に縦に配置。CJM, SBP, Outcome, EMの各エディタに切り替える4つのアイコンを配置。 |
+| **メインビューエリア** | 中央の広範な領域。選択されたエディタが描画される。 |
+| **プロパティパネル** | 右ペイン。メインビューで選択された要素の詳細を編集するパネル。全ビューで共通。 |
 
-| UI要素 | 内容 | 補足 |
-| :--- | :--- | :--- |
-| **ナビゲーションバー** | 画面左端に縦に配置 | CJM, SBP, Outcome, EMの各エディタに切り替えるための4つのアイコンを配置。 |
-| **メインビューエリア** | 中央の広範な領域 | ナビゲーションバーで選択されたエディタ（CJM Editorなど）が描画される。 |
-| **プロパティパネル** | 右ペイン | メインビューエリアで選択された要素の詳細を編集するパネル。全てのビューで共通のコンポーネント。 |
-
-- 参考
-  - ![](./image_application_shell.png)
-
-#### 4.2. 各エディタビューのUI詳細
+#### 4.2. 各エディタビューのUIルール
 
 ##### CJM Editor
 
-  - **実装状況**: ✅ 完成
-  - **技術スタック**: MUI Table + Recharts + @dnd-kit
-  - **中央キャンバス**:
-    - **ペルソナカード**: テーブル上部にMUI Paperで表示、クリックでPropertyPanel表示
-      - 表示内容: "ペルソナ: {name}" のみ（説明は非表示）
-      - cursor: pointer、ホバー時に背景色変化
-      - クリックでPropertyPanelが開き、ペルソナ編集が可能
-    - MUIテーブルベースのレイアウト
-    - 表外にツールバー（フェーズ追加、アクション追加ボタン）
-    - フェーズヘッダー行（ドラッグハンドル付き、水平並び替え可能）
-    - アクション行（各フェーズ内でドラッグ&ドロップで並び替え可能）
-    - タッチポイント行、思考・感情行
-    - 感情曲線（Recharts LineChart、高さ240px）
+  - **レイアウト**: テーブルベースのレイアウト。上部にペルソナカード、テーブルのヘッダーにフェーズ、行にアクション、タッチポイント、思考・感情を配置。最下部に感情曲線のグラフを表示。
+  - **ペルソナカード**: 「ペルソナ: {name}」と表示。クリックするとプロパティパネルでペルソナ名と説明を編集可能。ペルソナは削除不可。
   - **操作**:
-    - フェーズ追加: 自動的に「アクション 1」を作成
-    - アクション追加: ダイアログでフェーズ選択+名前入力
-    - ドラッグ&ドロップ: フェーズとアクションの順番を入れ替え
-    - クリック: プロパティパネル表示（activationConstraint: 8px）
-  - **プロパティパネル**:
-    - 幅: 33vw（最小400px）
-    - **ペルソナ編集**:
-      - タイトル: "ペルソナ"
-      - ペルソナ名: TextField（1行）
-      - 説明: TextField multiline（rows=6、複数行テキスト）
-      - SAVE のみ（DELETEボタンなし、ペルソナは削除不可）
-    - **アクション編集**: アクション → タッチポイント → 思考・感情 → 感情スコア
-    - **フェーズ編集**: フェーズ名
-    - すべて日本語ラベル
-    - アクション・フェーズ・ペルソナは排他的に表示
-  - 参考
-    - ![](./image_cjm.png)
-
+      - フェーズとアクションはドラッグ＆ドロップで並び替え可能。
+      - 各要素（ペルソナ、フェーズ、アクション）をクリックするとプロパティパネルで詳細を編集できる。
 
 ##### SBP Editor
 
-  - **実装状況**: ✅ 完成
-  - **技術スタック**: @xyflow/react (React Flow)
-  - **中央キャンバス**:
-    - スイムレーン構造（種別: `cjm`, `human`, `team`, `system`）
-    - CJMレーン (`kind: 'cjm'`): CJMアクションから自動生成されたreadonlyタスク
-    - 他のレーン: ユーザーが追加・編集可能なタスク
-    - タスク間を矢印（エッジ）で接続（ドラッグ&ドロップ）
-    - ミニマップ、コントロールパネル、背景グリッド
-  - **除外機能**:
-    - TIME行、EVIDENCE行は不要（仕様から削除）
-  - **操作**:
-    - レーン追加: 左上の「レーン追加」ボタンから即座に追加
-    - レーン削除: 3つの方法で削除可能
-      - DELETEボタン: プロパティパネルのDELETEボタン（確認ダイアログ表示）
-      - Deleteキー: レーン選択時にDeleteキーで削除（PropertyPanelが開いていても動作）
-      - Backspaceキー: レーン選択時にBackspaceキーで削除（PropertyPanelが開いていても動作）
-      - すべての方法で共通の削除ロジック（`deleteLaneWithRelatedData()`）を使用
-      - レーン削除時に関連タスクと接続も自動削除、即座にDSLに反映
-    - レーン並び替え: レーンノードをドラッグして上下移動
-    - レーンリサイズ: レーン選択時に表示されるNodeResizerハンドルでサイズ変更
-      - 最小幅800px、最小高さ150px、最大高さ400px
-      - リサイズ中に他レーン・タスクの端（右端・下端）との距離が10px以内で破線ガイド表示＋自動スナップ
-      - リサイズ終了時にスナップ位置を確定
-      - レーン位置・サイズは`position: {x, y}`と`size: {width, height}`をDSLに保存
-    - タスク追加: 左上の「タスク追加」ボタン（レーン選択+名前入力）
-    - タスク接続: ドラッグ&ドロップで矢印を作成（`connections[]`配列に追加）
-      - 4方向ハンドル対応: `top`, `right`, `bottom`, `left` いずれからでも接続可能
-      - D&D仕様: D&D開始側が`source`、終了側が`target`（矢印は終了側に表示）
-      - ハンドル位置保持: 実際にD&Dした接続ポイントを`sourceHandle`、`targetHandle`に記録
-      - CJM連動: CJM readonlyタスクから通常タスクへの接続時、自動的にタスクの`source_id`を設定
-      - 削除時の連動: CJM接続エッジ削除時、タスクの`source_id`を自動的にクリア
-    - タスク削除: DELETEキー、またはプロパティパネルのDELETEボタン
-    - タスクアライメントガイド: タスクD&D時に他タスクとの中央位置で破線ガイド表示＋自動スナップ（閾値5px）
-    - 位置情報永続化: 通常タスク・CJM readonlyタスクともに`position: {x, y}`をDSLに保存
+  - **レイアウト**: スイムレーン構造のキャンバス。レーン内にタスクを配置し、タスク間を矢印（エッジ）で接続する。
+  - **レーン種別**: `cjm`, `human`, `team`, `system`の4種。
   - **CJM連動**:
-    - `kind: 'cjm'`レーンに`readonly: true`タスクを自動表示
-    - ノードID: `cjm-readonly-{actionId}` 形式
-    - CJM更新時にSBPのreadonlyタスクを自動的に追加・削除・更新
-    - readonly表示（グレーアウト、編集不可、ミニマップで灰色）
-    - CJM readonlyタスクから通常タスクへの接続時、自動的に`source_id`を設定
-    - CJM readonlyノードもアライメントガイドとスナップの対象
-  - **プロパティパネル**:
-    - 幅: 33vw（最小400px）
-    - タスク編集: タスク名、レーン選択、削除
-    - レーン編集: レーン名、種別（CJMレーンは変更不可）
-    - SAVE/DELETE時の即時反映（ID-based状態管理）
-  - **技術的詳細**:
-    - ID-based状態管理: `selectedLaneId`でstale closure回避
-    - 選択的useEffect更新: レーン・タスク・CJM readonlyを独立して同期
-    - `deletion.ts`: 削除ロジックの共通ユーティリティ関数
-      - `isInputFocused()`: 入力フィールドにフォーカスがあるかチェック
-      - `deleteLaneWithRelatedData()`: レーンと関連タスク・接続を削除した新しいSBPを返す（純粋関数）
-      - `deleteTaskWithRelatedData()`: タスクと関連接続を削除した新しいSBPを返す（純粋関数）
-      - すべての削除操作（DELETEボタン、Delete/Backspaceキー）が共通関数を使用
-      - メリット: コード削減（約65行）、バグ修正が容易、テスト可能、DRY原則遵守
-    - `flowConverter.ts`: DSL ⇔ React Flow形式の相互変換
-      - `convertDslToFlow()`: DSLからReact Flow形式に変換、`connections[]`を`edges`に変換、レーン位置・サイズ読み込み
-      - `updateDslFromFlow()`: React Flow形式からDSLに変換、`edges`を`connections[]`に変換、レーン位置・サイズ保存
-      - CJM readonly nodeのID変換: 内部ID `cjm-readonly-{actionId}` ⇔ DSL ID `{actionId}`
-      - 位置情報保存: 通常タスク・CJM readonlyタスクともに`position`を保存
-      - レーンサイズ抽出: NodeResizerのサイズは`node.measured?.width/height`, `node.width/height`, `node.style?.width/height`の優先順で取得
-    - レーン配置: Y座標 = `index * (LANE_HEIGHT + LANE_SPACING)`, デフォルトサイズ: `LANE_WIDTH=1400`, `LANE_HEIGHT=300`
-    - タスクアライメントガイド: `useAlignmentGuides` フックによる破線ガイド表示とスナップ処理（閾値5px）
-    - レーンリサイズアライメントガイド: `handleLaneResize`, `handleLaneResizeEnd`による破線ガイド表示とスナップ処理（閾値10px）
-    - エッジマーカー: `markerEnd` を使用して矢印を終了側（target）に表示
-    - 接続削除処理: `handleEdgesDelete` でCJM接続エッジ削除時に`source_id`をクリア
-  - 参考
-    - ![](./image_sbp.png)
+      - `kind: 'cjm'`のレーンには、CJMで定義されたアクションが編集不可(`readonly: true`)のタスクとして自動的に表示される。
+      - CJMの内容が更新されると、このレーンのタスクも自動的に追加・削除・更新される。
+  - **操作**:
+      - レーンとタスクの追加・削除・編集が可能。
+      - レーンはドラッグで上下に並び替え、ハンドルでサイズ変更が可能。
+      - タスクはドラッグで移動可能。移動時には他のタスクと中央位置が揃うとガイド線が表示され、自動でスナップする。
+      - タスクのハンドルをドラッグ＆ドロップすることで、タスク間に矢印を作成・接続できる。
+      - CJMの`readonly`タスクから通常タスクへ接続すると、通常タスクの`source_id`が自動的に設定される。この接続を削除すると`source_id`もクリアされる。
+  - **仕様**:
+      - TIME行、EVIDENCE行は仕様に含まない。
+      - タスクとレーンの位置・サイズ情報はDSLに保存される。
 
 ##### Outcome Editor
 
-  - **実装状況**: ✅ 完成（カード型レイアウト）
-  - **技術スタック**: MUI Paper/Stack/Button + PropertyPanel (Drawer)
-  - **中央エリア**:
-    - **レイアウト順序**: CJM → SBP → 組織の求める成果
-    - **初期表示**: SBP未定義時は「SBPを作成するか YAML をロードしてください」を表示
-    - **フィルタリング機能**:
-      - フィルターアコーディオン（デフォルト閉じた状態、スティッキー表示）
-      - **フィルター有効時にバッジ表示**: MUI Chip (`size="small"`, `color="primary"`) でフィルタリング後のSBPタスク件数を表示
-    - **CJM領域**: フェーズフィルタボタン＋CJMアクション表示
-      - フェーズごとにグルーピングしてアクション表示
-      - 選択フェーズのアクションのみ表示（フィルタリング時）
-    - **SBP領域**: レーンごとにカード形式でタスクを表示
-      - 説明テキスト「CSFをタスクの中から選択してください。」を表示
-      - フェーズフィルタに連動してタスクをフィルタ表示
-    - **CSF設定**: SBPタスクカードをクリックして`primary_csf.source_id`を設定
-    - **組織の求める成果カード（強調表示）**: KGI/CSF/KPI個別カード表示（カード内にネスト）
-      - elevation=3、border=2、borderColor='primary.main'、bgcolor='grey.100'
-      - 見出しを太字（fontWeight="bold"）で強調
-  - **PropertyPanel** (右ペイン):
-    - 幅: 33vw（最小400px）
-    - KGI名入力
-    - CSF: ソースタスク表示（readonly）+ 説明入力
-    - KPI: 名前、説明、目標値、ユニット選択
-    - 数値フォーマット対応（カンマ区切り、小数点自動調整）
+  - **レイアウト**: 「CJM」→「SBP」→「組織の求める成果」の順にカード形式で情報を表示。
+  - **初期表示**: SBPが未定義の場合、「SBPを作成するか YAML をロードしてください」と表示。
+  - **フィルタリング**:
+      - CJMフェーズでSBPタスクをフィルタリングできる。
+      - フィルターが有効な場合、フィルタリング後のSBPタスク件数をバッジで表示する。
+  - **CSF設定**: SBP領域に表示されたタスクカードをクリックすることで、そのタスクをCSFのソース(`primary_csf.source_id`)として設定する。
+  - **組織の求める成果カード**: KGI, CSF, KPIを個別のカードとして強調表示する。
+  - **プロパティパネル**: KGI名、CSFの説明、KPIの名前・説明・目標値・ユニットを編集できる。
 
 ##### EM Editor
 
-  - **実装状況**: ✅ 完成（カードベースレイアウト）
-  - **技術スタック**: MUI Paper/Stack/Button + react-resizable-panels + TableSortLabel
-  - **エディタペイン** (上部):
-    - **レイアウト順序**: 組織の求める成果 → 顧客 → 顧客の意思決定プロセス → 組織の価値提供プロセス → 必要な行動
-    - **初期表示**: Outcome未定義時は「Outcomeを作成するか YAML をロードしてください」を表示
-    - **フィルタリング機能**:
-      - フィルターアコーディオン（デフォルト閉じた状態、スティッキー表示）
-      - **フィルター有効時にバッジ表示**: MUI Chip (`size="small"`, `color="primary"`) でフィルタリング後のEM行動件数を表示
-    - **組織の求める成果カード**: KGI/CSF/KPI表示（KPI: `{名前}: {目標値}{ユニット}` 形式）
-      - CSFフィルタボタン: CSFに紐づくCJMアクション、SBPレーン・タスク、EM行動のみ表示
-    - **顧客カード**: CJMペルソナ表示（ペルソナ名＋説明、複数行テキスト対応）
-    - **顧客の意思決定プロセスカード**: CJMフェーズフィルタボタン＋CJMアクション表示
-      - フェーズごとにグルーピングしてアクション表示
-      - 選択フェーズのアクションのみ表示（フィルタリング時）
-      - フィルタ連動: CJMアクション → SBPタスク → EM行動
-    - **組織の価値提供プロセスカード**: SBPレーンフィルタ＋タスク表示
-      - レーン選択で関連タスク・行動をフィルタ
-    - **必要な行動カード（SBPタスクでグルーピング）**: タスクごとにEM行動をグループ化して表示
-      - タスク名をグループ見出しとして表示、行動件数をChipで表示
-      - 各グループ内に行動カードを配置（クリックでPropertyPanel表示）
-      - 行動カード内にはタスク名を表示しない（グループ見出しに表示されているため）
-  - **リソース一覧ペイン** (下部):
-    - Paper elevation={2}でカードラップ（padding 24px）
-    - リサイズ可能なテーブル（react-resizable-panels）
-    - CSVダウンロード機能
-    - カラム: CSF（チェックボックス）/CJMフェーズ/CJMアクション/SBPレーン/SBPタスク/必要な行動/リンクタイプ/名前/URL
-    - CSF行の強調表示（緑色背景 `#c8e6c9`、太字）
-    - 全カラムでソート可能（TableSortLabel）
-    - テキスト検索フィルタ
-    - 互い違いの背景色（白/薄いグレー）
-  - **PropertyPanel** (右ペイン):
-    - 幅: 33vw（最小400px）
-    - 行動名入力
-    - スキル一覧（学習コンテンツ `title` フィールド使用）
-    - ナレッジ一覧（名前＋URL）
-    - ツール一覧（名前＋URL）
-    - 各リソースの追加・削除機能
-    - SAVE/DELETEボタン
-  - **操作**:
-    - 「必要な行動を追加」ボタン: 新規EM Action作成
-    - CSF/フェーズ/レーンフィルタ: ボタンクリックでフィルタリング
-    - 行動カードクリック: PropertyPanel表示（`stopPropagation()`で保護）
-    - PropertyPanel以外をクリック: パネルを閉じる
-  - **データ構造**:
-    - 階層: Outcome KPI → CJM Phase → CJM Action → SBP Task → EM Actions → Skills/Knowledge/Tools
-    - 学習コンテンツ: `{ title, url }` （`id`、`name`フィールドなし）
-    - インデックスベースの更新で連動問題を解消
+  - **レイアウト**: 上部の「エディタペイン」と下部の「リソース一覧ペイン」に分かれる。
+  - **初期表示**: Outcomeが未定義の場合、「Outcomeを作成するか YAML をロードしてください」と表示。
+  - **エディタペイン**: 「組織の求める成果」→「顧客」→「顧客の意思決定プロセス」→「組織の価値提供プロセス」→「必要な行動」の順にカード形式で表示。
+  - **フィルタリング**:
+      - CSF、CJMフェーズ、SBPレーンによって、表示される情報をフィルタリングできる。
+      - フィルターが有効な場合、フィルタリング後のEM行動件数をバッジで表示する。
+  - **必要な行動カード**: SBPタスクごとにEM行動をグループ化して表示する。行動カードをクリックするとプロパティパネルで編集可能。
+  - **リソース一覧ペイン**:
+      - 全てのスキル、ナレッジ、ツールを一覧表示するリサイズ可能なテーブル。
+      - カラム: CSF, CJMフェーズ, CJMアクション, SBPレーン, SBPタスク, 必要な行動, リンクタイプ, 名前, URL。
+      - 全てのカラムでソート、テキスト検索が可能。
+      - CSVダウンロード機能を持つ。
+  - **プロパティパネル**: 行動名、および関連するスキル、ナレッジ、ツールの一覧を編集できる。
 
------
+### 5\. デザインシステム
 
-### 5\. 操作フローの例
+#### 5.1. カラーパレット
 
-1.  **ファイルを開く**: アプリケーションの開始画面で「YAMLファイルを開く」ボタンをクリックし、`---`で区切られたDSL群を含む単一の `.yaml` ファイルを読み込みます。
-2.  **CJMを編集**: 左のナビゲーションバーで「CJM」アイコンをクリックします。メインビューにCJM Editorが表示され、YAML内の `kind: cjm` の部分を編集できます。
-3.  **SBPを編集**: 「SBP」アイコンをクリックします。ビューがSBP Editorに切り替わります。CJMで編集した内容は即座にSBPの表示に反映されます。
-4.  **成果を定義**: 「Outcome」アイコンをクリックし、Outcome EditorでCSFとKPIを定義します。
-5.  **施策を設計**: 「EM」アイコンをクリックし、EM Editorで具体的な施策を設計します。
-6.  **エクスポート**: 編集が完了したら、「エクスポート」ボタンを押し、全ての変更内容を含んだ単一のYAMLファイルとして保存します。
-
------
-
-### 6\. 実装方針
-
-単一ファイル・マルチビューのWebアプリケーションとしてOSS化するため、以下の実装方針を採用します。
-
-| 項目 | 内容 |
+| 用途 | カラーコード |
 | :--- | :--- |
-| **プロジェクト構成** | **モノレポ構成** (pnpm workspaces) |
-| **技術基盤** | React / TypeScript |
-| **アプリケーションシェル**| React (Vite)。ナビゲーションとビューの切り替えはReact Router v6で管理。 |
-| **状態管理** | **単一のグローバルストア** (Zustand with persist middleware) で、読み込んだYAMLのパース結果（4つのDSLオブジェクト）を一元管理。各エディタビューはこのストアからデータを読み書きする。 |
-| **エディタモジュール** | @xyflow/react (React Flow) および Material-UI (MUI)。各エディタはシェルから動的にロードされるコンポーネントとして開発。 |
-| **DSL管理** | YAMLパーサー (js-yaml), JSON Schemaバリデーター (ajv) を共通パッケージとして管理。 |
-| **共通UIキット** | エディタ間で共通のボタン、パネル、アイコンなどをまとめたUIコンポーネントライブラリを開発。 |
-| **OSSライセンス** | MIT License |
+| **プライマリカラー** (ボタン, アクティブ状態など) | `#2e7d32` |
+| **セカンダリカラー** (補助要素, ホバー状態など) | `#66bb6a` |
+| **テキストカラー** (本文, 見出し) | `#424242` |
+| **セカンダリテキスト** (補足テキスト, ラベル) | `#616161` |
 
------
+#### 5.2. ブランドアセット
 
-### 6.1. デザインシステム
+| アセット | 配置 | サイズ |
+| :--- | :--- | :--- |
+| **ロゴ** (`/logo.png`) | ヘッダー左側 | 高さ40px |
+| **アイコン** (`/icon.png`) | favicon | - |
 
-#### カラーパレット
+#### 5.3. UIコンポーネント規則
 
-アプリケーション全体で統一されたカラーパレットを使用します。
+  - **フィルターバッジ (Outcome/EMエディタ)**:
+      - フィルターが有効な場合にのみ表示される。
+      - `size="small"`, `color="primary"` のChipコンポーネントを使用。
+      - Outcomeエディタではフィルタリング後のSBPタスク件数、EMエディタではEM行動件数を表示する。
 
-| カラー名 | カラーコード | Material Design | 用途 |
-| :--- | :--- | :--- | :--- |
-| **プライマリカラー** | `#2e7d32` | Green 800 | ボタン、アクティブ状態、リンク、ヘッダー |
-| **セカンダリカラー** | `#66bb6a` | Green 400 | 補助的なUI要素、ホバー状態 |
-| **テキストカラー** | `#424242` | Grey 800 | 本文、見出し（純粋な黒より目に優しい） |
-| **セカンダリテキスト** | `#616161` | Grey 700 | 補足テキスト、ラベル |
+### 6\. データと操作のルール
 
-**MUIテーマ設定** ([apps/studio/src/main.tsx](apps/studio/src/main.tsx)):
-```typescript
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#2e7d32',      // Green 800
-      light: '#60ad5e',
-      dark: '#005005',
-      contrastText: '#ffffff',
-    },
-    secondary: {
-      main: '#66bb6a',      // Green 400
-      light: '#98ee99',
-      dark: '#338a3e',
-      contrastText: '#000000',
-    },
-    text: {
-      primary: '#424242',   // Grey 800
-      secondary: '#616161', // Grey 700
-    },
-  },
-  typography: {
-    allVariants: {
-      color: '#424242',
-    },
-  },
-})
-```
+#### 6.1. データ参照
 
-#### ブランドアセット
+  - **CJMアクションの参照**: SBP内のCJMレーンタスクは、CJMで定義されたアクションへの**参照**として扱う。CJMでの変更はSBPに自動的に反映される。
+  - **DSL間の関連性**:
+      - 1つのSBPタスクに対して、複数のEM行動が紐づく（1対多）。
+      - 1つのEM行動は、必ず1つのSBPタスクにのみ紐づく。
+      - EM行動からSBPタスクへの参照には`source_id`フィールドを使用する。
 
-| アセット | ファイル | 配置 | サイズ | 説明 |
-| :--- | :--- | :--- | :--- | :--- |
-| **ロゴ** | `/logo.png` | ヘッダー左側 | 高さ40px | 緑の三角形ロゴ、プライマリカラーと統一 |
-| **アイコン** | `/icon.png` | favicon | - | ブラウザタブに表示 |
+#### 6.2. UI操作
 
-**ロゴの実装** ([apps/studio/src/components/AppShell.tsx](apps/studio/src/components/AppShell.tsx)):
-```tsx
-<Box
-  component="img"
-  src="/logo.png"
-  alt="Enablement Map Studio"
-  sx={{ height: 40, width: 'auto' }}
-/>
-```
+  - **SBPのタスク間接続**: UI上でタスク間をドラッグ＆ドロップで接続すると、起点タスクの`link_to`配列に終点タスクのIDが追加される。
+  - **OutcomeのCSF設定**: SBPタスクカードをクリックすると、そのタスクが`primary_csf.source_id`として設定され、プロパティパネルが自動的に開く。
+  - **EMの階層表示**: UI上の`Outcome → CJM → SBP → EM`の階層は、DSLの参照関係（`source_id`）を逆引きして自動的に生成される。
 
-#### UIコンポーネント規則
+#### 6.3. ID生成と管理
 
-**フィルターバッジ仕様** (Outcome/EMエディタ):
-- コンポーネント: MUI Chip
-- 表示条件: フィルター有効時のみ表示
-- プロパティ: `size="small"`, `color="primary"`, `sx={{ ml: 1 }}`
-- 表示内容:
-  - Outcome Editor: フィルタリング後のSBPタスク件数
-  - EM Editor: フィルタリング後のEM行動件数
-
-**実装例**:
-```tsx
-{selectedPhaseId && (
-  <Chip
-    label={filteredTasks.length}
-    size="small"
-    color="primary"
-    sx={{ ml: 1 }}
-  />
-)}
-```
-
------
-
-### 7\. 設計上の重要な仕様
-
-#### 7.1. データ参照方式
-
-##### CJMアクションの参照（SBP内）
-- SBP内のCJMレーンタスクは、CJMエディタで定義されたアクションへの**参照**として扱います
-- CJMエディタで変更すると、SBPビューにも自動的に反映されます
-- `readonly: true`はSBPエディタ上で編集不可を意味します
-
-##### DSL間の関連性
-- 1つのSBP Taskに対して、複数のEM Actionが紐づきます（1対多）
-- 1つのEM Actionは、必ず1つのSBP Taskにのみ紐づきます
-- EM ActionからSBP Taskへの参照は`source_id`フィールドを使用します
-
-#### 7.2. UI操作仕様
-
-##### SBP Editorでのタスク間矢印の描画
-- ユーザーがUI上で手動で矢印を描画します
-- タスクをドラッグ&ドロップで接続すると、起点タスクの`link_to`配列に終点タスクのIDが追加されます
-- 1つのタスクから複数のタスクへ矢印を引くことができます（`link_to`は配列）
-
-##### Outcome EditorでのCSF設定
-- SBPタスクカードをクリックすることで、そのタスクを`primary_csf.source_id`として設定します
-- CSFが設定されると、PropertyPanelが自動的に開き、CSFの説明やKPI情報を入力できます
-- フェーズフィルタボタンで特定のCJMフェーズに関連するSBPタスクのみを表示できます
-
-##### EM Editorの階層表示
-- UIでは `Outcome → CJMフェーズ → CJMアクション → SBPタスク → EMアクション群 → skills, knowledge, tools` の階層で表示します
-- この階層は、EM OutcomeのKPI → CSF → SBP Task → CJM Action → CJM Phase という参照を逆引きして自動生成します
-
-#### 7.3. ID生成と管理
-
-##### 自動生成ルール
-- ユーザーが新しい要素（Phase, Action, Task, etc.）を作成すると、アプリケーションが自動的にIDを生成します
-- フォーマット: `{dsl種別}:{エンティティタイプ}:{UUID}`
-- 例: `cjm:action:550e8400-e29b-41d4-a716-446655440000`
-- ユーザーはIDを直接編集する必要はありません（内部的に管理）
-
-#### 7.4. バージョン管理
-
-##### 初期実装
-- 初期実装ではバージョンチェックは行いません
-- `version`フィールドは将来の拡張のために予約されています
-- すべてのDSLは`version: 1.0`で統一します
+  - **自動生成ルール**: ユーザーが新しい要素（Phase, Action, Taskなど）を作成すると、アプリケーションが自動的にIDを生成する。
+  - **フォーマット**: `{dsl種別}:{エンティティタイプ}:{UUID}` （例: `cjm:action:550e8400-e29b-41d4-a716-446655440000`）
+  - **編集**: ユーザーはIDを直接編集しない。
