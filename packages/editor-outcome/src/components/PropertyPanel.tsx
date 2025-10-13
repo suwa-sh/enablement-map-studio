@@ -200,8 +200,10 @@ export function PropertyPanel({
                   />
 
                   <FormControl fullWidth size="small">
-                    <InputLabel>ユニット</InputLabel>
+                    <InputLabel id="unit-select-label">ユニット</InputLabel>
                     <Select
+                      labelId="unit-select-label"
+                      id="unit-select"
                       value={editedOutcome.primary_kpi.unit || ''}
                       label="ユニット"
                       onChange={(e) =>

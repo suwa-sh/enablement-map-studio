@@ -1136,8 +1136,10 @@ export function SbpCanvas({
         <DialogTitle>タスク追加</DialogTitle>
         <DialogContent>
           <FormControl fullWidth sx={{ mt: 2, mb: 2 }}>
-            <InputLabel>レーン</InputLabel>
+            <InputLabel id="lane-select-label">レーン</InputLabel>
             <Select
+              labelId="lane-select-label"
+              id="lane-select"
               value={selectedLaneForNewTask}
               label="レーン"
               onChange={(e) => setSelectedLaneForNewTask(e.target.value)}

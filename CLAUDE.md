@@ -380,22 +380,98 @@ DSLのスキーマを変更する場合は、以下の手順に従います。
 
 ビルド成果物でコンフリクトが発生した場合は、再ビルドで生成可能であるため、常に最新のバージョン（HEAD側）を採用して解決します。
 
-## 6\. 作業ルール
+## テスト
+
+### ユニットテスト
+
+- フレームワーク: Vitest
+- アプローチ: t-wadaさん推奨のTDDアプローチ
+- テスト構造: Given / When / Then
+- 命名規則: テスト対象メソッド名_XXXの場合_YYYであること
+- 実行コマンド:
+  - `pnpm test` - ウォッチモードでテスト実行
+  - `pnpm test:run` - 1回のみテスト実行
+
+### e2eテスト
+
+- フレームワーク: Playwright
+- テストファイル配置: `apps/studio/e2e/`
+- テスト種別:
+  - **スモークテスト** (`smoke.spec.ts`)
+    - アプリケーションの基本的な動作確認
+    - サンプルYAMLのロード、各エディタページへの遷移
+    - YAMLのエクスポート、データのクリア
+  - **正常系シナリオ** (`happy-path.spec.ts`)
+    - 空の状態から各エディタで要素を新規作成
+    - CJM、SBP、Outcome、EMの全エディタでデータ作成を確認
+    - YAMLのエクスポート/インポートでデータが保持されることを確認
+    - localStorageへの永続化を確認
+  - **更新・削除シナリオ** (`update-delete.spec.ts`)
+    - サンプルデータをロードしてから各エディタで更新・削除操作を確認
+    - **ドラッグ＆ドロップ操作を含む**:
+      - CJMエディタ: フェーズとアクションの並び替え
+      - SBPエディタ: タスクの移動、レーンのサイズ変更、レーンの移動、エッジの削除
+    - CSF（重要成功要因）の付け替え
+    - EMエディタ: スキル、ナレッジ、ツール、学習コンテンツの変更・削除
+- 実行コマンド:
+  - `pnpm test:e2e` - ヘッドレスモードでe2eテスト実行（全テスト）
+  - `pnpm test:e2e:ui` - UIモードでe2eテスト実行（デバッグ用）
+  - `pnpm test:e2e:headed` - ブラウザを表示してe2eテスト実行
+
+#### e2eテスト実装のベストプラクティス
+
+1. **MUI Selectコンポーネントの操作**:
+   - アクセシビリティ属性（`labelId`, `id`）を設定して、テストで安定して要素を取得できるようにする
+   - 操作フロー: combobox要素をクリック → listboxが表示される → listbox内でoptionを選択 → listboxが閉じる
+   - strict mode violationを避けるため、listboxスコープ内でoptionを検索する
+   - ヘルパー関数 `selectMuiOption(page, selectId, optionName)` を使用すると、この操作を簡潔に記述できる
+
+2. **待機処理**:
+   - `page.waitForTimeout()`の使用を避け、要素の状態変化を待つ`expect().toBeVisible()`や`.not.toBeVisible()`を使用する
+   - タイムアウトはエラーを隠蔽するため、適切な待機条件を設定する
+   - ただし、MUIのTextFieldで値の変更を認識させるための短い待機（100ms）は例外的に許容される
+
+3. **DrawerとDialogの違い**:
+   - OutcomeエディタとEMエディタは`variant="persistent"`のDrawerを使用
+   - Drawerは`getByRole('dialog')`では見つからないため、内部の要素で確認する
+
+4. **要素の特定**:
+   - strict mode violationを避けるため、コンテナでスコープしてから要素を検索する
+   - ヘルパー関数 `getAddButtonInSection(page, sectionText)` を使用すると、セクション内の追加ボタンを特定できる
+   - 例: `getAddButtonInSection(page, 'スキル (0)')`
+
+5. **ヘルパー関数の活用**:
+   - `apps/studio/e2e/happy-path.spec.ts` に以下のヘルパー関数を定義：
+     - `fillInput(page, locator, value)`: 入力フィールドに値を入力
+     - `selectMuiOption(page, selectId, optionName)`: MUI Selectでオプションを選択
+     - `getAddButtonInSection(page, sectionText)`: セクション内の追加ボタンを取得
+   - 共通処理をヘルパー関数に抽出することで、テストコードの重複を削減し、保守性を向上させる
+
+#### ドラッグ＆ドロップテストの実装
+
+ドラッグ＆ドロップのe2eテストには、以下の技術的課題への対応が必要です：
+
+**使用ライブラリ:**
+- CJMエディタ: `@dnd-kit/core` (PointerSensor with `activationConstraint.distance: 8`)
+- SBPエディタ: `@xyflow/react` (React Flow)
+
+**実装のポイント:**
+1. **ポインターイベントの使用**: `page.dragAndDrop()`ではなく、`page.mouse`を使用
+   - `@dnd-kit`とReact FlowはHTML5 dragイベントではなくポインターイベントをリスン
+2. **activation constraintへの対応**: @dnd-kitの設定（distance: 8）を考慮し、最初に10px移動してからドラッグ
+3. **親要素のターゲティング**: DragIndicatorアイコンではなく、`{...listeners}`を持つ親Box要素をターゲット
+4. **適切な待機時間**: `waitForTimeout(30ms)`でactivation delayを尊重
+
+詳細は`apps/studio/e2e/utils/drag-helpers.ts`を参照してください。
+
+## 作業ルール
 
 - 作業を開始する前に、`README.md`と`REQUIREMENTS.md`を読み込み、仕様を理解してください。
 - 実装が完了したら、すべての静的解析、テストが通ることを確認してください
   - `pnpm check`
   - `pnpm build`
-- 実装が完了したら、Chrome DevToolsで画面表示と動作を確認してください。
-- 動作確認後、今回修正した範囲とそれに関連する既存コードのリファクタリングを行ってください。
+- Chrome DevToolsで画面表示と動作を確認してください。
+- 今回修正した範囲とそれに関連する既存コードのリファクタリングを行ってください。
+- 回帰テストで他への影響がないことを確認してください。
+  - `pnpm test:e2e`
 - 作業完了後、`CLAUDE.md`, `README.md`, `REQUIREMENTS.md`を最新の状態に更新してください。
-
-## テスト
-
-- ユニットテスト
-  - t-wadaさん推奨のTDDアプローチ
-  - Given / When / Then
-  - テストメソッドの命名規則は、テスト対象メソッド名_XXXの場合_YYYであること
-- e2eテスト
-  - クリアした状態から、CJM/SBP/Outcome/EMでの正常系シナリオを確認
-  - サンプルをインポートした状態から、変更・削除系の振る舞いを個別に確認

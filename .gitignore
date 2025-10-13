@@ -18,3 +18,9 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+*.trace

@@ -23,11 +23,17 @@
     "format": "qlty fmt",
     "test": "vitest",
     "test:run": "vitest --run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
     "type-check": "tsc --noEmit",
     "check": "pnpm format && pnpm type-check && pnpm lint && pnpm test:run"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@types/node": "^20.11.5",
+    "playwright": "^1.56.0",
     "typescript": "^5.3.3",
     "vitest": "^1.2.0"
   },

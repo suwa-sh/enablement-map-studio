@@ -114,6 +114,9 @@ docker run -p 8080:80 ghcr.io/suwa-sh/enablement-map-studio:latest
   - Outcome: MUI Paper/Stack/Button + フィルタリング機能
   - EM: MUI Paper/Stack/Button + react-resizable-panels + TableSortLabel
 - **DSL処理**: js-yaml, ajv
+- **テスト**:
+  - ユニットテスト: Vitest
+  - e2eテスト: Playwright (ドラッグ&ドロップを含む包括的なシナリオテスト)
 - **Linter/Formatter**: qlty (biome, prettier, eslint)
 - **パッケージ管理**: pnpm workspaces
 
