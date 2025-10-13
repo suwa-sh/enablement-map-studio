@@ -221,7 +221,7 @@ const EmotionCurve = ({ phases, actions }: { phases: CjmPhase[]; actions: CjmAct
             );
           }}
         />
-        <Line type="monotone" dataKey="score" stroke="#1976d2" strokeWidth={2} dot={{ r: 5 }} />
+        <Line type="monotone" dataKey="score" stroke="#2e7d32" strokeWidth={2} dot={{ r: 5 }} />
       </LineChart>
     </ResponsiveContainer>
   );
