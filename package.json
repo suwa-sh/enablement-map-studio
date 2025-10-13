@@ -22,7 +22,9 @@
     "lint": "qlty check",
     "format": "qlty fmt",
     "test": "vitest",
-    "type-check": "tsc --noEmit"
+    "test:run": "vitest --run",
+    "type-check": "tsc --noEmit",
+    "check": "pnpm format && pnpm type-check && pnpm lint && pnpm test:run"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
