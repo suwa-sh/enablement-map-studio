@@ -526,7 +526,7 @@ DSLのスキーマを変更する場合は、以下の手順に従います。
 
 ## 作業ルール
 
-- 作業を開始する前に、`README.md`と`REQUIREMENTS.md`を読み込み、仕様を理解してください。
+- 作業を開始する前に、`README.md`と`REQUIREMENTS.md`、`ARCHITECTURE.md`、`DEVELOPMENT.md`を読み込み、仕様とルールを理解してください。
 - 実装が完了したら、すべての静的解析、テストが通ることを確認してください
   - `pnpm check`
   - `pnpm build`
@@ -534,4 +534,4 @@ DSLのスキーマを変更する場合は、以下の手順に従います。
 - 今回修正した範囲とそれに関連する既存コードのリファクタリングを行ってください。
 - 回帰テストで他への影響がないことを確認してください。
   - `pnpm test:e2e`
-- 作業完了後、`CLAUDE.md`, `README.md`, `REQUIREMENTS.md`を最新の状態に更新してください。
+- 作業完了後、`CLAUDE.md`, `README.md`, `REQUIREMENTS.md`、`ARCHITECTURE.md`、`DEVELOPMENT.md`を最新の状態に更新してください。

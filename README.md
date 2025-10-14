@@ -35,10 +35,6 @@ docker run -p 8080:80 ghcr.io/suwa-sh/enablement-map-studio:latest
 
 アプリケーションは http://localhost:8080 でアクセスできます。
 
-### 開発環境で利用
-
-開発環境のセットアップ方法については、[DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
-
 ## サポートブラウザ
 
 Enablement Map Studioは、File System Access APIを使用してローカルファイルの読み書きを行います。以下のブラウザでの利用を推奨します。
@@ -69,7 +65,7 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 
 ### CJM Editor
 
-![](https://share.cleanshot.com/lHjjXccy+)
+![](https://share.cleanshot.com/xTJzT9SM+)
 
 - ペルソナの表示・編集
 - フェーズとアクションの表示・編集
@@ -79,7 +75,7 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 
 ### SBP Editor
 
-![](https://share.cleanshot.com/R5yFsfB5+)
+![](https://share.cleanshot.com/ZdN4GMyl+)
 
 - React Flowベースのフローダイアグラム
 - CJMの定義内容と連動
@@ -89,7 +85,7 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 
 ### Outcome Editor
 
-![](https://share.cleanshot.com/74PNSd28+)
+![](https://share.cleanshot.com/2XLtpjKJ+)
 
 - CJM、SBPの定義内容と連動
 - SBPタスクから、CSFを選択
@@ -98,7 +94,7 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 
 ### EM Editor
 
-![](https://share.cleanshot.com/sQpwBX6t+)
+![](https://share.cleanshot.com/bstnPPQw+)
 
 - CJM、SBP、Outcomeの定義内容と連動
 - SBPタスクに、必要な行動を追加・更新、削除
@@ -108,17 +104,18 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 ### 共通機能
 
 - localStorageによる永続化
-- Undo / Redo
-- YAMLファイルの開く/保存
+- YAMLファイルを開く/保存
   - **Open File**: ローカルのYAMLファイルを開く（Ctrl+O / Cmd+O）
   - **Save**: 開いているファイルに上書き保存（Ctrl+S / Cmd+S）
   - **Save As...**: 別名で保存（Ctrl+Shift+S / Cmd+Shift+S）
 - サンプルデータのロード
 - キャンバスのクリア
+- Undo（Ctrl+Z / Cmd+Z）
+- Redo（Ctrl+Shift+Z / Cmd+Shift+Z）
 
-## Git連携ワークフロー
+## チームで利用する場合
 
-Enablement Map Studioは、Gitを使ったチーム開発をサポートします。以下のワークフローで、YAMLファイルをバージョン管理できます。
+Enablement Map Studioは、個人で利用するエディタです。チームで定義を共有する場合は、Gitを使ったチーム開発を想定しています。以下のワークフローで、YAMLファイルをバージョン管理できます。
 
 ### 基本的な流れ
 
@@ -199,17 +196,15 @@ docker run -p 3000:80 ghcr.io/suwa-sh/enablement-map-studio:1.0.0
 
 ## 開発に参加する
 
-開発環境のセットアップ、ビルド方法、コーディング規約については、[DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
+- 仕様の情報は、[REQUIREMENTS.md](./REQUIREMENTS.md) を参照してください。
+- 構成の情報は、[ARCHITECTURE.md](./ARCHITECTURE.md) を参照してください。
+- 開発ルールの情報は、[DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
+
+## 関連ドキュメント
+
+- [イネーブルメントのコンセプト](https://note.com/suwash/n/n02fa7e60d409)
+- [KPIマネジメントのコンセプト](https://note.com/suwash/n/n7c5fb05a1009)
 
 ## ライセンス
 
 MIT License
-
-## 関連ドキュメント
-
-- [REQUIREMENTS.md](./REQUIREMENTS.md) - 詳細仕様
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - アーキテクチャ
-- [DEVELOPMENT.md](./DEVELOPMENT.md) - 開発環境セットアップと開発ガイド
-- [CLAUDE.md](./CLAUDE.md) - 実装ガイド
-- [イネーブルメントのコンセプト](https://note.com/suwash/n/n02fa7e60d409)
-- [KPIマネジメントのコンセプト](https://note.com/suwash/n/n7c5fb05a1009)

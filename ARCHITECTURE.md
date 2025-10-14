@@ -5,22 +5,6 @@
 Enablement Map Studioは、ブラウザ上で動作する単一ユーザー向けのWebアプリケーションです。
 データはブラウザのlocalStorageに永続化され、File System Access APIを使用してローカルのYAMLファイルと直接読み書きできます。
 
-### 実装済み機能
-
-- **File System Access API**: ローカルファイルとの直接読み書き（Open File, Save, Save As...）
-- **キーボードショートカット**: Ctrl+S / Cmd+S で上書き保存
-- **未保存変更の検知**: ファイル名に `*` マークを表示、ブラウザ終了時に警告
-- **Git連携サポート**: ローカルにcloneしたYAMLファイルを編集し、Gitでバージョン管理可能
-
-### ブラウザサポート
-
-| ブラウザ | サポート状況 |
-|---------|-------------|
-| Chrome 86+ | ✅ 完全サポート |
-| Edge 86+ | ✅ 完全サポート |
-| Safari 15.2+ | ✅ 完全サポート |
-| Firefox | ❌ File System Access API 非対応 |
-
 ## アーキテクチャ (C4 Model)
 
 ### Level 1: システムコンテキスト
@@ -229,19 +213,25 @@ graph LR
 
 ## 処理フロー
 
-### YAML読み込みフロー
+### YAML読み込みフロー（File System Access API）
 
 ```mermaid
 sequenceDiagram
     participant User
     participant FileOps
+    participant FileSystem
     participant Store
     participant Parser
     participant Validator
     participant RefChecker
     participant LocalStorage
 
-    User->>FileOps: Load YAML
+    User->>FileOps: Ctrl+O / Open File
+    FileOps->>FileSystem: showOpenFilePicker()
+    FileSystem-->>FileOps: FileSystemFileHandle
+    FileOps->>FileSystem: handle.getFile()
+    FileSystem-->>FileOps: File
+    FileOps->>FileOps: file.text()
     FileOps->>Parser: parseYaml(content)
     Parser->>Parser: yaml.loadAll()
     Parser->>Validator: validateDsl(doc)
@@ -250,6 +240,7 @@ sequenceDiagram
     FileOps->>Store: loadYaml(content)
     Store->>RefChecker: checkReferenceIntegrity(parsed)
     RefChecker-->>Store: ReferenceCheckResult
+    Store->>Store: setFileHandle(handle)
     Store->>LocalStorage: persist state
     LocalStorage-->>Store: OK
     Store-->>FileOps: OK
@@ -258,15 +249,22 @@ sequenceDiagram
 
 | ステップ | 説明 |
 |---------|------|
-| 1. Load YAML | ユーザーがYAMLファイルを選択 |
-| 2. parseYaml | js-yamlでパース (複数ドキュメント対応) |
-| 3. validateDsl | ajvでJSONスキーマ検証 |
-| 4. loadYaml | Zustandストアに格納 |
-| 5. checkReferenceIntegrity | DSL間の参照整合性チェック |
-| 6. persist | localStorage に永続化 |
-| 7. Success Toast | 成功通知を表示 |
+| 1. Ctrl+O / Open File | ユーザーがショートカットまたはボタンでファイルを開く |
+| 2. showOpenFilePicker | File System Access APIでファイル選択ダイアログを表示 |
+| 3. FileSystemFileHandle | 選択されたファイルへのハンドルを取得 |
+| 4. getFile | ハンドルからFileオブジェクトを取得 |
+| 5. file.text | ファイル内容をテキストとして読み込み |
+| 6. parseYaml | js-yamlでパース (複数ドキュメント対応) |
+| 7. validateDsl | ajvでJSONスキーマ検証 |
+| 8. loadYaml | Zustandストアに格納 |
+| 9. checkReferenceIntegrity | DSL間の参照整合性チェック |
+| 10. setFileHandle | ファイルハンドルを保存（Save用） |
+| 11. persist | localStorage に永続化 |
+| 12. Success Toast | 成功通知を表示 |
 
-### YAML出力フロー
+### YAML保存フロー（File System Access API）
+
+#### Save（上書き保存）
 
 ```mermaid
 sequenceDiagram
@@ -276,26 +274,72 @@ sequenceDiagram
     participant Parser
     participant FileSystem
 
-    User->>FileOps: Export YAML
+    User->>FileOps: Ctrl+S / Save
     FileOps->>Store: exportYaml()
     Store->>Parser: exportYaml(state)
     Parser->>Parser: yaml.dump(doc) x N
     Parser-->>Store: YAML string
     Store-->>FileOps: YAML string
-    FileOps->>FileOps: create Blob
-    FileOps->>FileSystem: download file
-    FileSystem-->>User: enablement-map.yaml
+    FileOps->>Store: getFileHandle()
+    Store-->>FileOps: FileSystemFileHandle
+    FileOps->>FileSystem: handle.createWritable()
+    FileSystem-->>FileOps: FileSystemWritableFileStream
+    FileOps->>FileSystem: writable.write(content)
+    FileOps->>FileSystem: writable.close()
+    FileOps->>Store: markAsSaved()
     FileOps-->>User: Success Toast
 ```
 
 | ステップ | 説明 |
 |---------|------|
-| 1. Export YAML | ユーザーがエクスポートを実行 |
+| 1. Ctrl+S / Save | ユーザーがショートカットまたはボタンで保存 |
 | 2. exportYaml | Zustandストアから状態を取得 |
 | 3. yaml.dump | 各DSLをYAML形式にシリアライズ |
-| 4. create Blob | ファイルとしてダウンロード可能な形式に変換 |
-| 5. download file | ブラウザのダウンロード機能で保存 |
-| 6. Success Toast | 成功通知を表示 |
+| 4. getFileHandle | 保存されているファイルハンドルを取得 |
+| 5. createWritable | 書き込み可能なストリームを作成 |
+| 6. write & close | ファイルに書き込んで閉じる |
+| 7. markAsSaved | 未保存フラグをクリア |
+| 8. Success Toast | 成功通知を表示 |
+
+#### Save As...（別名で保存）
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant FileOps
+    participant Store
+    participant Parser
+    participant FileSystem
+
+    User->>FileOps: Ctrl+Shift+S / Save As...
+    FileOps->>Store: exportYaml()
+    Store->>Parser: exportYaml(state)
+    Parser->>Parser: yaml.dump(doc) x N
+    Parser-->>Store: YAML string
+    Store-->>FileOps: YAML string
+    FileOps->>FileSystem: showSaveFilePicker()
+    FileSystem-->>FileOps: FileSystemFileHandle
+    FileOps->>FileSystem: handle.createWritable()
+    FileSystem-->>FileOps: FileSystemWritableFileStream
+    FileOps->>FileSystem: writable.write(content)
+    FileOps->>FileSystem: writable.close()
+    FileOps->>Store: setFileHandle(handle)
+    FileOps->>Store: setFileMetadata()
+    FileOps-->>User: Success Toast
+```
+
+| ステップ | 説明 |
+|---------|------|
+| 1. Ctrl+Shift+S / Save As... | ユーザーがショートカットまたはボタンで別名保存 |
+| 2. exportYaml | Zustandストアから状態を取得 |
+| 3. yaml.dump | 各DSLをYAML形式にシリアライズ |
+| 4. showSaveFilePicker | File System Access APIで保存先を選択 |
+| 5. FileSystemFileHandle | 新しいファイルへのハンドルを取得 |
+| 6. createWritable | 書き込み可能なストリームを作成 |
+| 7. write & close | ファイルに書き込んで閉じる |
+| 8. setFileHandle | 新しいファイルハンドルを保存 |
+| 9. setFileMetadata | ファイル名と保存時刻を更新 |
+| 10. Success Toast | 成功通知を表示 |
 
 ### エディタ操作フロー
 

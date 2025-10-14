@@ -115,9 +115,7 @@ enablement-map-studio/
 │   ├── editor-outcome/     # Outcomeエディタ
 │   └── editor-em/          # EMエディタ
 ├── Dockerfile              # Docker multi-stage build
-├── nginx.conf              # Nginx設定（SPA対応）
-├── CLAUDE.md               # Claude Code用ガイド
-└── REQUIREMENTS.md         # 詳細仕様
+└── nginx.conf              # Nginx設定（SPA対応）
 ```
 
 ## ワークスペース構成
@@ -173,6 +171,20 @@ DSLスキーマを変更する場合、以下の手順を実行してくださ�
 ### 参照整合性のテスト
 
 `apps/studio/public/sample.yaml`をUIで読み込み、ブラウザコンソールで参照チェック結果を確認してください。
+
+### File System Access APIのテスト
+
+このアプリケーションは、File System Access APIを使用してローカルファイルと直接読み書きします。
+
+#### テスト方法
+
+1. **サポートブラウザで開発**: Chrome、Edge、Safariを使用してください
+2. **ファイル操作のテスト**:
+   - `Ctrl+O` / `Cmd+O`: ファイルを開く
+   - `Ctrl+S` / `Cmd+S`: 上書き保存
+   - `Ctrl+Shift+S` / `Cmd+Shift+S`: 別名で保存
+3. **未保存変更の確認**: 編集後、ファイル名に `*` マークが表示されることを確認
+4. **ブラウザ終了時の警告**: 未保存変更がある状態でブラウザを閉じると警告が表示されることを確認
 
 ## GitHub Actionsでの自動公開
 
@@ -233,22 +245,10 @@ pnpm type-check
 
 開発サーバーのデフォルトポート（5173）が使用中の場合、Viteは自動的に別のポートを使用します。コンソール出力を確認してください。
 
-## 関連ドキュメント
-
-- [README.md](./README.md) - プロジェクト概要とDocker利用方法
-- [REQUIREMENTS.md](./REQUIREMENTS.md) - 詳細仕様
-- [CLAUDE.md](./CLAUDE.md) - Claude Code用の実装ガイド
-- [イネーブルメントのコンセプト](https://note.com/suwash/n/n02fa7e60d409)
-
 ## 貢献
 
 プルリクエストを送信する前に：
 
-1. `pnpm lint` でコード品質をチェック
-2. `pnpm type-check` で型エラーがないことを確認
-3. `pnpm build` でビルドが成功することを確認
-4. 変更内容を明確に説明したコミットメッセージを作成
-
-## ライセンス
-
-MIT License
+1. `pnpm check` が通ることを確認
+2. `pnpm build` でビルドが成功することを確認
+3. 変更内容を明確に説明したコミットメッセージを作成
