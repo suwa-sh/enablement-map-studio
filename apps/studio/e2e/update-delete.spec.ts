@@ -1,10 +1,11 @@
-import { test, expect, Locator, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import {
   dragByHandleWithOffset,
   dragElementByOffset,
   resizeElementByOffset,
   deleteEdge
 } from './utils/drag-helpers';
+import { fillInput } from './helpers';
 
 /**
  * 更新・削除確認シナリオ
@@ -12,17 +13,6 @@ import {
  * サンプルデータをロードしてから、各エディタで更新・削除操作を確認する
  * ハッピーパスで確認済みの新規作成操作は省略
  */
-
-/**
- * 入力フィールドに値を入力するヘルパー関数
- */
-async function fillInput(page: Page, locator: Locator, value: string) {
-  await locator.click();
-  await locator.fill('');
-  await page.waitForTimeout(100);
-  await locator.fill(value);
-  await page.waitForTimeout(100);
-}
 
 test.describe('更新・削除確認シナリオ', () => {
   test.beforeEach(async ({ page }) => {

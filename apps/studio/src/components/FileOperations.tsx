@@ -46,71 +46,6 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
     return error instanceof Error ? error.message : UNKNOWN_ERROR;
   };
 
-  // 外部からファイルダイアログを開けるようにする
-  useImperativeHandle(ref, () => ({
-    openFileDialog: handleOpenFile,
-  }));
-
-  // Save: 上書き保存
-  const handleSave = async () => {
-    if (!hasData) return;
-
-    // ファイルハンドルがない場合は Save As
-    if (!fileHandle) {
-      await handleSaveAs();
-      return;
-    }
-
-    try {
-      const yamlContent = exportYaml();
-      if (!yamlContent) {
-        showError({
-          message: 'エクスポートするデータがありません',
-        });
-        return;
-      }
-
-      const writable = await fileHandle.createWritable();
-      await writable.write(yamlContent);
-      await writable.close();
-
-      markAsSaved();
-      showToast('保存しました', 'success');
-    } catch (error) {
-      console.error('Failed to save file:', error);
-      showError({
-        message: 'ファイルの保存に失敗しました',
-        details: getErrorMessage(error),
-      });
-    }
-  };
-
-  // Ctrl+S / Cmd+S でsave
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fileHandle, hasData, handleSave]);
-
-  // ブラウザ終了時の警告
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges]);
-
   // File System Access API による Open File
   const handleOpenFile = async () => {
     try {
@@ -153,36 +88,10 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
     }
   };
 
-  // 従来の input type="file" によるフォールバック
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        loadYaml(content);
-        setFileMetadata({
-          fileName: file.name,
-          lastSaved: new Date(),
-          hasUnsavedChanges: false,
-        });
-        showToast(`${file.name} を読み込みました`, 'success');
-        navigate('/cjm');
-      } catch (error) {
-        console.error('Failed to load YAML:', error);
-        showError({
-          message: 'YAMLの読み込みに失敗しました',
-          details: getErrorMessage(error),
-        });
-      }
-    };
-    reader.readAsText(file);
-
-    // Reset input so the same file can be loaded again
-    event.target.value = '';
-  };
+  // 外部からファイルダイアログを開けるようにする
+  useImperativeHandle(ref, () => ({
+    openFileDialog: handleOpenFile,
+  }));
 
   // Save As: 名前を付けて保存
   const handleSaveAs = async () => {
@@ -234,6 +143,110 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
         details: getErrorMessage(error),
       });
     }
+  };
+
+  // Save: 上書き保存
+  const handleSave = async () => {
+    if (!hasData) return;
+
+    // ファイルハンドルがない場合は Save As
+    if (!fileHandle) {
+      await handleSaveAs();
+      return;
+    }
+
+    try {
+      const yamlContent = exportYaml();
+      if (!yamlContent) {
+        showError({
+          message: 'エクスポートするデータがありません',
+        });
+        return;
+      }
+
+      const writable = await fileHandle.createWritable();
+      await writable.write(yamlContent);
+      await writable.close();
+
+      markAsSaved();
+      showToast('保存しました', 'success');
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      showError({
+        message: 'ファイルの保存に失敗しました',
+        details: getErrorMessage(error),
+      });
+    }
+  };
+
+  // Ctrl+O / Cmd+O でopen, Ctrl+S / Cmd+S でsave, Ctrl+Shift+S / Cmd+Shift+S でsaveAs
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+O / Cmd+O: Open File
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        handleOpenFile();
+        return;
+      }
+
+      // Ctrl+S / Cmd+S: Save
+      // Ctrl+Shift+S / Cmd+Shift+S: Save As
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleSaveAs();
+        } else {
+          handleSave();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fileHandle, hasData, handleSave, handleSaveAs, handleOpenFile]);
+
+  // ブラウザ終了時の警告
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // 従来の input type="file" によるフォールバック
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        loadYaml(content);
+        setFileMetadata({
+          fileName: file.name,
+          lastSaved: new Date(),
+          hasUnsavedChanges: false,
+        });
+        showToast(`${file.name} を読み込みました`, 'success');
+        navigate('/cjm');
+      } catch (error) {
+        console.error('Failed to load YAML:', error);
+        showError({
+          message: 'YAMLの読み込みに失敗しました',
+          details: getErrorMessage(error),
+        });
+      }
+    };
+    reader.readAsText(file);
+
+    // Reset input so the same file can be loaded again
+    event.target.value = '';
   };
 
   // 従来のダウンロード方式 (フォールバック)

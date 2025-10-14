@@ -500,11 +500,12 @@ DSLのスキーマを変更する場合は、以下の手順に従います。
    - 例: `getAddButtonInSection(page, 'スキル (0)')`
 
 5. **ヘルパー関数の活用**:
-   - `apps/studio/e2e/happy-path.spec.ts` に以下のヘルパー関数を定義：
+   - `apps/studio/e2e/helpers.ts` に以下のヘルパー関数を定義：
      - `fillInput(page, locator, value)`: 入力フィールドに値を入力
      - `selectMuiOption(page, selectId, optionName)`: MUI Selectでオプションを選択
      - `getAddButtonInSection(page, sectionText)`: セクション内の追加ボタンを取得
    - 共通処理をヘルパー関数に抽出することで、テストコードの重複を削減し、保守性を向上させる
+   - `happy-path.spec.ts` と `update-delete.spec.ts` でこれらのヘルパー関数を再利用
 
 #### ドラッグ＆ドロップテストの実装
 

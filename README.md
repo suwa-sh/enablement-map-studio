@@ -110,9 +110,9 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 - localStorageによる永続化
 - Undo / Redo
 - YAMLファイルの開く/保存
-  - **Open File**: ローカルのYAMLファイルを開く
+  - **Open File**: ローカルのYAMLファイルを開く（Ctrl+O / Cmd+O）
   - **Save**: 開いているファイルに上書き保存（Ctrl+S / Cmd+S）
-  - **Save As...**: 別名で保存
+  - **Save As...**: 別名で保存（Ctrl+Shift+S / Cmd+Shift+S）
 - サンプルデータのロード
 - キャンバスのクリア
 
