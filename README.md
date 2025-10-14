@@ -85,7 +85,7 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 
 ### Outcome Editor
 
-![](https://share.cleanshot.com/2XLtpjKJ+)
+![](https://share.cleanshot.com/5QMXtVkq+)
 
 - CJM、SBPの定義内容と連動
 - SBPタスクから、CSFを選択
