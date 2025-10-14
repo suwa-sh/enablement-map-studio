@@ -173,6 +173,45 @@ graph LR
 
 `use-undo`ライブラリを利用して、Undo/Redo機能を実現しています。DSLに対する全ての更新操作は自動的に履歴に記録されます。
 
+### 2.6. File System Access API
+
+Git連携をサポートするため、File System Access APIを使用したファイル操作機能を提供します。
+
+#### 2.6.1. データモデル
+
+```typescript
+interface FileMetadata {
+  fileName: string;
+  lastSaved: Date;
+  hasUnsavedChanges: boolean;
+}
+```
+
+- `fileMetadata`: Zustandストアで管理し、localStorageに永続化
+- `fileHandle`: React stateで管理（localStorageには保存不可）
+
+#### 2.6.2. ファイル操作
+
+| 操作 | API | 動作 |
+| :--- | :--- | :--- |
+| Open File | `showOpenFilePicker()` | ファイル選択ダイアログを表示し、選択されたファイルを読み込み |
+| Save | `fileHandle.createWritable()` | 開いているファイルに上書き保存 |
+| Save As... | `showSaveFilePicker()` | 名前を付けて保存ダイアログを表示し、新しいファイルに保存 |
+
+#### 2.6.3. キーボードショートカット
+
+- **Ctrl+S / Cmd+S**: Save（上書き保存）
+- 未保存の変更がある状態でブラウザを閉じようとすると、警告ダイアログを表示
+
+#### 2.6.4. ブラウザサポート
+
+| ブラウザ | サポート |
+| :--- | :--- |
+| Chrome 86+ | ✅ |
+| Edge 86+ | ✅ |
+| Safari 15.2+ | ✅ |
+| Firefox | ❌ (File System Access API 非対応) |
+
 ## 3\. 開発環境
 
 ### 3.1. 必須コマンド
@@ -245,6 +284,26 @@ CSFに該当するタスクには「CSF」と表示されたチップを追加�
 #### 4.1.4. CJMアクションの表示順序
 
 全てのエディタ（CJM, Outcome, EM）で、CJMアクションの表示順序を統一します。アクションは、CJM DSLの`phases`配列の順序に基づいてソートします。
+
+#### 4.1.5. ファイル操作
+
+ヘッダーには、以下のボタンが配置されています。
+
+| ボタン | アイコン | 動作 | 状態制御 |
+| :--- | :--- | :--- | :--- |
+| Open File | FolderOpen | ファイル選択ダイアログを表示し、YAMLファイルを読み込み | 常に有効 |
+| Save | Save | 開いているファイルに上書き保存（ファイルハンドルがない場合はSave Asを実行） | ファイルハンドルがない、またはデータがない場合は無効 |
+| Save As... | SaveAs | 名前を付けて保存ダイアログを表示し、新しいファイルに保存 | データがない場合は無効 |
+| Load Sample | CloudDownload | サンプルデータを読み込み | 常に有効 |
+| Clear Canvas | Delete | 全データをクリア（確認ダイアログ表示） | データがない場合は無効 |
+
+**ファイル名の表示**:
+- ファイルを開くと、ヘッダーにファイル名が表示されます
+- 未保存の変更がある場合は、ファイル名の後に `*` マークが表示されます
+
+**Saveボタンの状態表示**:
+- 未保存の変更がある場合: `variant="contained"` で強調表示
+- 未保存の変更がない場合: `variant="outlined"` で通常表示
 
 ### 4.2. CJMエディタ
 

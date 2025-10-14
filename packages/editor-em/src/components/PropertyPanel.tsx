@@ -137,6 +137,7 @@ export function PropertyPanel({
           boxSizing: 'border-box',
         },
       }}
+      data-testid="em-property-panel"
     >
       <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
@@ -428,6 +429,7 @@ export function PropertyPanel({
               variant="contained"
               startIcon={<Save />}
               sx={{ flex: 1 }}
+              data-testid="em-save-button"
             >
               SAVE
             </Button>

@@ -3,6 +3,7 @@ import { Box, AppBar, Toolbar, Typography, IconButton, Stack } from '@mui/materi
 import { Undo, Redo } from '@mui/icons-material';
 import { Navigation } from './Navigation';
 import { FileOperations, FileOperationsRef } from './FileOperations';
+import { FileStatusIndicator } from './FileStatusIndicator';
 import { useUndoableStore } from '@enablement-map-studio/store';
 import { ConfirmDialogProvider } from '@enablement-map-studio/ui';
 import { ToastProvider } from '../contexts/ToastContext';
@@ -77,6 +78,7 @@ export function AppShell({ children }: AppShellProps) {
                     alt="Enablement Map Studio"
                     sx={{ height: 52, width: 'auto' }}
                   />
+                  <FileStatusIndicator />
                 </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
                   {/* Undo/Redo ボタン */}

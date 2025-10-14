@@ -8,6 +8,13 @@ import {
   type ReferenceCheckResult,
 } from '@enablement-map-studio/dsl';
 
+// File metadata for tracking file state
+export interface FileMetadata {
+  fileName: string;
+  lastSaved: Date;
+  hasUnsavedChanges: boolean;
+}
+
 // Nested state for undo/redo
 export interface AppState {
   cjm: CjmDsl | null;
@@ -23,6 +30,9 @@ export interface AppStore {
   // Reference check result (not tracked)
   referenceCheck: ReferenceCheckResult | null;
 
+  // File metadata (tracked for save state)
+  fileMetadata: FileMetadata | null;
+
   // Actions
   loadYaml: (content: string) => void;
   exportYaml: () => string;
@@ -32,6 +42,11 @@ export interface AppStore {
   updateEm: (em: EmDsl) => void;
   checkReferences: () => ReferenceCheckResult;
   reset: () => void;
+
+  // File metadata actions
+  setFileMetadata: (metadata: FileMetadata | null) => void;
+  markAsModified: () => void;
+  markAsSaved: () => void;
 }
 
 const initialState: AppState = {
@@ -44,6 +59,7 @@ const initialState: AppState = {
 const storeImpl = (set: any, get: any): AppStore => ({
   state: initialState,
   referenceCheck: null,
+  fileMetadata: null,
 
   loadYaml: (content: string) => {
     try {
@@ -77,21 +93,25 @@ const storeImpl = (set: any, get: any): AppStore => ({
   updateCjm: (cjm: CjmDsl) => {
     set((store: AppStore) => ({ state: { ...store.state, cjm } }));
     get().checkReferences();
+    get().markAsModified();
   },
 
   updateSbp: (sbp: SbpDsl) => {
     set((store: AppStore) => ({ state: { ...store.state, sbp } }));
     get().checkReferences();
+    get().markAsModified();
   },
 
   updateOutcome: (outcome: OutcomeDsl) => {
     set((store: AppStore) => ({ state: { ...store.state, outcome } }));
     get().checkReferences();
+    get().markAsModified();
   },
 
   updateEm: (em: EmDsl) => {
     set((store: AppStore) => ({ state: { ...store.state, em } }));
     get().checkReferences();
+    get().markAsModified();
   },
 
   checkReferences: () => {
@@ -101,7 +121,37 @@ const storeImpl = (set: any, get: any): AppStore => ({
     return refCheck;
   },
 
-  reset: () => set({ state: initialState, referenceCheck: null }),
+  reset: () =>
+    set({ state: initialState, referenceCheck: null, fileMetadata: null }),
+
+  setFileMetadata: (metadata: FileMetadata | null) => {
+    set({ fileMetadata: metadata });
+  },
+
+  markAsModified: () => {
+    const { fileMetadata } = get();
+    if (fileMetadata) {
+      set({
+        fileMetadata: {
+          ...fileMetadata,
+          hasUnsavedChanges: true,
+        },
+      });
+    }
+  },
+
+  markAsSaved: () => {
+    const { fileMetadata } = get();
+    if (fileMetadata) {
+      set({
+        fileMetadata: {
+          ...fileMetadata,
+          hasUnsavedChanges: false,
+          lastSaved: new Date(),
+        },
+      });
+    }
+  },
 });
 
 export const useAppStore = create<AppStore>()(
@@ -110,6 +160,7 @@ export const useAppStore = create<AppStore>()(
     partialize: (store) => ({
       state: store.state,
       referenceCheck: store.referenceCheck,
+      fileMetadata: store.fileMetadata,
     }),
   })
 );

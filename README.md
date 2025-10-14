@@ -39,6 +39,19 @@ docker run -p 8080:80 ghcr.io/suwa-sh/enablement-map-studio:latest
 
 開発環境のセットアップ方法については、[DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
 
+## サポートブラウザ
+
+Enablement Map Studioは、File System Access APIを使用してローカルファイルの読み書きを行います。以下のブラウザでの利用を推奨します。
+
+| ブラウザ | サポート | バージョン |
+|---------|---------|-----------|
+| Google Chrome | ✅ | 86+ |
+| Microsoft Edge | ✅ | 86+ |
+| Safari | ✅ | 15.2+ |
+| Firefox | ❌ | 非対応 |
+
+> **注意**: Firefoxは File System Access API に対応していないため、ファイルの保存機能が制限されます。Chrome、Edge、Safariでの利用を推奨します。
+
 ## 概要
 
 単一のYAMLファイル（\`---\`区切りで複数のDSLを含む）を読み込み、以下の4つのエディタビューをシームレスに切り替えながら、一気通貫で計画を立案・編集できます：
@@ -96,9 +109,51 @@ docker run -p 8080:80 ghcr.io/suwa-sh/enablement-map-studio:latest
 
 - localStorageによる永続化
 - Undo / Redo
-- YAML形式でのインポート/エクスポート
+- YAMLファイルの開く/保存
+  - **Open File**: ローカルのYAMLファイルを開く
+  - **Save**: 開いているファイルに上書き保存（Ctrl+S / Cmd+S）
+  - **Save As...**: 別名で保存
 - サンプルデータのロード
 - キャンバスのクリア
+
+## Git連携ワークフロー
+
+Enablement Map Studioは、Gitを使ったチーム開発をサポートします。以下のワークフローで、YAMLファイルをバージョン管理できます。
+
+### 基本的な流れ
+
+```bash
+# 1. リポジトリをクローン
+git clone https://github.com/your-org/your-enablement-map.git
+cd your-enablement-map
+
+# 2. ブランチを作成
+git checkout -b feature/update-cjm
+
+# 3. Enablement Map Studioでファイルを開く
+# Open Fileボタンから enablement-map.yaml を選択
+
+# 4. エディタで編集して保存
+# Ctrl+S (Cmd+S) で上書き保存
+
+# 5. 変更をコミット
+git add enablement-map.yaml
+git commit -m "feat: 顧客体験フローを更新"
+
+# 6. プッシュしてプルリクエスト
+git push origin feature/update-cjm
+```
+
+### ファイル名の推奨
+
+- メインファイル: `enablement-map.yaml`
+- 複数プロジェクト: `project-name-enablement-map.yaml`
+
+### コラボレーション
+
+- YAMLファイルをGitで管理することで、変更履歴を追跡できます
+- プルリクエストでレビューを受けられます
+- コンフリクトが発生した場合は、通常のGitワークフローで解決できます
 
 ## 技術スタック
 
@@ -152,8 +207,9 @@ MIT License
 
 ## 関連ドキュメント
 
-- [DEVELOPMENT.md](./DEVELOPMENT.md) - 開発環境セットアップと開発ガイド
 - [REQUIREMENTS.md](./REQUIREMENTS.md) - 詳細仕様
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - アーキテクチャ
+- [DEVELOPMENT.md](./DEVELOPMENT.md) - 開発環境セットアップと開発ガイド
 - [CLAUDE.md](./CLAUDE.md) - 実装ガイド
 - [イネーブルメントのコンセプト](https://note.com/suwash/n/n02fa7e60d409)
 - [KPIマネジメントのコンセプト](https://note.com/suwash/n/n7c5fb05a1009)

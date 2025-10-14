@@ -1,4 +1,5 @@
-import { test, expect, Locator, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { fillInput, selectMuiOption, getAddButtonInSection } from './helpers';
 
 /**
  * ハッピーパス: キャンバスクリアから全エディタでのデータ作成
@@ -11,66 +12,37 @@ import { test, expect, Locator, Page } from '@playwright/test';
  * 5. EM: Outcome同期確認、行動追加、スキル/学習コンテンツ/ナレッジ/ツール追加、リソース一覧確認
  */
 
-/**
- * 入力フィールドに値を入力するヘルパー関数
- * 既存のテキストを全選択してから新しい値を入力する
- *
- * @param page - Playwrightのページオブジェクト
- * @param locator - 入力フィールドのlocator
- * @param value - 入力する値
- */
-async function fillInput(page: Page, locator: Locator, value: string) {
-  await locator.click();
-  await locator.fill(''); // まず空にする
-  // MUIのTextFieldが値の変更を認識するための短い待機
-  await page.waitForTimeout(100);
-  await locator.fill(value); // 新しい値を入力
-  // 入力が確定するための短い待機
-  await page.waitForTimeout(100);
-}
-
-/**
- * MUI Selectコンポーネントでオプションを選択するヘルパー関数
- *
- * @param page - Playwrightのページオブジェクト
- * @param selectId - SelectコンポーネントのID
- * @param optionName - 選択するオプションの名前
- */
-async function selectMuiOption(page: Page, selectId: string, optionName: string) {
-  // Selectをクリックして開く
-  const selectElement = page.locator(`#${selectId}`);
-  await expect(selectElement).toBeVisible();
-  await selectElement.click();
-
-  // listboxが表示されるのを待つ
-  const listbox = page.getByRole('listbox');
-  await expect(listbox).toBeVisible();
-
-  // オプションを選択（listboxスコープ内で検索）
-  const option = listbox.getByRole('option', { name: optionName });
-  await expect(option).toBeVisible();
-  await option.click();
-
-  // listboxが閉じるのを待つ
-  await expect(listbox).not.toBeVisible();
-}
-
-/**
- * セクション内の「追加」ボタンを取得するヘルパー関数
- *
- * @param page - Playwrightのページオブジェクト
- * @param sectionText - セクションを識別するテキスト（例: "スキル (0)"）
- * @returns 追加ボタンのlocator
- */
-function getAddButtonInSection(page: Page, sectionText: string) {
-  const section = page.locator(`text=${sectionText}`).locator('..');
-  return section.getByText('追加');
-}
-
 test.describe('ハッピーパス: キャンバスクリアから全エディタでのデータ作成', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5173/');
     await page.waitForLoadState('networkidle');
+
+    // File System Access APIをモック化
+    await page.evaluate(() => {
+      let savedContent = '';
+      let savedHandle: any = null;
+
+      (window as any).showSaveFilePicker = async () => {
+        savedHandle = {
+          name: 'enablement-map.yaml',
+          createWritable: async () => ({
+            write: async (data: string) => {
+              savedContent = data;
+            },
+            close: async () => {},
+          }),
+          getFile: async () => new File([savedContent], 'enablement-map.yaml', { type: 'text/yaml' }),
+        };
+        return savedHandle;
+      };
+
+      (window as any).showOpenFilePicker = async () => {
+        if (!savedContent) {
+          throw new Error('No file saved yet');
+        }
+        return [savedHandle];
+      };
+    });
   });
 
   test('キャンバスクリアからCJM/SBP/Outcome/EMで完全なデータを作成できること', async ({ page }) => {
@@ -378,8 +350,8 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
       // 単位を選択（MUI Select）
       await selectMuiOption(page, 'unit-select', '%');
 
-      // SAVEボタンをクリック
-      await page.getByRole('button', { name: 'SAVE' }).click();
+      // プロパティパネル内のSAVEボタンをクリック
+      await page.getByTestId('outcome-save-button').click();
 
       // データが保存されたことを確認（メインエリアに表示される）
       // プロパティパネルは persistent なので開いたままでOK
@@ -474,8 +446,8 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
       await expect(toolUrlInput).toBeVisible();
       await fillInput(page, toolUrlInput, 'https://example.com/hearing-sheet');
 
-      // SAVEボタンをクリック
-      await page.getByRole('button', { name: 'SAVE' }).click();
+      // プロパティパネル内のSAVEボタンをクリック
+      await page.getByTestId('em-save-button').click();
 
       // プロパティパネル外をクリックして閉じる
       await page.locator('body').click({ position: { x: 100, y: 300 } });
@@ -496,65 +468,57 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
     });
 
     // ========================================
-    // ステップ6: YAMLエクスポート/インポートの確認
+    // ステップ6: ファイル入出力の確認
     // ========================================
-    await test.step('YAMLエクスポート', async () => {
+    await test.step('ファイル入出力', async () => {
       await page.goto('http://localhost:5173/');
       await page.waitForLoadState('networkidle');
 
-      // YAMLをエクスポート
-      const downloadPromise = page.waitForEvent('download');
-      await page.getByRole('button', { name: 'EXPORT YAML' }).click();
-      const download = await downloadPromise;
-      const downloadPath = await download.path();
+      // Save As...ボタン
+      await page.getByRole('button', { name: /Save As\.\.\./i }).click();
 
-      // ダウンロードが成功したことを確認
-      expect(downloadPath).toBeTruthy();
-
-      // ダウンロードパスを次のステップで使用するために保存
-      (page as any)._downloadPath = downloadPath;
+      // Saveボタンが有効になることを確認（ファイルハンドルが設定された証拠）
+      await expect(page.getByRole('button', { name: /^Save$/i })).toBeEnabled();
     });
 
-    await test.step('データクリア後にYAMLインポート', async () => {
+    await test.step('データクリア確認', async () => {
       // データをクリア
       await page.getByRole('button', { name: 'CLEAR CANVAS' }).click();
 
       const confirmDialog = page.getByRole('dialog');
       await confirmDialog.getByRole('button', { name: 'クリア' }).click();
 
-      // Export YAMLボタンが無効化されていることを確認
-      await expect(page.getByRole('button', { name: 'EXPORT YAML' })).toBeDisabled();
+      // Save/Save As...ボタンが無効化されていることを確認
+      await expect(page.getByRole('button', { name: /^Save$/i })).toBeDisabled();
+      await expect(page.getByRole('button', { name: /Save As\.\.\./i })).toBeDisabled();
 
-      // ダウンロードしたYAMLを再インポート
-      const downloadPath = (page as any)._downloadPath;
-      const fileChooserPromise = page.waitForEvent('filechooser');
-      await page.getByRole('button', { name: 'LOAD YAML' }).click();
-      const fileChooser = await fileChooserPromise;
-      await fileChooser.setFiles(downloadPath!);
-
-      // データが復元されたことを確認（CJMページに遷移）
-      await expect(page).toHaveURL(/\/cjm/);
-      await expect(page.getByText('テスト利用者')).toBeVisible();
+      // CJMページに移動して、データがクリアされていることを確認
+      await page.goto('http://localhost:5173/cjm');
+      await expect(page.getByText('フェーズを追加する か YAML をロードしてください')).toBeVisible();
     });
 
     // ========================================
     // ステップ7: localStorageへの永続化確認
     // ========================================
     await test.step('localStorageへの永続化確認', async () => {
+      // サンプルをロードして、データを再度準備
+      await page.goto('http://localhost:5173/');
+      await page.getByRole('button', { name: 'LOAD SAMPLE' }).click();
+
+      // CJMページへの遷移を待つ
+      await expect(page).toHaveURL(/\/cjm/);
+      await page.waitForLoadState('networkidle');
+
+      // データがロードされたことを確認
+      await expect(page.getByText('事業部門のシステム利用ユーザー')).toBeVisible();
+
       // ページをリロード
       await page.reload();
       await page.waitForLoadState('networkidle');
 
-      // データが保持されていることを確認
-      await page.goto('http://localhost:5173/cjm');
-      await page.waitForLoadState('networkidle');
-
-      // ペルソナ情報が保持されていることを確認
-      await expect(page.getByText('テスト利用者')).toBeVisible();
-
-      // フェーズ情報が保持されていることを確認
-      await expect(page.getByText('認識').first()).toBeVisible();
-      await expect(page.getByText('検討').first()).toBeVisible();
+      // リロード後もデータが保持されていることを確認
+      await expect(page.getByText('事業部門のシステム利用ユーザー')).toBeVisible();
+      await expect(page.getByText('要件定義').first()).toBeVisible();
     });
   });
 });

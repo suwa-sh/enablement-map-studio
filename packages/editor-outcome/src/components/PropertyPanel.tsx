@@ -63,6 +63,7 @@ export function PropertyPanel({
           boxSizing: 'border-box',
         },
       }}
+      data-testid="outcome-property-panel"
     >
       <Box
         sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}
@@ -239,6 +240,7 @@ export function PropertyPanel({
             variant="contained"
             startIcon={<Save />}
             fullWidth
+            data-testid="outcome-save-button"
           >
             SAVE
           </Button>

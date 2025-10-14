@@ -1,6 +1,6 @@
-import React, { useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Box, Button, Stack } from '@mui/material';
-import { UploadFile, Download, MenuBook, DeleteSweep } from '@mui/icons-material';
+import { FolderOpen, Save, SaveAs, MenuBook, DeleteSweep } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@enablement-map-studio/store';
 import { useConfirm } from '@enablement-map-studio/ui';
@@ -11,25 +11,149 @@ export interface FileOperationsRef {
   openFileDialog: () => void;
 }
 
+// Constants
+const ABORT_ERROR = 'AbortError';
+const UNKNOWN_ERROR = 'Unknown error';
+
 export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { loadYaml, exportYaml, reset, state } = useAppStore();
+  const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null);
+
+  const {
+    loadYaml,
+    exportYaml,
+    reset,
+    state,
+    fileMetadata,
+    setFileMetadata,
+    markAsSaved,
+  } = useAppStore();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
   const { showError } = useError();
 
-  // 外部からファイルダイアログを開けるようにする
-  useImperativeHandle(ref, () => ({
-    openFileDialog: () => {
-      fileInputRef.current?.click();
-    },
-  }));
+  const hasData = state.cjm || state.sbp || state.outcome || state.em;
+  const hasUnsavedChanges = fileMetadata?.hasUnsavedChanges ?? false;
 
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
+  // Helper: ユーザーキャンセルかどうかを判定
+  const isUserCancelled = (error: unknown): boolean => {
+    return error instanceof Error && error.name === ABORT_ERROR;
   };
 
+  // Helper: エラーメッセージを取得
+  const getErrorMessage = (error: unknown): string => {
+    return error instanceof Error ? error.message : UNKNOWN_ERROR;
+  };
+
+  // 外部からファイルダイアログを開けるようにする
+  useImperativeHandle(ref, () => ({
+    openFileDialog: handleOpenFile,
+  }));
+
+  // Save: 上書き保存
+  const handleSave = async () => {
+    if (!hasData) return;
+
+    // ファイルハンドルがない場合は Save As
+    if (!fileHandle) {
+      await handleSaveAs();
+      return;
+    }
+
+    try {
+      const yamlContent = exportYaml();
+      if (!yamlContent) {
+        showError({
+          message: 'エクスポートするデータがありません',
+        });
+        return;
+      }
+
+      const writable = await fileHandle.createWritable();
+      await writable.write(yamlContent);
+      await writable.close();
+
+      markAsSaved();
+      showToast('保存しました', 'success');
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      showError({
+        message: 'ファイルの保存に失敗しました',
+        details: getErrorMessage(error),
+      });
+    }
+  };
+
+  // Ctrl+S / Cmd+S でsave
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fileHandle, hasData, handleSave]);
+
+  // ブラウザ終了時の警告
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // File System Access API による Open File
+  const handleOpenFile = async () => {
+    try {
+      if (!('showOpenFilePicker' in window)) {
+        // フォールバック: 従来の input type="file"
+        fileInputRef.current?.click();
+        return;
+      }
+
+      const [handle] = await window.showOpenFilePicker({
+        types: [
+          {
+            description: 'YAML Files',
+            accept: { 'text/yaml': ['.yaml', '.yml'] },
+          },
+        ],
+      });
+
+      const file = await handle.getFile();
+      const content = await file.text();
+
+      loadYaml(content);
+      setFileHandle(handle);
+      setFileMetadata({
+        fileName: file.name,
+        lastSaved: new Date(),
+        hasUnsavedChanges: false,
+      });
+
+      showToast(`${file.name} を読み込みました`, 'success');
+      navigate('/cjm');
+    } catch (error) {
+      if (isUserCancelled(error)) return;
+
+      console.error('Failed to open file:', error);
+      showError({
+        message: 'ファイルを開けませんでした',
+        details: getErrorMessage(error),
+      });
+    }
+  };
+
+  // 従来の input type="file" によるフォールバック
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -39,14 +163,18 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       try {
         const content = e.target?.result as string;
         loadYaml(content);
-        showToast('YAMLファイルを読み込みました', 'success');
-        // CJMエディタに遷移
+        setFileMetadata({
+          fileName: file.name,
+          lastSaved: new Date(),
+          hasUnsavedChanges: false,
+        });
+        showToast(`${file.name} を読み込みました`, 'success');
         navigate('/cjm');
       } catch (error) {
         console.error('Failed to load YAML:', error);
         showError({
           message: 'YAMLの読み込みに失敗しました',
-          details: error instanceof Error ? error.message : 'Unknown error',
+          details: getErrorMessage(error),
         });
       }
     };
@@ -56,7 +184,60 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
     event.target.value = '';
   };
 
-  const handleExport = () => {
+  // Save As: 名前を付けて保存
+  const handleSaveAs = async () => {
+    if (!hasData) return;
+
+    try {
+      if (!('showSaveFilePicker' in window)) {
+        // フォールバック: 従来のダウンロード方式
+        handleLegacyExport();
+        return;
+      }
+
+      const yamlContent = exportYaml();
+      if (!yamlContent) {
+        showError({
+          message: 'エクスポートするデータがありません',
+        });
+        return;
+      }
+
+      const handle = await window.showSaveFilePicker({
+        types: [
+          {
+            description: 'YAML Files',
+            accept: { 'text/yaml': ['.yaml', '.yml'] },
+          },
+        ],
+        suggestedName: fileMetadata?.fileName || 'enablement-map.yaml',
+      });
+
+      const writable = await handle.createWritable();
+      await writable.write(yamlContent);
+      await writable.close();
+
+      setFileHandle(handle);
+      setFileMetadata({
+        fileName: handle.name,
+        lastSaved: new Date(),
+        hasUnsavedChanges: false,
+      });
+
+      showToast(`${handle.name} として保存しました`, 'success');
+    } catch (error) {
+      if (isUserCancelled(error)) return;
+
+      console.error('Failed to save file as:', error);
+      showError({
+        message: 'ファイルの保存に失敗しました',
+        details: getErrorMessage(error),
+      });
+    }
+  };
+
+  // 従来のダウンロード方式 (フォールバック)
+  const handleLegacyExport = () => {
     try {
       const yamlContent = exportYaml();
       if (!yamlContent) {
@@ -70,7 +251,7 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'enablement-map.yaml';
+      a.download = fileMetadata?.fileName || 'enablement-map.yaml';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -80,7 +261,7 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       console.error('Failed to export YAML:', error);
       showError({
         message: 'YAMLのエクスポートに失敗しました',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: getErrorMessage(error),
       });
     }
   };
@@ -93,14 +274,18 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
       }
       const content = await response.text();
       loadYaml(content);
+
+      // サンプルロード時はファイルハンドルをクリア
+      setFileHandle(null);
+      setFileMetadata(null);
+
       showToast('サンプルファイルを読み込みました', 'success');
-      // CJMエディタに遷移
       navigate('/cjm');
     } catch (error) {
       console.error('Failed to load sample:', error);
       showError({
         message: 'サンプルファイルの読み込みに失敗しました',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: getErrorMessage(error),
       });
     }
   };
@@ -115,21 +300,43 @@ export const FileOperations = forwardRef<FileOperationsRef>((_props, ref) => {
 
     if (confirmed) {
       reset();
+      setFileHandle(null);
       showToast('すべてのデータをクリアしました', 'info');
       navigate('/');
     }
   };
 
-  const hasData = state.cjm || state.sbp || state.outcome || state.em;
-
   return (
     <Stack direction="row" spacing={1}>
-      <Box component="input" ref={fileInputRef} type="file" accept=".yaml,.yml" onChange={handleFileChange} sx={{ display: 'none' }} aria-label="File input" />
-      <Button variant="outlined" size="small" onClick={handleFileSelect} startIcon={<UploadFile />}>
-        Load YAML
+      <Box
+        component="input"
+        ref={fileInputRef}
+        type="file"
+        accept=".yaml,.yml"
+        onChange={handleFileChange}
+        sx={{ display: 'none' }}
+        aria-label="File input"
+      />
+      <Button variant="outlined" size="small" onClick={handleOpenFile} startIcon={<FolderOpen />}>
+        Open File
       </Button>
-      <Button variant="outlined" size="small" onClick={handleExport} disabled={!hasData} startIcon={<Download />}>
-        Export YAML
+      <Button
+        variant={hasUnsavedChanges ? 'contained' : 'outlined'}
+        size="small"
+        onClick={handleSave}
+        disabled={!fileHandle && !hasData}
+        startIcon={<Save />}
+      >
+        {hasUnsavedChanges ? 'Save *' : 'Save'}
+      </Button>
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={handleSaveAs}
+        disabled={!hasData}
+        startIcon={<SaveAs />}
+      >
+        Save As...
       </Button>
       <Button variant="outlined" size="small" onClick={handleLoadSample} startIcon={<MenuBook />}>
         Load Sample

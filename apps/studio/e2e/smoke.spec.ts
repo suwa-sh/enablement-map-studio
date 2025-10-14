@@ -46,20 +46,34 @@ test.describe('スモークテスト', () => {
     await expect(page).toHaveURL(/\/em/);
   });
 
-  test('YAMLをエクスポートできること', async ({ page }) => {
+  test('YAMLを保存できること', async ({ page }) => {
     await page.goto('/');
 
     // サンプルをロード
     await page.getByRole('button', { name: /Load Sample/i }).click();
     await page.waitForTimeout(1000);
 
-    // Export YAMLボタンをクリック
-    const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: /Export YAML/i }).click();
+    // File System Access APIをモック化
+    await page.evaluate(() => {
+      let savedContent = '';
+      (window as any).showSaveFilePicker = async () => {
+        return {
+          createWritable: async () => ({
+            write: async (data: string) => {
+              savedContent = data;
+            },
+            close: async () => {},
+          }),
+          name: 'enablement-map.yaml',
+        };
+      };
+    });
 
-    // ダウンロードされること
-    const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe('enablement-map.yaml');
+    // Save As...ボタンをクリック
+    await page.getByRole('button', { name: /Save As\.\.\./i }).click();
+
+    // Toast通知が表示されることを確認
+    await expect(page.getByText(/保存しました/i)).toBeVisible();
   });
 
   test('Clear Canvasでデータをクリアできること', async ({ page }) => {
@@ -78,7 +92,8 @@ test.describe('スモークテスト', () => {
     // クリアボタンをクリック
     await page.getByRole('button', { name: /クリア/i }).click();
 
-    // Export YAMLボタンが無効化されること（データがない状態）
-    await expect(page.getByRole('button', { name: /Export YAML/i })).toBeDisabled();
+    // Save/Save As...ボタンが無効化されること（データがない状態）
+    await expect(page.getByRole('button', { name: /^Save$/i })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /Save As\.\.\./i })).toBeDisabled();
   });
 });

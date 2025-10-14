@@ -158,3 +158,59 @@ export async function clearData(page: Page) {
   // データがクリアされるまで待機
   await page.waitForTimeout(500);
 }
+
+/**
+ * 入力フィールドに値を入力するヘルパー関数
+ * 既存のテキストを全選択してから新しい値を入力する
+ *
+ * @param page - Playwrightのページオブジェクト
+ * @param locator - 入力フィールドのlocator
+ * @param value - 入力する値
+ */
+export async function fillInput(page: Page, locator: any, value: string) {
+  await locator.click();
+  await locator.fill(''); // まず空にする
+  // MUIのTextFieldが値の変更を認識するための短い待機
+  await page.waitForTimeout(100);
+  await locator.fill(value); // 新しい値を入力
+  // 入力が確定するための短い待機
+  await page.waitForTimeout(100);
+}
+
+/**
+ * MUI Selectコンポーネントでオプションを選択するヘルパー関数
+ *
+ * @param page - Playwrightのページオブジェクト
+ * @param selectId - SelectコンポーネントのID
+ * @param optionName - 選択するオプションの名前
+ */
+export async function selectMuiOption(page: Page, selectId: string, optionName: string) {
+  // Selectをクリックして開く
+  const selectElement = page.locator(`#${selectId}`);
+  await expect(selectElement).toBeVisible();
+  await selectElement.click();
+
+  // listboxが表示されるのを待つ
+  const listbox = page.getByRole('listbox');
+  await expect(listbox).toBeVisible();
+
+  // オプションを選択（listboxスコープ内で検索）
+  const option = listbox.getByRole('option', { name: optionName });
+  await expect(option).toBeVisible();
+  await option.click();
+
+  // listboxが閉じるのを待つ
+  await expect(listbox).not.toBeVisible();
+}
+
+/**
+ * セクション内の「追加」ボタンを取得するヘルパー関数
+ *
+ * @param page - Playwrightのページオブジェクト
+ * @param sectionText - セクションを識別するテキスト（例: "スキル (0)"）
+ * @returns 追加ボタンのlocator
+ */
+export function getAddButtonInSection(page: Page, sectionText: string) {
+  const section = page.locator(`text=${sectionText}`).locator('..');
+  return section.getByText('追加');
+}
