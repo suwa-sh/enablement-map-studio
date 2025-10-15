@@ -524,6 +524,52 @@ DSLのスキーマを変更する場合は、以下の手順に従います。
 
 詳細は`apps/studio/e2e/utils/drag-helpers.ts`を参照してください。
 
+## Docker構成
+
+### ディレクトリ構成
+
+Docker関連のファイルは`docker/`ディレクトリにまとめられています：
+
+- `docker/nginx.conf` - HTTPS対応のnginx設定ファイル
+- `docker/generate-cert.sh` - 自己署名証明書生成スクリプト
+
+### HTTPS対応
+
+Dockerイメージは以下のHTTPS機能を提供します：
+
+| 項目 | 説明 |
+|------|------|
+| ポート80 (HTTP) | HTTPSへの自動リダイレクト (301) |
+| ポート443 (HTTPS) | TLSv1.2/1.3対応のセキュア接続 |
+| 証明書 | 100年間有効な自己署名証明書 (ビルド時に生成) |
+| SAN対応 | localhost, *.localhost, 127.0.0.1, ::1, 0.0.0.0 |
+
+### ビルドプロセス
+
+Dockerfileは2段階ビルドを使用：
+
+1. **ビルダーステージ** (node:18-alpine):
+   - pnpmでの依存関係インストール
+   - TypeScriptとViteでのビルド
+
+2. **本番ステージ** (nginx:alpine):
+   - OpenSSLのインストール
+   - 証明書生成スクリプトの実行
+   - nginx設定のコピー
+   - ビルド済み静的ファイルのコピー
+
+### 起動方法
+
+```bash
+# HTTPとHTTPSの両方を公開
+docker run -p 8080:80 -p 8443:443 ghcr.io/suwa-sh/enablement-map-studio:latest
+
+# HTTPSでアクセス
+# https://localhost:8443
+```
+
+**注意**: 自己署名証明書を使用しているため、ブラウザで証明書警告が表示されます。「詳細設定」→「localhost にアクセスする（安全ではありません）」で進むことができます。
+
 ## 作業ルール
 
 - 作業を開始する前に、`README.md`と`REQUIREMENTS.md`、`ARCHITECTURE.md`、`DEVELOPMENT.md`を読み込み、仕様とルールを理解してください。
