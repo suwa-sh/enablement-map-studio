@@ -372,6 +372,65 @@ sequenceDiagram
 | 5. persist | localStorageに永続化 |
 | 6. UI re-render | 変更がUIに反映される |
 
+## デプロイメント構成
+
+### Dockerコンテナ構成
+
+```mermaid
+graph TB
+    subgraph "Docker Container"
+        subgraph "nginx:alpine"
+            nginx[Nginx Server]
+            ssl[SSL Certificates]
+            static[Static Files]
+        end
+    end
+
+    Browser[Web Browser]
+
+    Browser -->|HTTP :80| nginx
+    Browser -->|HTTPS :443| nginx
+    nginx -->|Redirect 301| Browser
+    ssl -->|Self-signed cert<br/>100 years validity| nginx
+    static -->|SPA files| nginx
+```
+
+| 要素名 | 説明 |
+|--------|------|
+| nginx | Webサーバー (nginx:alpine) |
+| SSL Certificates | 自己署名証明書 (100年有効) |
+| Static Files | ビルド済みReactアプリケーション |
+| HTTP :80 | HTTPSへの自動リダイレクト |
+| HTTPS :443 | TLSv1.2/1.3でセキュアな接続 |
+
+### SSL証明書
+
+Dockerイメージには以下の特徴を持つ自己署名証明書が含まれています：
+
+| 項目 | 内容 |
+|------|------|
+| 証明書タイプ | 自己署名 (OpenSSL) |
+| 有効期限 | 100年間 (36500日) |
+| キーサイズ | RSA 2048bit |
+| Subject Alternative Name (SAN) | localhost, *.localhost, 127.0.0.1, ::1, 0.0.0.0 |
+| TLS Protocol | TLSv1.2, TLSv1.3 |
+| ビルド時生成 | `/etc/nginx/ssl/` に配置 |
+
+証明書生成スクリプト: [`docker/generate-cert.sh`](docker/generate-cert.sh)
+
+### nginx設定
+
+| 設定項目 | 内容 |
+|---------|------|
+| ポート80 | HTTPSへの自動リダイレクト (301) |
+| ポート443 | TLS/SSL対応 |
+| gzip圧縮 | 有効 (レベル6) |
+| 静的ファイルキャッシュ | 1年間 (immutable) |
+| セキュリティヘッダー | HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection |
+| SPA Fallback | すべてのルートで index.html を返す |
+
+nginx設定ファイル: [`docker/nginx.conf`](docker/nginx.conf)
+
 ## 制約と課題
 
 ### 現状の制約

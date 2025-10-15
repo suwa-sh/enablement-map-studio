@@ -30,10 +30,14 @@ Enablement Map Studio は、この整理ステージを支援して、「**成�
 docker pull ghcr.io/suwa-sh/enablement-map-studio:latest
 
 # コンテナを起動
-docker run -p 8080:80 ghcr.io/suwa-sh/enablement-map-studio:latest
+docker run -p 8080:80 -p 8443:443 ghcr.io/suwa-sh/enablement-map-studio:latest
 ```
 
-アプリケーションは http://localhost:8080 でアクセスできます。
+アプリケーションは以下のURLでアクセスできます：
+- HTTP: http://localhost:8080
+- HTTPS: https://localhost:8443
+
+> **注意**: HTTPSアクセスでは自己署名証明書を使用しています。ブラウザで証明書警告が表示されますが、「詳細設定」→「localhost にアクセスする（安全ではありません）」で進むことができます。
 
 ## サポートブラウザ
 
@@ -184,11 +188,22 @@ git push origin feature/update-cjm
 
 ```bash
 # 別のポートで起動
-docker run -p 3000:80 ghcr.io/suwa-sh/enablement-map-studio:latest
+docker run -p 3000:80 -p 3443:443 ghcr.io/suwa-sh/enablement-map-studio:latest
 
 # 特定のバージョンを指定
-docker run -p 3000:80 ghcr.io/suwa-sh/enablement-map-studio:1.0.0
+docker run -p 3000:80 -p 3443:443 ghcr.io/suwa-sh/enablement-map-studio:1.0.0
 ```
+
+### HTTPS証明書について
+
+Dockerイメージには、100年間有効な自己署名証明書が含まれています。証明書には以下のアドレスが登録されています：
+
+- `localhost`, `*.localhost`
+- `127.0.0.1` (IPv4ループバック)
+- `::1` (IPv6ループバック)
+- `0.0.0.0`
+
+ローカルネットワーク内の他のIPアドレス（例: `192.168.x.x`）でアクセスする場合も、ブラウザで証明書警告を許可することで利用できます。
 
 ### データの永続化
 
