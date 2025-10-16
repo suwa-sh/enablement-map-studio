@@ -98,7 +98,7 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 
 ### EM Editor
 
-![](https://share.cleanshot.com/bstnPPQw+)
+![](https://share.cleanshot.com/xM9kd44R+)
 
 - CJM、SBP、Outcomeの定義内容と連動
 - SBPタスクに、必要な行動を追加・更新、削除
