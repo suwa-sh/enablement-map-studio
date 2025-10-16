@@ -11,6 +11,7 @@ import {
   deleteLaneWithRelatedData,
   deleteTaskWithRelatedData,
 } from './utils/deletion';
+import { findNonOverlappingPosition } from './utils/positioning';
 
 export function SbpEditor() {
   const sbp = useAppStore((state) => state.state.sbp);
@@ -138,11 +139,15 @@ export function SbpEditor() {
 
   const handleTaskAdd = (laneId: string, taskName: string) => {
     if (!sbp) return;
+
+    // 既存タスクと重ならない位置を計算
+    const position = findNonOverlappingPosition(sbp.tasks, laneId);
+
     const newTask: SbpTask = {
       id: generateId('sbp', 'task'),
       name: taskName,
       lane: laneId,
-      position: { x: 100, y: 100 },
+      position,
     };
     updateSbp({ ...sbp, tasks: [...sbp.tasks, newTask] });
     setSelectedTask(newTask);
