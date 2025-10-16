@@ -1,7 +1,10 @@
 import { Box, Typography } from '@mui/material';
 import { EmEditor } from '@enablement-map-studio/editor-em';
+import { useToast } from '../contexts/ToastContext';
 
 export function EmEditorPage() {
+  const { showToast } = useToast();
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: 3, py: 2 }}>
@@ -10,7 +13,7 @@ export function EmEditorPage() {
         </Typography>
       </Box>
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        <EmEditor />
+        <EmEditor onShowToast={showToast} />
       </Box>
     </Box>
   );

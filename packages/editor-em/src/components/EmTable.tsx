@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -16,8 +16,18 @@ import {
   Checkbox,
   Button,
 } from '@mui/material';
-import { Search, Download } from '@mui/icons-material';
+import { Search, Download, Upload } from '@mui/icons-material';
 import type { EmDsl, OutcomeDsl, SbpDsl, CjmDsl } from '@enablement-map-studio/dsl';
+import {
+  findOrCreateCjmPhase,
+  findOrCreateCjmAction,
+  findOrCreateSbpLane,
+  findOrCreateSbpTask,
+  findOrCreateEmAction,
+  processSkillResource,
+  processKnowledgeResource,
+  processToolResource,
+} from '../utils/csv-import-helpers';
 
 interface EmTableProps {
   em: EmDsl | null;
@@ -25,6 +35,10 @@ interface EmTableProps {
   sbp: SbpDsl | null;
   cjm: CjmDsl | null;
   visibleTaskIds: Set<string> | null;
+  onCjmUpdate: (cjm: CjmDsl) => void;
+  onSbpUpdate: (sbp: SbpDsl) => void;
+  onEmUpdate: (em: EmDsl) => void;
+  onShowToast: (message: string, severity?: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
 interface ResourceRow {
@@ -43,10 +57,11 @@ interface ResourceRow {
 type SortColumn = keyof ResourceRow;
 type SortOrder = 'asc' | 'desc';
 
-export function EmTable({ em, outcome, sbp, cjm, visibleTaskIds }: EmTableProps) {
+export function EmTable({ em, outcome, sbp, cjm, visibleTaskIds, onCjmUpdate, onSbpUpdate, onEmUpdate, onShowToast }: EmTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('isCSF');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [filterText, setFilterText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Build flat resource list
   const rows = useMemo((): ResourceRow[] => {
@@ -230,6 +245,177 @@ export function EmTable({ em, outcome, sbp, cjm, visibleTaskIds }: EmTableProps)
     URL.revokeObjectURL(url);
   };
 
+  const parseCSV = (csvText: string): string[][] => {
+    // Remove BOM if present
+    const text = csvText.replace(/^\uFEFF/, '');
+
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = '';
+    let insideQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+
+      if (insideQuotes) {
+        if (char === '"') {
+          if (nextChar === '"') {
+            // Escaped quote
+            currentField += '"';
+            i++; // Skip next quote
+          } else {
+            // End of quoted field
+            insideQuotes = false;
+          }
+        } else {
+          currentField += char;
+        }
+      } else {
+        if (char === '"') {
+          // Start of quoted field
+          insideQuotes = true;
+        } else if (char === ',') {
+          // Field separator
+          currentRow.push(currentField);
+          currentField = '';
+        } else if (char === '\n') {
+          // Row separator
+          currentRow.push(currentField);
+          if (currentRow.some(f => f.trim() !== '')) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+        } else if (char === '\r') {
+          // Skip CR (will handle LF next)
+          continue;
+        } else {
+          currentField += char;
+        }
+      }
+    }
+
+    // Handle last field and row
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(f => f.trim() !== '')) {
+        rows.push(currentRow);
+      }
+    }
+
+    return rows;
+  };
+
+  const handleUploadCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csvText = e.target?.result as string;
+        const rows = parseCSV(csvText);
+
+        if (rows.length === 0) {
+          onShowToast('CSVファイルが空です', 'error');
+          return;
+        }
+
+        // Validate header
+        const expectedHeaders = [
+          'CSF',
+          'CJMフェーズ',
+          'CJMアクション',
+          'SBPレーン',
+          'SBPタスク',
+          '必要な行動',
+          'リソースタイプ',
+          'リソース',
+          'URL',
+        ];
+        const header = rows[0];
+        if (header.length !== expectedHeaders.length) {
+          onShowToast(`CSVのカラム数が不正です。${expectedHeaders.length}列必要です。`, 'error');
+          return;
+        }
+
+        // Process data rows
+        processCSVRows(rows.slice(1));
+      } catch (error) {
+        console.error('Failed to parse CSV:', error);
+        const errorMessage = `CSVの解析に失敗しました: ${error instanceof Error ? error.message : String(error)}`;
+        onShowToast(errorMessage, 'error');
+      }
+    };
+    reader.readAsText(file);
+
+    // Reset input so the same file can be uploaded again
+    event.target.value = '';
+  };
+
+  const processCSVRows = (dataRows: string[][]) => {
+    if (!em || !sbp || !cjm) {
+      onShowToast('データが初期化されていません', 'error');
+      return;
+    }
+
+    let newCjm = { ...cjm };
+    let newSbp = { ...sbp };
+    let newEm = { ...em };
+
+    for (const row of dataRows) {
+      if (row.length < 9) continue; // Skip incomplete rows
+
+      const [_csf, cjmPhaseName, cjmActionName, sbpLaneName, sbpTaskName, emActionName, resourceType, resourceName, resourceUrl] = row;
+
+      // Skip if essential fields are empty
+      if (!resourceName.trim()) continue;
+
+      // Find or create CJM entities
+      const cjmPhaseResult = findOrCreateCjmPhase(newCjm, cjmPhaseName);
+      newCjm = cjmPhaseResult.cjm;
+      const cjmPhase = cjmPhaseResult.phase;
+
+      const cjmActionResult = findOrCreateCjmAction(newCjm, cjmActionName, cjmPhase?.id || null);
+      newCjm = cjmActionResult.cjm;
+
+      // Find or create SBP entities
+      const sbpLaneResult = findOrCreateSbpLane(newSbp, sbpLaneName);
+      newSbp = sbpLaneResult.sbp;
+      const sbpLane = sbpLaneResult.lane;
+
+      const sbpTaskResult = findOrCreateSbpTask(newSbp, sbpTaskName, sbpLane?.id || null);
+      newSbp = sbpTaskResult.sbp;
+      const sbpTask = sbpTaskResult.task;
+
+      // Find or create EM Action
+      const emActionResult = findOrCreateEmAction(newEm, emActionName, sbpTask?.id || null);
+      newEm = emActionResult.em;
+      const emAction = emActionResult.action;
+
+      if (!emAction) continue;
+
+      // Process resource based on type
+      const trimmedType = resourceType.trim();
+
+      if (trimmedType === 'スキル' || trimmedType === 'スキル/学習コンテンツ') {
+        newEm = processSkillResource(newEm, emAction.id, resourceName, resourceUrl);
+      } else if (trimmedType === 'ナレッジ') {
+        newEm = processKnowledgeResource(newEm, emAction.id, resourceName, resourceUrl);
+      } else if (trimmedType === 'ツール') {
+        newEm = processToolResource(newEm, emAction.id, resourceName, resourceUrl);
+      }
+    }
+
+    // Update all DSLs
+    onCjmUpdate(newCjm);
+    onSbpUpdate(newSbp);
+    onEmUpdate(newEm);
+
+    onShowToast('CSVファイルからリソースを一括登録しました', 'success');
+  };
+
   if (!em || !outcome || !sbp || !cjm) {
     return (
       <Paper elevation={2} sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'white' }}>
@@ -244,6 +430,23 @@ export function EmTable({ em, outcome, sbp, cjm, visibleTaskIds }: EmTableProps)
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
           <Typography variant="h6">リソース一覧</Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              component="input"
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleUploadCSV}
+              sx={{ display: 'none' }}
+              aria-label="CSV file input"
+            />
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Upload />}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              CSVアップロード
+            </Button>
             <Button
               variant="outlined"
               size="small"

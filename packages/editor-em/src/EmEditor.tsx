@@ -16,12 +16,18 @@ export type SelectedItem =
   | { type: 'tool'; item: { id: string; name: string } }
   | null;
 
-export function EmEditor() {
+interface EmEditorProps {
+  onShowToast: (message: string, severity?: 'success' | 'error' | 'warning' | 'info') => void;
+}
+
+export function EmEditor({ onShowToast }: EmEditorProps) {
   const em = useAppStore((state) => state.state.em);
   const outcome = useAppStore((state) => state.state.outcome);
   const sbp = useAppStore((state) => state.state.sbp);
   const cjm = useAppStore((state) => state.state.cjm);
   const updateEm = useAppStore((state) => state.updateEm);
+  const updateCjm = useAppStore((state) => state.updateCjm);
+  const updateSbp = useAppStore((state) => state.updateSbp);
 
   const [selectedAction, setSelectedAction] = useState<EmAction | null>(null);
   const [visibleTaskIds, setVisibleTaskIds] = useState<Set<string> | null>(null);
@@ -97,7 +103,17 @@ export function EmEditor() {
           {/* Table Panel (bottom) */}
           <Panel defaultSize={30} minSize={10}>
             <Box sx={{ height: '100%', bgcolor: 'grey.50', p: 3, overflow: 'auto' }}>
-              <EmTable em={em} outcome={outcome} sbp={sbp} cjm={cjm} visibleTaskIds={visibleTaskIds} />
+              <EmTable
+                em={em}
+                outcome={outcome}
+                sbp={sbp}
+                cjm={cjm}
+                visibleTaskIds={visibleTaskIds}
+                onCjmUpdate={updateCjm}
+                onSbpUpdate={updateSbp}
+                onEmUpdate={updateEm}
+                onShowToast={onShowToast}
+              />
             </Box>
           </Panel>
         </PanelGroup>
