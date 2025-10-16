@@ -338,6 +338,8 @@ CSFに該当するタスクには「CSF」と表示されたチップを追加�
 
   - 画面右側に表示されるパネルで、選択した要素（ペルソナ、フェーズ、アクション）の詳細を編集します。
   - アクションのタッチポイントや思考・感情フィールドでは、改行を含む複数行のテキスト入力が可能です。
+  - 入力フィールドのフォーカスアウト時に、末尾の空行を自動的にトリムします。
+  - 感情スコアの下に固定プレビューセクションを表示し、タッチポイントと思考・感情の実際の表示形式（`• 項目`形式）をリアルタイムで確認できます。
   - 要素を削除する際は、確認ダイアログを表示します。
 
 ### 4.3. SBPエディタ
@@ -516,11 +518,16 @@ DSLのスキーマを変更する場合は、以下の手順に従います。
 
 5. **ヘルパー関数の活用**:
    - `apps/studio/e2e/helpers.ts` に以下のヘルパー関数を定義：
-     - `fillInput(page, locator, value)`: 入力フィールドに値を入力
+     - `fillInput(page, locator, value)`: 入力フィールドに値を入力（React 18のイベント処理に対応）
      - `selectMuiOption(page, selectId, optionName)`: MUI Selectでオプションを選択
      - `getAddButtonInSection(page, sectionText)`: セクション内の追加ボタンを取得
    - 共通処理をヘルパー関数に抽出することで、テストコードの重複を削減し、保守性を向上させる
    - `happy-path.spec.ts` と `update-delete.spec.ts` でこれらのヘルパー関数を再利用
+
+6. **React 18とMUI TextFieldへの対応**:
+   - Playwrightの標準的な`locator.fill()`は、MUI TextFieldとReact 18の組み合わせで正しく動作しないことがある
+   - `fillInput`ヘルパー関数は、`Object.getOwnPropertyDescriptor`を使用してネイティブのvalue setterを取得し、React 18のイベント処理に対応
+   - この実装により、MUI TextFieldでも既存のテキストをクリアして新しい値を正しく設定できる
 
 #### ドラッグ＆ドロップテストの実装
 
@@ -592,7 +599,8 @@ docker run -p 8080:80 -p 8443:443 ghcr.io/suwa-sh/enablement-map-studio:latest
   - `pnpm check`
   - `pnpm build`
 - Chrome DevToolsで画面表示と動作を確認してください。
-- 今回修正した範囲とそれに関連する既存コードのリファクタリングを行ってください。
+- ボーイスカウトルール
+  - 今回修正した範囲とそれに関連する既存コードのリファクタリングを行ってください。
 - 回帰テストで他への影響がないことを確認してください。
   - `pnpm test:e2e`
 - 作業完了後、`CLAUDE.md`, `README.md`, `REQUIREMENTS.md`、`ARCHITECTURE.md`、`DEVELOPMENT.md`を最新の状態に更新してください。

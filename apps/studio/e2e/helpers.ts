@@ -161,20 +161,30 @@ export async function clearData(page: Page) {
 
 /**
  * 入力フィールドに値を入力するヘルパー関数
- * 既存のテキストを全選択してから新しい値を入力する
+ * React 18のイベント処理に対応した方法で値を設定する
  *
  * @param page - Playwrightのページオブジェクト
  * @param locator - 入力フィールドのlocator
  * @param value - 入力する値
  */
 export async function fillInput(page: Page, locator: any, value: string) {
-  await locator.click();
-  await locator.fill(''); // まず空にする
-  // MUIのTextFieldが値の変更を認識するための短い待機
-  await page.waitForTimeout(100);
-  await locator.fill(value); // 新しい値を入力
-  // 入力が確定するための短い待機
-  await page.waitForTimeout(100);
+  await locator.evaluate((el: HTMLInputElement | HTMLTextAreaElement, val: string) => {
+    // React 18の新しいイベント処理に対応
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      el instanceof HTMLTextAreaElement ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,
+      'value'
+    )?.set;
+
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(el, val);
+    } else {
+      el.value = val;
+    }
+
+    // inputイベントを発火してReactの状態を更新
+    const event = new Event('input', { bubbles: true });
+    el.dispatchEvent(event);
+  }, value);
 }
 
 /**

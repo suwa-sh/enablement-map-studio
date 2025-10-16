@@ -91,7 +91,8 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
       await dialog.getByRole('button', { name: 'SAVE' }).click();
 
       // プロパティパネルを閉じる
-      await page.keyboard.press('Escape');
+      await dialog.locator('button[aria-label="close"]').click();
+      await expect(dialog).not.toBeVisible();
 
       // フェーズが追加されたことを確認
       await expect(page.getByText('認識').first()).toBeVisible();
@@ -112,7 +113,8 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
       await dialog.getByRole('button', { name: 'SAVE' }).click();
 
       // プロパティパネルを閉じる
-      await page.keyboard.press('Escape');
+      await dialog.locator('button[aria-label="close"]').click();
+      await expect(dialog).not.toBeVisible();
 
       // 2つ目のフェーズが追加されたことを確認
       await expect(page.getByText('検討').first()).toBeVisible();
@@ -135,8 +137,9 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
       // 保存
       await dialog.getByRole('button', { name: 'SAVE' }).click();
 
-      // 閉じる
-      await page.keyboard.press('Escape');
+      // プロパティパネルを閉じる
+      await dialog.locator('button[aria-label="close"]').click();
+      await expect(dialog).not.toBeVisible();
 
       // ペルソナが設定されたことを確認
       await expect(page.getByText('テスト利用者')).toBeVisible();
@@ -159,8 +162,9 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
       // 保存
       await dialog.getByRole('button', { name: 'SAVE' }).click();
 
-      // 閉じる
-      await page.keyboard.press('Escape');
+      // プロパティパネルを閉じる
+      await dialog.locator('button[aria-label="close"]').click();
+      await expect(dialog).not.toBeVisible();
 
       // アクションが更新されたことを確認（テーブル内のparagraphを選択）
       await expect(page.getByRole('paragraph').filter({ hasText: /^課題を認識する$/ })).toBeVisible();
@@ -180,8 +184,9 @@ test.describe('ハッピーパス: キャンバスクリアから全エディタ
       // 保存
       await dialog.getByRole('button', { name: 'SAVE' }).click();
 
-      // 閉じる
-      await page.keyboard.press('Escape');
+      // プロパティパネルを閉じる
+      await dialog.locator('button[aria-label="close"]').click();
+      await expect(dialog).not.toBeVisible();
 
       // アクションが更新されたことを確認（テーブル内のparagraphを選択）
       await expect(page.getByRole('paragraph').filter({ hasText: /^解決策を検討する$/ })).toBeVisible();

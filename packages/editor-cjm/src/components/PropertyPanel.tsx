@@ -8,6 +8,7 @@ import {
   Stack,
   IconButton,
   Slider,
+  Paper,
 } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
 import type { CjmAction, CjmPhase, CjmPersona } from '@enablement-map-studio/dsl';
@@ -24,6 +25,12 @@ interface PropertyPanelProps {
   onPhaseDelete: (phaseId: string) => void;
   onClose: () => void;
 }
+
+// TextFieldの行数定数
+const TEXTAREA_ROWS = {
+  SMALL: 3,
+  LARGE: 6,
+} as const;
 
 export function PropertyPanel({
   selectedAction,
@@ -74,7 +81,92 @@ export function PropertyPanel({
     }
   };
 
+  // 改行区切りテキストから空行をトリムする共通関数
+  const trimLines = (value: string): string[] => {
+    return value.split('\n').filter(line => line.trim() !== '');
+  };
+
+  const handleTouchpointsBlur = (value: string) => {
+    if (!editedAction) return;
+    setEditedAction({
+      ...editedAction,
+      touchpoints: trimLines(value),
+    });
+  };
+
+  const handleThoughtsFeelingsBlur = (value: string) => {
+    if (!editedAction) return;
+    setEditedAction({
+      ...editedAction,
+      thoughts_feelings: trimLines(value),
+    });
+  };
+
   const open = Boolean(selectedAction || selectedPhase || selectedPersona);
+
+  // プレビュー項目を表示する共通コンポーネント
+  const PreviewItems = ({
+    label,
+    items,
+    variant = 'caption'
+  }: {
+    label: string;
+    items: string[] | undefined;
+    variant?: 'caption' | 'body2';
+  }) => (
+    <Box sx={{ mt: 2 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+        {label}
+      </Typography>
+      {items && items.length > 0 ? (
+        items.filter(item => item.trim() !== '').map((item, i) => (
+          <Typography key={i} variant={variant} display="block" color="text.primary" sx={{ mb: variant === 'body2' ? 0.5 : 0 }}>
+            • {item}
+          </Typography>
+        ))
+      ) : (
+        <Typography variant={variant} color="text.secondary" sx={{ fontStyle: 'italic' }}>
+          （未入力）
+        </Typography>
+      )}
+    </Box>
+  );
+
+  // アクションボタンを表示する共通コンポーネント
+  const ActionButtons = ({ showDelete = false }: { showDelete?: boolean }) => (
+    <Box sx={{ mt: 3 }}>
+      {showDelete ? (
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            startIcon={<Save />}
+            onClick={handleSave}
+            sx={{ flex: 1 }}
+          >
+            Save
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Delete />}
+            onClick={handleDelete}
+            sx={{ flex: 1 }}
+          >
+            Delete
+          </Button>
+        </Stack>
+      ) : (
+        <Button
+          variant="contained"
+          startIcon={<Save />}
+          onClick={handleSave}
+          fullWidth
+        >
+          Save
+        </Button>
+      )}
+    </Box>
+  );
 
   return (
     <Drawer
@@ -94,7 +186,7 @@ export function PropertyPanel({
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h6">プロパティ</Typography>
-          <IconButton onClick={onClose} size="small">
+          <IconButton onClick={onClose} size="small" aria-label="close">
             <Close />
           </IconButton>
         </Box>
@@ -114,7 +206,7 @@ export function PropertyPanel({
                 label="説明"
                 fullWidth
                 multiline
-                rows={6}
+                rows={TEXTAREA_ROWS.LARGE}
                 value={editedPersona.description || ''}
                 onChange={(e) =>
                   setEditedPersona({ ...editedPersona, description: e.target.value })
@@ -148,7 +240,7 @@ export function PropertyPanel({
                 label="タッチポイント"
                 fullWidth
                 multiline
-                rows={3}
+                rows={TEXTAREA_ROWS.SMALL}
                 value={editedAction.touchpoints?.join('\n') || ''}
                 onChange={(e) =>
                   setEditedAction({
@@ -156,6 +248,7 @@ export function PropertyPanel({
                     touchpoints: e.target.value.split('\n'),
                   })
                 }
+                onBlur={(e) => handleTouchpointsBlur(e.target.value)}
                 placeholder="1行に1つ入力"
               />
 
@@ -163,7 +256,7 @@ export function PropertyPanel({
                 label="思考・感情"
                 fullWidth
                 multiline
-                rows={3}
+                rows={TEXTAREA_ROWS.SMALL}
                 value={editedAction.thoughts_feelings?.join('\n') || ''}
                 onChange={(e) =>
                   setEditedAction({
@@ -171,6 +264,7 @@ export function PropertyPanel({
                     thoughts_feelings: e.target.value.split('\n'),
                   })
                 }
+                onBlur={(e) => handleThoughtsFeelingsBlur(e.target.value)}
                 placeholder="1行に1つ入力"
               />
 
@@ -188,71 +282,29 @@ export function PropertyPanel({
                   valueLabelDisplay="auto"
                 />
               </Box>
+
+              {/* プレビューセクション */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  backgroundColor: 'grey.50',
+                }}
+              >
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  プレビュー
+                </Typography>
+                <PreviewItems label="タッチポイント:" items={editedAction.touchpoints} variant="caption" />
+                <PreviewItems label="思考・感情:" items={editedAction.thoughts_feelings} variant="body2" />
+              </Paper>
             </Stack>
           )}
         </Box>
 
         {/* Actions */}
-        {editedPersona && (
-          <Box sx={{ mt: 3 }}>
-            <Button
-              variant="contained"
-              startIcon={<Save />}
-              onClick={handleSave}
-              fullWidth
-            >
-              Save
-            </Button>
-          </Box>
-        )}
-
-        {editedPhase && (
-          <Box sx={{ mt: 3 }}>
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="contained"
-                startIcon={<Save />}
-                onClick={handleSave}
-                sx={{ flex: 1 }}
-              >
-                Save
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<Delete />}
-                onClick={handleDelete}
-                sx={{ flex: 1 }}
-              >
-                Delete
-              </Button>
-            </Stack>
-          </Box>
-        )}
-
-        {editedAction && (
-          <Box sx={{ mt: 3 }}>
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="contained"
-                startIcon={<Save />}
-                onClick={handleSave}
-                sx={{ flex: 1 }}
-              >
-                Save
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<Delete />}
-                onClick={handleDelete}
-                sx={{ flex: 1 }}
-              >
-                Delete
-              </Button>
-            </Stack>
-          </Box>
-        )}
+        {editedPersona && <ActionButtons />}
+        {editedPhase && <ActionButtons showDelete />}
+        {editedAction && <ActionButtons showDelete />}
       </Box>
     </Drawer>
   );
