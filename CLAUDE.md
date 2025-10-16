@@ -305,6 +305,21 @@ CSFに該当するタスクには「CSF」と表示されたチップを追加�
 - 未保存の変更がある場合: `variant="contained"` で強調表示
 - 未保存の変更がない場合: `variant="outlined"` で通常表示
 
+#### 4.1.6. プロパティパネルの共通スタイル
+
+全てのエディタ（CJM、SBP、Outcome、EM）のプロパティパネルは、以下の統一されたスタイルを採用しています。
+
+| 要素 | スタイル | 説明 |
+| :--- | :--- | :--- |
+| Drawer variant | `temporary` | プロパティパネル表示時に暗いバックドロップ（オーバーレイ）を表示 |
+| Width | `33vw` (最小 400px) | ビューポート幅の33%、最小幅は400px |
+| Header | `display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3` | 「プロパティ」タイトルと閉じるボタンを水平配置 |
+| Header Text | 「プロパティ」 | 全エディタで統一されたタイトル |
+| Content Box | `flex: 1, overflow: 'auto'` | スクロール可能なコンテンツエリア |
+| Stack Padding | `pt: 1` (CJM/SBP) | TextFieldラベルがヘッダーと重ならないよう上部にパディング |
+| Actions (Buttons) | 画面下部に配置 | SAVEとDELETEボタンを固定配置 |
+| DELETE Button | `variant="outlined", color="error"` | 白背景に赤枠のアウトラインスタイル |
+
 ### 4.2. CJMエディタ
 
 #### 4.2.1. UI構成

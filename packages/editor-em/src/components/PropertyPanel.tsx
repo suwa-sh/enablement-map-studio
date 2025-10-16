@@ -129,7 +129,7 @@ export function PropertyPanel({
       anchor="right"
       open={!!editedAction}
       onClose={onClose}
-      variant="persistent"
+      variant="temporary"
       sx={{
         '& .MuiDrawer-paper': {
           width: '33vw',
