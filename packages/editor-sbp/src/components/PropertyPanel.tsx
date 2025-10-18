@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
 import type { SbpTask, SbpLane } from '@enablement-map-studio/dsl';
-import { useConfirm } from '@enablement-map-studio/ui';
+import { useConfirm, TEXTAREA_ROWS } from '@enablement-map-studio/ui';
 
 interface PropertyPanelProps {
   selectedTask: SbpTask | null;
@@ -107,6 +107,16 @@ export function PropertyPanel({
                 onChange={(e) => setEditedLane({ ...editedLane, name: e.target.value })}
               />
 
+              <TextField
+                label="説明"
+                fullWidth
+                multiline
+                minRows={TEXTAREA_ROWS.SMALL}
+                value={editedLane.description || ''}
+                onChange={(e) => setEditedLane({ ...editedLane, description: e.target.value })}
+                placeholder="レーンの説明を入力（任意）"
+              />
+
               <FormControl fullWidth>
                 <InputLabel>レーン種別</InputLabel>
                 <Select
@@ -141,6 +151,17 @@ export function PropertyPanel({
                 fullWidth
                 value={editedTask.name}
                 onChange={(e) => setEditedTask({ ...editedTask, name: e.target.value })}
+                disabled={editedTask.readonly}
+              />
+
+              <TextField
+                label="説明"
+                fullWidth
+                multiline
+                minRows={TEXTAREA_ROWS.SMALL}
+                value={editedTask.description || ''}
+                onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                placeholder="タスクの説明を入力（任意）"
                 disabled={editedTask.readonly}
               />
 

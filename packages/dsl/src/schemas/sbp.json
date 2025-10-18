@@ -28,6 +28,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "kind": { "enum": ["cjm", "human", "team", "system"] },
+        "description": { "type": "string" },
         "position": {
           "type": "object",
           "properties": {
@@ -53,6 +54,7 @@
         "id": { "type": "string" },
         "lane": { "type": "string" },
         "name": { "type": "string" },
+        "description": { "type": "string" },
         "source_id": { "type": "string" },
         "position": {
           "type": "object",

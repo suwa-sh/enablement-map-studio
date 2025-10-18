@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Close, Save, Delete } from '@mui/icons-material';
 import type { CjmAction, CjmPhase, CjmPersona } from '@enablement-map-studio/dsl';
-import { useConfirm } from '@enablement-map-studio/ui';
+import { useConfirm, TEXTAREA_ROWS } from '@enablement-map-studio/ui';
 
 interface PropertyPanelProps {
   selectedAction: CjmAction | null;
@@ -25,12 +25,6 @@ interface PropertyPanelProps {
   onPhaseDelete: (phaseId: string) => void;
   onClose: () => void;
 }
-
-// TextFieldの行数定数
-const TEXTAREA_ROWS = {
-  SMALL: 3,
-  LARGE: 6,
-} as const;
 
 export function PropertyPanel({
   selectedAction,
@@ -206,7 +200,7 @@ export function PropertyPanel({
                 label="説明"
                 fullWidth
                 multiline
-                rows={TEXTAREA_ROWS.LARGE}
+                minRows={TEXTAREA_ROWS.LARGE}
                 value={editedPersona.description || ''}
                 onChange={(e) =>
                   setEditedPersona({ ...editedPersona, description: e.target.value })
@@ -240,7 +234,7 @@ export function PropertyPanel({
                 label="タッチポイント"
                 fullWidth
                 multiline
-                rows={TEXTAREA_ROWS.SMALL}
+                minRows={TEXTAREA_ROWS.SMALL}
                 value={editedAction.touchpoints?.join('\n') || ''}
                 onChange={(e) =>
                   setEditedAction({
@@ -256,7 +250,7 @@ export function PropertyPanel({
                 label="思考・感情"
                 fullWidth
                 multiline
-                rows={TEXTAREA_ROWS.SMALL}
+                minRows={TEXTAREA_ROWS.SMALL}
                 value={editedAction.thoughts_feelings?.join('\n') || ''}
                 onChange={(e) =>
                   setEditedAction({

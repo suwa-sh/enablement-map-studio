@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { Close, Save } from '@mui/icons-material';
 import type { OutcomeDsl, SbpDsl } from '@enablement-map-studio/dsl';
+import { TEXTAREA_ROWS } from '@enablement-map-studio/ui';
 
 interface PropertyPanelProps {
   outcome: OutcomeDsl | null;
@@ -117,7 +118,7 @@ export function PropertyPanel({
                 fullWidth
                 size="small"
                 multiline
-                rows={3}
+                minRows={TEXTAREA_ROWS.SMALL}
                 value={editedOutcome.primary_csf.rationale}
                 onChange={(e) =>
                   setEditedOutcome({
@@ -159,7 +160,7 @@ export function PropertyPanel({
                   fullWidth
                   size="small"
                   multiline
-                  rows={2}
+                  minRows={2}
                   placeholder="オプション"
                   value={editedOutcome.primary_kpi.definition || ''}
                   onChange={(e) =>

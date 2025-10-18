@@ -16,7 +16,7 @@ import type {
   EmDsl,
 } from '@enablement-map-studio/dsl';
 import { generateId } from '@enablement-map-studio/dsl';
-import { useConfirm } from '@enablement-map-studio/ui';
+import { useConfirm, TEXTAREA_ROWS } from '@enablement-map-studio/ui';
 
 interface PropertyPanelProps {
   selectedAction: EmAction | null;
@@ -163,6 +163,24 @@ export function PropertyPanel({
                 onChange={(e) =>
                   setEditedAction({ ...editedAction, name: e.target.value })
                 }
+              />
+            </Box>
+
+            {/* Action Description */}
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
+                説明
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                multiline
+                minRows={TEXTAREA_ROWS.SMALL}
+                value={editedAction.description || ''}
+                onChange={(e) =>
+                  setEditedAction({ ...editedAction, description: e.target.value })
+                }
+                placeholder="行動の説明を入力（任意）"
               />
             </Box>
 

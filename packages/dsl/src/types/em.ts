@@ -17,6 +17,7 @@ export interface EmOutcome {
 export interface EmAction {
   id: string;
   name: string;
+  description?: string;
   source_id: string; // SBP Task ID
 }
 

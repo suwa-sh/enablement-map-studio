@@ -99,6 +99,7 @@ lanes:
   - id: sbp:lane:dev-team
     name: 開発チーム
     kind: team
+    description: システム開発を担当するチーム。要件定義から設計、実装、テストまでを実施。
     position:
       x: -380
       'y': 320
@@ -127,6 +128,7 @@ tasks:
   - id: sbp:task:gather-requirements
     lane: sbp:lane:dev-team
     name: 機能定義を整理
+    description: ユーザーからの要求をヒアリングし、機能要件として整理する。優先順位付けも行う。
     source_id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
     position:
       x: 185.51058035661606
@@ -134,6 +136,7 @@ tasks:
   - id: sbp:task:design-system
     lane: sbp:lane:dev-team
     name: 設計を作成
+    description: 画面設計、データベース設計、API設計などの詳細設計を行う。
     position:
       x: 427.35121204598516
       'y': 163.8960042464439
@@ -342,9 +345,11 @@ outcomes:
 actions:
   - id: em:act:testcase-design
     name: UATシナリオに基づきテストケースを設計する
+    description: ユーザー受入テストのシナリオを基に、具体的なテストケースを作成する。正常系・異常系・境界値テストを網羅する。
     source_id: sbp:task:support-uat
   - id: em:act:prepare-test-data
     name: UAT用のテストデータを準備する
+    description: テストケースに必要なデータを抽出・加工し、テスト環境に投入する。
     source_id: sbp:task:support-uat
   - id: em:act:setup-test-env
     name: テスト環境のセットアップ手順を文書化する

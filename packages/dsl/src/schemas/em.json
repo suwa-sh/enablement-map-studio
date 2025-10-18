@@ -28,6 +28,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
+        "description": { "type": "string" },
         "source_id": { "type": "string" }
       },
       "required": ["id", "name", "source_id"]
