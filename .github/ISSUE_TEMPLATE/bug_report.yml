@@ -1,0 +1,88 @@
+name: バグレポート
+description: バグや不具合を報告する
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグレポートをありがとうございます。以下の情報を提供していただくと、問題の解決がスムーズになります。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: バグの説明
+      description: 発生している問題について、できるだけ詳しく説明してください。
+      placeholder: 何が起きているか、期待される動作は何かを記載してください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 再現手順
+      description: バグを再現するための手順を記載してください。
+      placeholder: |
+        1. '...'に移動
+        2. '...'をクリック
+        3. '...'までスクロール
+        4. エラーが発生
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待される動作
+      description: 本来どのように動作するべきかを記載してください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: スクリーンショット
+      description: 問題を示すスクリーンショットがあれば貼り付けてください。
+      placeholder: スクリーンショットをドラッグ&ドロップできます。
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: ブラウザ
+      description: 使用しているブラウザを選択してください。
+      options:
+        - Chrome
+        - Edge
+        - Safari
+        - Firefox
+        - その他
+      multiple: true
+    validations:
+      required: true
+
+  - type: input
+    id: browser-version
+    attributes:
+      label: ブラウザバージョン
+      description: ブラウザのバージョンを記載してください（例：Chrome 120.0.6099.109）
+      placeholder: "例: Chrome 120.0.6099.109"
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      description: 使用しているOSを選択してください。
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - その他
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 追加情報
+      description: その他、問題の解決に役立つ情報があれば記載してください。
+      placeholder: エラーメッセージ、コンソールログなど

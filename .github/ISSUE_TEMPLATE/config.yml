@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: ドキュメント
+    url: https://github.com/suwa-sh/enablement-map-studio/blob/main/README.md
+    about: 使い方やアーキテクチャについては、まずドキュメントをご確認ください
+  - name: ディスカッション
+    url: https://github.com/suwa-sh/enablement-map-studio/discussions
+    about: アイデアの共有や一般的な議論は、Discussionsをご利用ください

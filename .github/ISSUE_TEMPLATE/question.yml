@@ -1,0 +1,56 @@
+name: 質問
+description: 使い方やドキュメントについて質問する
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ご質問ありがとうございます。以下の情報を提供していただくと、回答がスムーズになります。
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 質問内容
+      description: 質問の内容を記載してください。
+      placeholder: ...について教えてください。
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: カテゴリ
+      description: 質問のカテゴリを選択してください。
+      options:
+        - 使い方
+        - CJMエディタ
+        - SBPエディタ
+        - Outcomeエディタ
+        - EMエディタ
+        - DSL仕様
+        - ファイル操作
+        - その他
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 背景・状況
+      description: 質問に至った背景や、現在の状況を記載してください。
+      placeholder: ...を実現しようとしていて、...の部分で困っています。
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 試したこと
+      description: すでに試したことがあれば記載してください。
+      placeholder: ドキュメントの...を確認しましたが、...でした。
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 追加情報
+      description: その他、参考になる情報があれば記載してください。
+      placeholder: スクリーンショット、YAMLファイルの例など
