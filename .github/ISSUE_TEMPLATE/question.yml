@@ -1,6 +1,6 @@
 name: 質問
 description: 使い方やドキュメントについて質問する
-title: "[Question]: "
+title: "question: "
 labels: ["question"]
 body:
   - type: markdown

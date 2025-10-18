@@ -1,6 +1,6 @@
 name: 機能要望
 description: 新機能や改善の提案をする
-title: "[Feature]: "
+title: "feat: "
 labels: ["enhancement"]
 body:
   - type: markdown

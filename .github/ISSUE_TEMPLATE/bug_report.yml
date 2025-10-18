@@ -1,6 +1,6 @@
 name: バグレポート
 description: バグや不具合を報告する
-title: "[Bug]: "
+title: "fix: "
 labels: ["bug"]
 body:
   - type: markdown
