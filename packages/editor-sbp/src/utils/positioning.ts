@@ -1,4 +1,5 @@
 import type { SbpTask } from '@enablement-map-studio/dsl';
+import { snapPositionToGrid, GRID_SIZE } from './grid';
 
 /**
  * タスクノードの想定サイズ
@@ -6,20 +7,20 @@ import type { SbpTask } from '@enablement-map-studio/dsl';
  * padding (p: 2 = 16px) やテキストの折り返しを考慮して、
  * 実際のレンダリングサイズに近い値を設定
  */
-const TASK_NODE_WIDTH = 200;
-const TASK_NODE_HEIGHT = 80;
+export const TASK_NODE_WIDTH = 200;
+export const TASK_NODE_HEIGHT = 80;
 
 /**
  * 重なり判定の閾値
  * この距離以内にタスクがある場合は重なっていると判定
  */
-const OVERLAP_THRESHOLD = 10;
+const OVERLAP_THRESHOLD = GRID_SIZE;
 
 /**
- * 重なりを避けるためのオフセット量
+ * 重なりを避けるためのオフセット量（グリッドサイズの倍数）
  */
-const OFFSET_X = 50;
-const OFFSET_Y = 50;
+const OFFSET_X = GRID_SIZE * 5; // 50px
+const OFFSET_Y = GRID_SIZE * 5; // 50px
 
 /**
  * 最大試行回数（無限ループを防ぐ）
@@ -58,12 +59,12 @@ export function findNonOverlappingPosition(
     (task) => task.lane === targetLaneId && task.position
   );
 
-  // 既存タスクがない場合はデフォルト位置をそのまま返す
+  // 既存タスクがない場合はデフォルト位置をグリッドにスナップして返す
   if (tasksInSameLane.length === 0) {
-    return defaultPosition;
+    return snapPositionToGrid(defaultPosition);
   }
 
-  let candidatePosition = { ...defaultPosition };
+  let candidatePosition = snapPositionToGrid(defaultPosition);
   let attempts = 0;
 
   // 重ならない位置が見つかるまで、右下にずらしていく
@@ -82,11 +83,11 @@ export function findNonOverlappingPosition(
       return candidatePosition;
     }
 
-    // 重なりがある場合は右下にオフセット
-    candidatePosition = {
+    // 重なりがある場合は右下にオフセット（常にグリッドにスナップ）
+    candidatePosition = snapPositionToGrid({
       x: candidatePosition.x + OFFSET_X,
       y: candidatePosition.y + OFFSET_Y,
-    };
+    });
     attempts++;
   }
 

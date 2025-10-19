@@ -38,10 +38,9 @@ import { Add } from '@mui/icons-material';
 import type { SbpDsl, SbpTask, SbpLane, CjmDsl } from '@enablement-map-studio/dsl';
 import { TaskNode } from './TaskNode';
 import { LaneNode } from './LaneNode';
-import { AlignmentGuides } from './AlignmentGuides';
-import { useAlignmentGuides } from '../hooks/useAlignmentGuides';
 import { dslToFlow, updateDslFromFlow, LANE_HEIGHT, LANE_SPACING, LANE_WIDTH } from '../utils/flowConverter';
 import { deleteLaneWithRelatedData } from '../utils/deletion';
+import { snapPositionToGrid, snapSizeToGrid } from '../utils/grid';
 
 interface SbpCanvasProps {
   sbp: SbpDsl;
@@ -86,15 +85,6 @@ export function SbpCanvas({
   const [addTaskDialogOpen, setAddTaskDialogOpen] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [selectedLaneForNewTask, setSelectedLaneForNewTask] = useState('');
-
-  // アライメントガイド用のフック
-  const { alignmentLines, onDragStart, onDrag, onDragEnd } = useAlignmentGuides();
-
-  // レーンリサイズ時のスナップガイド
-  const [resizeAlignmentLines, setResizeAlignmentLines] = useState<{ horizontal: number[]; vertical: number[] }>({
-    horizontal: [],
-    vertical: [],
-  });
 
   // DSL更新からのノード更新をスキップするカウンター
   // setNodes呼び出し前にインクリメント、handleNodesChangeでデクリメント
@@ -394,37 +384,38 @@ export function SbpCanvas({
 
   // タスクノードのドラッグ開始時の処理
   const handleNodeDragStart = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
-      // ドラッグフラグを立てる（handleNodesChangeでDSL更新をスキップするため）
+    () => {
+      // ドラッグ開始フラグを立てる
       isDraggingRef.current = true;
-
-      // タスクノード（CJM readonlyノード含む）の場合、アライメントガイドを有効化
-      if (node.type === 'taskNode') {
-        onDragStart();
-      }
     },
-    [onDragStart]
-  );
+    []
+  );;
 
   // タスクノードのドラッグ中の処理
   const handleNodeDrag = useCallback(
     (_event: React.MouseEvent, node: Node) => {
-      // タスクノード（CJM readonlyノード含む）の場合、アライメントガイドとスナップを計算
+      // タスクノード（CJM readonlyノード含む）の場合、グリッドスナップを適用
       if (node.type === 'taskNode') {
-        const snapPosition = onDrag(node, nodes);
+        const snappedPosition = snapPositionToGrid(node.position);
+        setNodes((currentNodes) =>
+          currentNodes.map((n) =>
+            n.id === node.id ? { ...n, position: snappedPosition } : n
+          )
+        );
+      }
 
-        // スナップ位置があれば、ノード位置を更新（ドラッグ中にリアルタイムで吸着）
-        if (snapPosition) {
-          setNodes((currentNodes) =>
-            currentNodes.map((n) =>
-              n.id === node.id ? { ...n, position: snapPosition } : n
-            )
-          );
-        }
+      // レーンノードの場合、ドラッグ中にグリッドスナップを適用
+      if (node.type === 'laneNode') {
+        const snappedPosition = snapPositionToGrid(node.position);
+        setNodes((currentNodes) =>
+          currentNodes.map((n) =>
+            n.id === node.id ? { ...n, position: snappedPosition } : n
+          )
+        );
       }
     },
-    [onDrag, nodes, setNodes]
-  );
+    [setNodes]
+  );;;
 
   // レーンリサイズ中の処理（スナップガイド表示）
   const handleLaneResize = useCallback(
@@ -435,59 +426,32 @@ export function SbpCanvas({
       // リサイズフラグを立てる（handleNodesChangeでDSL更新をスキップするため）
       isResizingRef.current = true;
 
-      const currentLaneNode = nodes.find((n) => n.id === laneNodeId);
-      if (!currentLaneNode) return;
-
-      // 他のレーンノードとタスクノードを取得
-      const otherLanes = nodes.filter((n) => n.id !== laneNodeId && n.type === 'laneNode');
-      const taskNodes = nodes.filter((n) => n.type === 'taskNode');
-
-      const horizontalLines: number[] = [];
-      const verticalLines: number[] = [];
-
-      const SNAP_THRESHOLD = 10;
-
-      // リサイズ後の右端と下端の座標
-      const rightEdge = params.x + params.width;
-      const bottomEdge = params.y + params.height;
-
-      // 他のレーンの端と比較
-      otherLanes.forEach((otherLane) => {
-        const otherRight = otherLane.position.x + (otherLane.measured?.width || otherLane.width || LANE_WIDTH);
-        const otherBottom = otherLane.position.y + (otherLane.measured?.height || otherLane.height || LANE_HEIGHT);
-
-        // 横方向（幅）のアライメント
-        if (Math.abs(rightEdge - otherRight) < SNAP_THRESHOLD) {
-          verticalLines.push(otherRight);
-        }
-
-        // 縦方向（高さ）のアライメント
-        if (Math.abs(bottomEdge - otherBottom) < SNAP_THRESHOLD) {
-          horizontalLines.push(otherBottom);
-        }
+      // グリッドにスナップしたサイズを計算
+      const finalSize = snapSizeToGrid({
+        width: params.width,
+        height: params.height,
       });
 
-      // タスクノードの端とも比較
-      taskNodes.forEach((taskNode) => {
-        const taskRight = taskNode.position.x + (taskNode.measured?.width || 200);
-        const taskBottom = taskNode.position.y + (taskNode.measured?.height || 80);
-
-        if (Math.abs(rightEdge - taskRight) < SNAP_THRESHOLD) {
-          verticalLines.push(taskRight);
-        }
-
-        if (Math.abs(bottomEdge - taskBottom) < SNAP_THRESHOLD) {
-          horizontalLines.push(taskBottom);
-        }
-      });
-
-      setResizeAlignmentLines({
-        horizontal: horizontalLines,
-        vertical: verticalLines,
-      });
+      // リサイズ中も即座にノードサイズを更新（グリッドスナップを視覚的に確認可能）
+      setNodes((currentNodes) =>
+        currentNodes.map((n) =>
+          n.id === laneNodeId
+            ? {
+                ...n,
+                style: {
+                  ...n.style,
+                  width: finalSize.width,
+                  height: finalSize.height,
+                },
+                width: finalSize.width,
+                height: finalSize.height,
+              }
+            : n
+        )
+      );
     },
-    [nodes]
-  );
+    [setNodes]
+  );;;;
 
   // レーンリサイズ終了時の処理（スナップ確定とガイド非表示）
   const handleLaneResizeEnd = useCallback(
@@ -495,79 +459,31 @@ export function SbpCanvas({
       _event: React.MouseEvent | React.TouchEvent,
       params: { width: number; height: number; x: number; y: number }
     ) => {
-      // ガイドを非表示
-      setResizeAlignmentLines({ horizontal: [], vertical: [] });
-
-      // スナップ位置を確定（setTimeout削除、即座に更新）
-      setNodes((currentNodes) => {
-        const currentLaneNode = currentNodes.find((n) => n.id === laneNodeId);
-        if (!currentLaneNode) return currentNodes;
-
-        // 他のレーンノードとタスクノードを取得
-        const otherLanes = currentNodes.filter((n) => n.id !== laneNodeId && n.type === 'laneNode');
-        const taskNodes = currentNodes.filter((n) => n.type === 'taskNode');
-
-        let snappedWidth = params.width;
-        let snappedHeight = params.height;
-
-        const SNAP_THRESHOLD = 10;
-
-        // リサイズ後の右端と下端の座標
-        const rightEdge = params.x + params.width;
-        const bottomEdge = params.y + params.height;
-
-        // 他のレーンの端と比較してスナップ
-        otherLanes.forEach((otherLane) => {
-          const otherRight = otherLane.position.x + (otherLane.measured?.width || otherLane.width || LANE_WIDTH);
-          const otherBottom = otherLane.position.y + (otherLane.measured?.height || otherLane.height || LANE_HEIGHT);
-
-          // 横方向（幅）のスナップ
-          if (Math.abs(rightEdge - otherRight) < SNAP_THRESHOLD) {
-            snappedWidth = otherRight - params.x;
-          }
-
-          // 縦方向（高さ）のスナップ
-          if (Math.abs(bottomEdge - otherBottom) < SNAP_THRESHOLD) {
-            snappedHeight = otherBottom - params.y;
-          }
-        });
-
-        // タスクノードの端ともスナップ
-        taskNodes.forEach((taskNode) => {
-          const taskRight = taskNode.position.x + (taskNode.measured?.width || 200);
-          const taskBottom = taskNode.position.y + (taskNode.measured?.height || 80);
-
-          if (Math.abs(rightEdge - taskRight) < SNAP_THRESHOLD) {
-            snappedWidth = taskRight - params.x;
-          }
-
-          if (Math.abs(bottomEdge - taskBottom) < SNAP_THRESHOLD) {
-            snappedHeight = taskBottom - params.y;
-          }
-        });
-
-        // スナップした場合はサイズを更新
-        const updatedNodes = (snappedWidth !== params.width || snappedHeight !== params.height)
-          ? currentNodes.map((n) =>
-              n.id === laneNodeId
-                ? {
-                    ...n,
-                    style: {
-                      ...n.style,
-                      width: snappedWidth,
-                      height: snappedHeight,
-                    },
-                    width: snappedWidth,
-                    height: snappedHeight,
-                  }
-                : n
-            )
-          : currentNodes;
-
-        return updatedNodes;
+      // グリッドにスナップしたサイズを計算
+      const finalSize = snapSizeToGrid({
+        width: params.width,
+        height: params.height,
       });
 
-      // レーンリサイズ終了後、常にDSL更新を実行（スナップの有無に関わらず）
+      // サイズを更新
+      setNodes((currentNodes) =>
+        currentNodes.map((n) =>
+          n.id === laneNodeId
+            ? {
+                ...n,
+                style: {
+                  ...n.style,
+                  width: finalSize.width,
+                  height: finalSize.height,
+                },
+                width: finalSize.width,
+                height: finalSize.height,
+              }
+            : n
+        )
+      );
+
+      // レーンリサイズ終了後、常にDSL更新を実行
       const updatedDsl = updateDslFromFlow(sbp, nodes, edges);
       onSbpUpdate(updatedDsl);
 
@@ -575,7 +491,7 @@ export function SbpCanvas({
       isResizingRef.current = false;
     },
     [setNodes, edges, sbp, onSbpUpdate, nodes]
-  );;
+  );;;;
 
   // レーンノードにリサイズハンドラを設定
   useEffect(() => {
@@ -601,60 +517,29 @@ export function SbpCanvas({
   // レーンのドラッグ終了時の処理
   const handleNodeDragStop = useCallback(
     (_event: unknown, node: Node) => {
-      // タスクノード（CJM readonlyノード含む）の場合は最終的なスナップ位置を確定してからガイドを非表示
+      // タスクノード（CJM readonlyノード含む）の場合、グリッドスナップを適用
       if (node.type === 'taskNode') {
-        // まずガイドを非表示にする
-        onDragEnd();
-
-        // 最終スナップ位置を確定（setTimeout削除、即座に更新）
+        // 最終スナップ位置を確定（グリッドスナップのみ）
         setNodes((currentNodes) => {
           const currentNode = currentNodes.find((n) => n.id === node.id);
           if (!currentNode) return currentNodes;
 
-          // 現在位置でスナップ判定（onDragを使わずに直接計算）
-          const otherNodes = currentNodes.filter(
-            (n) => n.id !== node.id && n.type === 'taskNode'
+          // グリッドにスナップした位置を計算
+          const finalPosition = snapPositionToGrid(currentNode.position);
+
+          const updatedNodes = currentNodes.map((n) =>
+            n.id === node.id
+              ? {
+                  ...n,
+                  position: finalPosition,
+                }
+              : n
           );
-
-          let snapX: number | null = null;
-          let snapY: number | null = null;
-
-          const nodeCenterX = currentNode.position.x + (currentNode.measured?.width || 0) / 2;
-          const nodeCenterY = currentNode.position.y + (currentNode.measured?.height || 0) / 2;
-
-          otherNodes.forEach((other) => {
-            const otherCenterX = other.position.x + (other.measured?.width || 0) / 2;
-            const otherCenterY = other.position.y + (other.measured?.height || 0) / 2;
-
-            const SNAP_THRESHOLD = 10;
-
-            if (Math.abs(nodeCenterY - otherCenterY) < SNAP_THRESHOLD) {
-              snapY = otherCenterY - (currentNode.measured?.height || 0) / 2;
-            }
-
-            if (Math.abs(nodeCenterX - otherCenterX) < SNAP_THRESHOLD) {
-              snapX = otherCenterX - (currentNode.measured?.width || 0) / 2;
-            }
-          });
-
-          const updatedNodes = (snapX !== null || snapY !== null)
-            ? currentNodes.map((n) =>
-                n.id === node.id
-                  ? {
-                      ...n,
-                      position: {
-                        x: snapX ?? n.position.x,
-                        y: snapY ?? n.position.y,
-                      },
-                    }
-                  : n
-              )
-            : currentNodes;
 
           return updatedNodes;
         });
 
-        // タスクノードのドラッグ終了後、常にDSL更新を実行（スナップの有無に関わらず）
+        // タスクノードのドラッグ終了後、常にDSL更新を実行
         const updatedDsl = updateDslFromFlow(sbp, nodes, edges);
         onSbpUpdate(updatedDsl);
 
@@ -666,6 +551,19 @@ export function SbpCanvas({
 
       // レーンノードの場合のみ処理
       if (node.type !== 'laneNode') return;
+
+      // レーン位置をグリッドにスナップ
+      setNodes((currentNodes) => {
+        return currentNodes.map((n) => {
+          if (n.id === node.id) {
+            return {
+              ...n,
+              position: snapPositionToGrid(n.position),
+            };
+          }
+          return n;
+        });
+      });
 
       // 現在のレーンのY座標からインデックスを推定
       const laneNodes = nodes.filter((n) => n.type === 'laneNode');
@@ -691,8 +589,8 @@ export function SbpCanvas({
       // ドラッグフラグをリセット
       isDraggingRef.current = false;
     },
-    [nodes, edges, sbp, onLaneReorder, onDragEnd, setNodes, onSbpUpdate]
-  );;
+    [nodes, edges, sbp, onLaneReorder, setNodes, onSbpUpdate]
+  );;;
 
   // エッジ接続時の処理
   const handleConnect: OnConnect = useCallback(
@@ -1092,7 +990,7 @@ export function SbpCanvas({
         maxZoom={1.5}
       >
         {/* 背景グリッド */}
-        <Background color="#aaa" gap={16} />
+        <Background color="#aaa" gap={10} />
 
         {/* コントロールパネル */}
         <Controls />
@@ -1105,31 +1003,6 @@ export function SbpCanvas({
           style={{ backgroundColor: '#f5f5f5' }}
         />
       </ReactFlow>
-
-      {/* アライメントガイド（タスクノードドラッグ時） */}
-      <AlignmentGuides
-        lines={alignmentLines}
-        viewportWidth={window.innerWidth}
-        viewportHeight={window.innerHeight}
-      />
-
-      {/* アライメントガイド（レーンリサイズ時） */}
-      <AlignmentGuides
-        lines={[
-          ...resizeAlignmentLines.horizontal.map((y, i) => ({
-            id: `resize-h-${i}`,
-            type: 'horizontal' as const,
-            position: y,
-          })),
-          ...resizeAlignmentLines.vertical.map((x, i) => ({
-            id: `resize-v-${i}`,
-            type: 'vertical' as const,
-            position: x,
-          })),
-        ]}
-        viewportWidth={window.innerWidth}
-        viewportHeight={window.innerHeight}
-      />
 
       {/* タスク追加ダイアログ */}
       <Dialog open={addTaskDialogOpen} onClose={handleCloseAddTaskDialog}>

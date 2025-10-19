@@ -91,10 +91,10 @@ lanes:
     name: Customer Journey
     kind: cjm
     position:
-      x: -381
-      'y': 98.17596566523605
+      x: -380
+      'y': 100
     size:
-      width: 1936
+      width: 1940
       height: 150
   - id: sbp:lane:dev-team
     name: 開発チーム
@@ -104,25 +104,25 @@ lanes:
       x: -380
       'y': 320
     size:
-      width: 1934
-      height: 263
+      width: 1940
+      height: 260
   - id: sbp:lane:infra-team
     name: インフラチーム
     kind: team
     position:
-      x: -379
-      'y': 608.6593727040895
+      x: -380
+      'y': 610
     size:
-      width: 1932
-      height: 166
+      width: 1940
+      height: 170
   - id: sbp:lane:support-team
     name: ユーザーサポートチーム
     kind: team
     position:
-      x: -378.67038172746095
-      'y': 802.8983267160388
+      x: -380
+      'y': 800
     size:
-      width: 1930
+      width: 1940
       height: 150
 tasks:
   - id: sbp:task:gather-requirements
@@ -131,129 +131,129 @@ tasks:
     description: ユーザーからの要求をヒアリングし、機能要件として整理する。優先順位付けも行う。
     source_id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
     position:
-      x: 185.51058035661606
-      'y': 63
+      x: 190
+      'y': 60
   - id: sbp:task:design-system
     lane: sbp:lane:dev-team
     name: 設計を作成
     description: 画面設計、データベース設計、API設計などの詳細設計を行う。
     position:
-      x: 427.35121204598516
-      'y': 163.8960042464439
+      x: 430
+      'y': 160
   - id: sbp:task:review-with-user
     lane: sbp:lane:dev-team
     name: 設計を説明
     source_id: cjm:action:review-design
     position:
-      x: 561.0316844828253
-      'y': 63
+      x: 560
+      'y': 60
   - id: sbp:task:implement-system
     lane: sbp:lane:dev-team
     name: システムを実装
     position:
-      x: 738.02186362409
-      'y': 156.41639708079344
+      x: 740
+      'y': 160
   - id: sbp:task:support-uat
     lane: sbp:lane:dev-team
     name: UATの準備
     source_id: cjm:action:execute-uat
     position:
-      x: 871.6389251405731
-      'y': 63
+      x: 870
+      'y': 60
   - id: sbp:task:prepare-test-env
     lane: sbp:lane:infra-team
     name: テスト環境を構築
     position:
-      x: 738.02186362409
+      x: 740
       'y': 50
   - id: sbp:task:prepare-prod-env
     lane: sbp:lane:infra-team
     name: 本番環境を構築
     position:
-      x: 1083.532565708573
+      x: 1080
       'y': 50
   - id: sbp:task:monitor-system
     lane: sbp:lane:infra-team
     name: システムを監視する
     position:
-      x: 1476.1363211050923
+      x: 1480
       'y': 50
   - id: sbp:task:provide-training
     lane: sbp:lane:support-team
     name: トレーニングを実施
     position:
-      x: 1472.6331019170461
+      x: 1470
       'y': 50
   - id: sbp:task:provide-support
     lane: sbp:lane:support-team
     name: 日常的なサポート
     source_id: cjm:action:daily-operation
     position:
-      x: 1694.973882797079
+      x: 1690
       'y': 50
   - id: sbp:task:63a173f8-2e8e-4daa-844f-fdb269bc23ed
     name: UATを支援する
     lane: sbp:lane:dev-team
     connections: []
     position:
-      x: 1083.532565708573
-      'y': 63
+      x: 1080
+      'y': 60
     source_id: cjm:action:execute-uat
   - id: sbp:task:0d8cfa63-23d3-466b-bf5c-c96f6699f4f0
     name: 非機能要件を整理
     lane: sbp:lane:infra-team
     position:
-      x: 185.51058035661606
+      x: 190
       'y': 50
     source_id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
   - id: sbp:task:79a461a9-2db2-4e98-8efa-73862b057ae0
     name: 本番環境にデプロイ
     lane: sbp:lane:dev-team
     position:
-      x: 1303.1314520646079
-      'y': 156.41639708079344
+      x: 1300
+      'y': 160
     source_id: cjm:action:start-using
   - id: cjm:action:communicate-requirements
     lane: sbp:lane:cjm
     name: 要求を伝える
     readonly: true
     position:
-      x: 47.608215818516214
-      'y': 53
+      x: 50
+      'y': 50
   - id: cjm:action:b1f37928-9185-4f96-9582-e4490a4a956b
     lane: sbp:lane:cjm
     name: 要件定義レビュー
     readonly: true
     position:
-      x: 317.65030694977645
+      x: 320
       'y': 50
   - id: cjm:action:review-design
     lane: sbp:lane:cjm
     name: 設計レビュー
     readonly: true
     position:
-      x: 561.0316844828253
+      x: 560
       'y': 50
   - id: cjm:action:execute-uat
     lane: sbp:lane:cjm
     name: 動きを確認する
     readonly: true
     position:
-      x: 1083.532565708573
+      x: 1080
       'y': 50
   - id: cjm:action:start-using
     lane: sbp:lane:cjm
     name: 業務で使い始める
     readonly: true
     position:
-      x: 1303.1314520646079
+      x: 1300
       'y': 50
   - id: cjm:action:daily-operation
     lane: sbp:lane:cjm
     name: 日常業務で利用する
     readonly: true
     position:
-      x: 1694.973882797079
+      x: 1690
       'y': 50
 connections:
   - source: cjm:action:daily-operation
