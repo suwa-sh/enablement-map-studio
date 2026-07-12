@@ -1,0 +1,469 @@
+kind: cjm
+version: '1.0'
+id: cjm:ai-dev-standardization
+persona:
+  name: 現場エンジニア(AI ツール配布後)
+  description: >-
+    AI コーディングツールを配布された開発チームのエンジニア。
+    このマップでは AI enablement サービスの「内部顧客」として扱う。
+    使わない理由はスキル不足ではなく、心理・品質・時間・プロセスの複合障壁
+    (出典: RAKUS Developers Blog, 2026-06-15)。
+phases:
+  - id: cjm:phase:rollout
+    name: 配布直後
+  - id: cjm:phase:trial
+    name: 個人試行
+  - id: cjm:phase:onpath
+    name: 標準に乗る
+  - id: cjm:phase:routine
+    name: 定着
+  - id: cjm:phase:feedback
+    name: 還流
+actions:
+  - id: cjm:action:wait-and-see
+    name: 様子見する
+    phase: cjm:phase:rollout
+    touchpoints:
+      - 社内チャット
+      - 全体発表
+    thoughts_feelings:
+      - 「AI 活用しています」と言いにくい
+      - 周りがどれくらい使っているのか分からない
+    emotion_score: -2
+  - id: cjm:action:try-personally
+    name: 個人で試す
+    phase: cjm:phase:trial
+    touchpoints:
+      - AI コーディングツール
+      - 個人の作業リポジトリ
+    thoughts_feelings:
+      - ハルシネーションでテスト修正が増える
+      - 本来のコストを上回っている気がする
+    emotion_score: -1
+  - id: cjm:action:postpone-trial
+    name: 試行を後回しにする
+    phase: cjm:phase:trial
+    touchpoints:
+      - タスク管理ツール
+    thoughts_feelings:
+      - 高負荷で試行錯誤の時間を取れない
+      - 使い方は知っているが業務への組み込み方がわからない
+    emotion_score: -2
+  - id: cjm:action:follow-golden-path
+    name: golden path に沿って業務に組み込む
+    phase: cjm:phase:onpath
+    touchpoints:
+      - spec テンプレート
+      - AI 活用 wiki
+      - CI の自動チェック
+    thoughts_feelings:
+      - 推奨デフォルトが一番楽な道になっている
+      - 迷わず始められる
+    emotion_score: 1
+  - id: cjm:action:learn-by-pairing
+    name: ペアリングとレトロで型を体得する
+    phase: cjm:phase:onpath
+    touchpoints:
+      - ペアリングセッション
+      - レトロスペクティブ
+    thoughts_feelings:
+      - 協働はスキル。練習の場があると身につく
+    emotion_score: 1
+  - id: cjm:action:daily-use
+    name: 日常の開発で使いこなす
+    phase: cjm:phase:routine
+    touchpoints:
+      - IDE
+      - CI の自動チェック
+      - spec テンプレート
+    thoughts_feelings:
+      - 工程への組み込み方が定着した
+      - 品質基準は自動チェックが守ってくれる
+    emotion_score: 2
+  - id: cjm:action:feedback-improvement
+    name: ローカル改善を還流する
+    phase: cjm:phase:feedback
+    touchpoints:
+      - ADR(軽量な意思決定記録)
+      - 標準昇格レビュー
+    thoughts_feelings:
+      - 逸脱が例外でなく実験として扱われ、標準候補になる
+    emotion_score: 1
+---
+kind: sbp
+version: '1.0'
+id: sbp:ai-dev-enablement
+lanes:
+  - id: sbp:lane:cjm
+    name: Customer Journey
+    kind: cjm
+    position:
+      x: -60
+      'y': 100
+    size:
+      width: 2060
+      height: 150
+  - id: sbp:lane:dev-team
+    name: 開発チーム(現場)
+    kind: team
+    description: AI を業務に組み込む当事者。EM の「必要な行動」はこのレーンのタスクにぶら下がる。
+    position:
+      x: -60
+      'y': 320
+    size:
+      width: 2060
+      height: 260
+  - id: sbp:lane:enabling-team
+    name: 推進チーム(enabling team)
+    kind: team
+    description: 一時的に伴走して自走させ、退く。監査でなく能力移転(Team Topologies)。
+    position:
+      x: -60
+      'y': 610
+    size:
+      width: 2060
+      height: 200
+  - id: sbp:lane:champions
+    name: Champions・現場リーダー
+    kind: team
+    description: 実コードベースでのペアリングとレトロで暗黙知を組織の標準能力へ転写する。
+    position:
+      x: -60
+      'y': 840
+    size:
+      width: 2060
+      height: 170
+  - id: sbp:lane:management
+    name: 経営・EM
+    kind: team
+    description: 計測の軸を設計し、活用度を成果と緊張させて読む。利用率の向上をゴールにしない。
+    position:
+      x: -60
+      'y': 1040
+    size:
+      width: 2060
+      height: 170
+tasks:
+  - id: sbp:task:write-spec
+    lane: sbp:lane:dev-team
+    name: spec を書いて AI に実装させる
+    description: 業務意図をユビキタス言語と Given/When/Then で spec 化し、AI に実装を生成させる。
+    source_id: cjm:action:follow-golden-path
+    position:
+      x: 880
+      'y': 60
+  - id: sbp:task:test-first
+    lane: sbp:lane:dev-team
+    name: テスト先行で期待挙動を定義する
+    description: AI が実装を生成するときこそ、先にテストで期待挙動を spec する。
+    source_id: cjm:action:follow-golden-path
+    position:
+      x: 880
+      'y': 160
+  - id: sbp:task:review-ai-output
+    lane: sbp:lane:dev-team
+    name: AI 出力をレビューして受け入れ判断する
+    description: 評価・デバッグ・保守できないコードを受け入れない。「AI が書いた」は言い訳にならない。
+    source_id: cjm:action:daily-use
+    position:
+      x: 1440
+      'y': 60
+  - id: sbp:task:build-tvp
+    lane: sbp:lane:enabling-team
+    name: Thinnest Viable Platform を整備する
+    description: wiki・spec テンプレ・推奨フローの「最も薄い型」から始め、痛点に応じて厚くする。必要以上に厚くしない。
+    source_id: cjm:action:follow-golden-path
+    position:
+      x: 600
+      'y': 60
+  - id: sbp:task:embed-guardrails
+    lane: sbp:lane:enabling-team
+    name: guardrail を CI・lint・テンプレに埋め込む
+    description: 標準を人手の承認関所(gate)でなく自動チェック(guardrail)にする。関所にすると現場は迂回する。
+    source_id: cjm:action:daily-use
+    position:
+      x: 1180
+      'y': 60
+  - id: sbp:task:promote-local-improvements
+    lane: sbp:lane:enabling-team
+    name: ローカル改善を標準へ昇格レビューする
+    description: golden path からの逸脱を例外でなく実験として記録し、定期レビューで標準候補へ昇格させる。
+    source_id: cjm:action:feedback-improvement
+    position:
+      x: 1720
+      'y': 60
+  - id: sbp:task:hear-barriers
+    lane: sbp:lane:champions
+    name: 使わない理由をヒアリングする
+    description: 心理・品質・時間・プロセスの複合障壁を特定する。スキル不足と決めつけない。
+    source_id: cjm:action:wait-and-see
+    position:
+      x: 40
+      'y': 50
+  - id: sbp:task:pairing-retro
+    lane: sbp:lane:champions
+    name: 実コードベースでペアリングとレトロを制度化する
+    description: 協働はスキルであり、知識と練習を要する。訓練の場を制度化しないと個人差は埋まらない。
+    source_id: cjm:action:learn-by-pairing
+    position:
+      x: 1160
+      'y': 50
+  - id: sbp:task:design-metrics
+    lane: sbp:lane:management
+    name: プロセス別 AI 組み込み度の計測軸を設計する
+    description: 活動量でなく工程組み込み度で測る。生産性は単一指標では測れない(SPACE)。
+    source_id: cjm:action:try-personally
+    position:
+      x: 320
+      'y': 50
+  - id: sbp:task:tension-dashboard
+    lane: sbp:lane:management
+    name: 成果指標と緊張させたダッシュボードを運用する
+    description: AI 活用度を DORA 安定性・品質指標と併読し、「速いが壊れている」状態を見逃さない。
+    source_id: cjm:action:daily-use
+    position:
+      x: 1440
+      'y': 50
+  - id: cjm:action:wait-and-see
+    lane: sbp:lane:cjm
+    name: 様子見する
+    readonly: true
+    position:
+      x: 40
+      'y': 50
+  - id: cjm:action:try-personally
+    lane: sbp:lane:cjm
+    name: 個人で試す
+    readonly: true
+    position:
+      x: 320
+      'y': 50
+  - id: cjm:action:postpone-trial
+    lane: sbp:lane:cjm
+    name: 試行を後回しにする
+    readonly: true
+    position:
+      x: 600
+      'y': 50
+  - id: cjm:action:follow-golden-path
+    lane: sbp:lane:cjm
+    name: golden path に沿って業務に組み込む
+    readonly: true
+    position:
+      x: 880
+      'y': 50
+  - id: cjm:action:learn-by-pairing
+    lane: sbp:lane:cjm
+    name: ペアリングとレトロで型を体得する
+    readonly: true
+    position:
+      x: 1160
+      'y': 50
+  - id: cjm:action:daily-use
+    lane: sbp:lane:cjm
+    name: 日常の開発で使いこなす
+    readonly: true
+    position:
+      x: 1440
+      'y': 50
+  - id: cjm:action:feedback-improvement
+    lane: sbp:lane:cjm
+    name: ローカル改善を還流する
+    readonly: true
+    position:
+      x: 1720
+      'y': 50
+connections:
+  - source: sbp:task:hear-barriers
+    target: cjm:action:wait-and-see
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:design-metrics
+    target: cjm:action:try-personally
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:build-tvp
+    target: cjm:action:follow-golden-path
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:write-spec
+    target: cjm:action:follow-golden-path
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:test-first
+    target: sbp:task:write-spec
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:review-ai-output
+    target: cjm:action:daily-use
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:embed-guardrails
+    target: sbp:task:review-ai-output
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:pairing-retro
+    target: cjm:action:learn-by-pairing
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:promote-local-improvements
+    target: cjm:action:feedback-improvement
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:tension-dashboard
+    target: cjm:action:daily-use
+    sourceHandle: top
+    targetHandle: bottom
+---
+kind: outcome
+version: '1.0'
+id: oc:ai-dev-standardization
+kgi:
+  id: oc:kgi
+  name: 顧客価値に届く成果をチーム横断で再現する(個人差の解消)
+primary_csf:
+  id: oc:csf
+  kgi_id: oc:kgi
+  source_id: sbp:task:build-tvp
+  rationale: >-
+    強制ゲートは迂回され、リスクは見えない shadow path に隠れる。
+    golden path を「最も楽な道」として整備することが自然な採用を駆動する
+    (Spotify Golden Path / Netflix Paved Road)。
+primary_kpi:
+  id: oc:kpi
+  csf_id: oc:csf
+  name: プロセス別 AI 組み込み度
+  definition: >-
+    各開発工程(設計・実装・レビュー・テスト)で AI が業務プロセスに
+    組み込まれている度合い。単独で評価しない。DORA 安定性
+    (Change Failure Rate)・知覚指標・rework 率と必ず緊張させて併読する
+    (SPACE / DORA の教訓)。
+  unit: '%'
+  target: 60
+---
+kind: em
+version: '1.0'
+id: em:ai-dev-standardization
+outcomes:
+  - id: em:outcome:process-ai-integration
+    source_id: oc:kpi
+actions:
+  - id: em:act:write-minimal-spec
+    name: spec の最小構造(意図 + Given/When/Then)で書く
+    description: >-
+      【固定層】業務意図をユビキタス言語で書き、期待挙動を Given/When/Then で
+      構造化する。SDD はまだ枯れていないため、固定するのは最小構造に絞り、
+      ワークフローの詳細は可変に開く。
+    source_id: sbp:task:write-spec
+  - id: em:act:keep-review-responsibility
+    name: 評価・デバッグ・保守できないコードを受け入れない
+    description: >-
+      【固定層】レビュー責任は人間が保持する。罠: 主観では速くなったつもりでも
+      実態は遅いことがある(METR RCT。留保条件は解説参照)。受け入れ判断を
+      主観に任せない。
+    source_id: sbp:task:review-ai-output
+  - id: em:act:keep-tools-variable
+    name: モデル・IDE・プロンプトは標準に焼き込まずチームで試行する
+    description: >-
+      【可変層】陳腐化の速い層は現場可変に残す。固定するのはツールに依存しない
+      原則層のみ(Ten Simple Rules for AI-Assisted Coding)。
+    source_id: sbp:task:review-ai-output
+  - id: em:act:test-first-spec
+    name: 先にテストで期待挙動を spec し placeholder/mock を監視する
+    description: >-
+      【固定層】AI が実装を生成するときこそテスト先行。placeholder や mock の
+      まま通ったことにされていないかを監視する。
+    source_id: sbp:task:test-first
+  - id: em:act:read-metrics-in-tension
+    name: 活用度を成果指標と緊張させて読む
+    description: >-
+      【固定層】AI 活用率・受諾率・AI 生成コード比率を単独指標にしない。
+      罠: 指標自体が gaming を誘発し(GitClear)、AI は弱いプロセスを増幅する
+      (DORA)。詳細は解説参照。
+    source_id: sbp:task:design-metrics
+  - id: em:act:encode-judgment-into-ci
+    name: 判断を一度エンコードして自動チェックで継続適用する
+    description: >-
+      【固定層】レビュー・品質基準・テスト先行を CI・lint・テンプレートに
+      埋め込む。人手の関所にすると迂回され、例外が増殖する。
+    source_id: sbp:task:embed-guardrails
+  - id: em:act:institutionalize-collaboration
+    name: 協働をスキルとして訓練の場を制度化する
+    description: >-
+      【固定層】Champions 育成・レトロ・ペアリングを制度化する。「ツールを
+      配れば勝手に上手くなる」は誤謬。罠: 公式標準がシャドー利用を捕捉
+      できないことがある(Stack Overflow / KPMG。詳細は解説参照)。
+    source_id: sbp:task:pairing-retro
+skills:
+  - id: em:skill:spec-writing
+    name: spec 記述(ユビキタス言語 / Given/When/Then)
+    action_id: em:act:write-minimal-spec
+    learnings:
+      - title: Spec-driven development(Thoughtworks)
+        url: https://www.thoughtworks.com/en-us/insights/blog/agile-engineering-practices/spec-driven-development-unpacking-2025-new-engineering-practices
+  - id: em:skill:ai-output-review
+    name: AI 出力のレビュー判断(受け入れ基準の運用)
+    action_id: em:act:keep-review-responsibility
+    learnings:
+      - title: Ten Simple Rules for AI-Assisted Coding(arXiv)
+        url: https://arxiv.org/abs/2510.22254
+  - id: em:skill:test-design
+    name: テスト設計(先行テストと境界の見極め)
+    action_id: em:act:test-first-spec
+    learnings:
+      - title: Ten Simple Rules for AI-Assisted Coding(arXiv)
+        url: https://arxiv.org/abs/2510.22254
+  - id: em:skill:metrics-design
+    name: 緊張関係のある指標設計(constellation of metrics)
+    action_id: em:act:read-metrics-in-tension
+    learnings:
+      - title: The SPACE of Developer Productivity(ACM Queue)
+        url: https://queue.acm.org/detail.cfm?id=3454124
+      - title: DORA 2024 Report
+        url: https://dora.dev/research/2024/dora-report/
+  - id: em:skill:enablement-coaching
+    name: 能力移転のコーチング(伴走して自走させ、退く)
+    action_id: em:act:institutionalize-collaboration
+    learnings:
+      - title: Team Topologies Key Concepts
+        url: https://teamtopologies.com/key-concepts
+      - title: Driving Copilot adoption in your company(GitHub Docs)
+        url: https://docs.github.com/en/copilot/tutorials/rolling-out-github-copilot-at-scale/enabling-developers/driving-copilot-adoption-in-your-company
+knowledge:
+  - id: em:knowledge:golden-path-spotify
+    name: golden path 事例(Spotify)
+    action_id: em:act:encode-judgment-into-ci
+    url: https://engineering.atspotify.com/2020/08/how-we-use-golden-paths-to-solve-fragmentation-in-our-software-ecosystem
+  - id: em:knowledge:paved-road-netflix
+    name: paved road 事例(Netflix, Context not Control)
+    action_id: em:act:encode-judgment-into-ci
+    url: https://netflixtechblog.medium.com/scaling-appsec-at-netflix-6a13d7ab6043
+  - id: em:knowledge:trap1-gitclear
+    name: 罠1 指標 gaming の警告(GitClear 2025)
+    action_id: em:act:read-metrics-in-tension
+    url: https://gitclear-public.s3.us-west-2.amazonaws.com/GitClear-AI-Copilot-Code-Quality-2025.pdf
+  - id: em:knowledge:trap2-metr
+    name: 罠2 主観と実態の乖離(METR RCT)
+    action_id: em:act:keep-review-responsibility
+    url: https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/
+  - id: em:knowledge:trap3-dora
+    name: 罠3 AI は増幅器(DORA 2025)
+    action_id: em:act:read-metrics-in-tension
+    url: https://cloud.google.com/blog/products/ai-machine-learning/announcing-the-2025-dora-report
+  - id: em:knowledge:trap4-shadow-use
+    name: 罠4 標準と実態の乖離(Stack Overflow 2025)
+    action_id: em:act:institutionalize-collaboration
+    url: https://survey.stackoverflow.co/2025/ai/
+tools:
+  - id: em:tool:spec-kit
+    name: spec-kit(spec テンプレートの例・可変層の例)
+    action_id: em:act:write-minimal-spec
+    url: https://github.com/github/spec-kit
+  - id: em:tool:copilot
+    name: GitHub Copilot(AI コーディング支援・可変層の例)
+    action_id: em:act:keep-tools-variable
+    url: https://github.com/features/copilot
+  - id: em:tool:github-actions
+    name: GitHub Actions(guardrail の実装先の例)
+    action_id: em:act:encode-judgment-into-ci
+    url: https://docs.github.com/en/actions
