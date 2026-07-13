@@ -1,0 +1,453 @@
+kind: cjm
+version: '1.0'
+id: cjm:enterprise-reach-value
+persona:
+  name: 業務部門の担当者(全社AI配布後・非技術を含む)
+  description: >-
+    ChatGPT/Codex を全社配布された人事・法務・経理・マーケなどの業務部門担当者。
+    このマップでは AI enablement サービスの「内部顧客」として扱う。
+    配布された(reach)だけでは業務成果(value)には化けない。
+    出典: OpenAI の Samsung 全社展開 blog(2026-06-21。Samsung 固有の成果指標はゼロ)
+    + McKinsey/BCG の独立調査(配布が広くても成果到達は低位に収束)。
+phases:
+  - id: cjm:phase:distributed
+    name: 配布された
+  - id: cjm:phase:trial
+    name: 個人で試す
+  - id: cjm:phase:embed
+    name: 業務に組み込む
+  - id: cjm:phase:value
+    name: 成果で回る
+  - id: cjm:phase:redefine
+    name: 職務が変わる
+actions:
+  - id: cjm:action:licensed-unclear
+    name: ライセンスは来たが使い道が分からない
+    phase: cjm:phase:distributed
+    touchpoints:
+      - 全社発表
+      - ライセンス通知メール
+    thoughts_feelings:
+      - 配られたが自分の業務でどう使うのか分からない
+      - 部門の規制的に使ってよいのか不安
+    emotion_score: -1
+  - id: cjm:action:generic-trial
+    name: 汎用の使い方で個人効率化にとどまる
+    phase: cjm:phase:trial
+    touchpoints:
+      - ChatGPT
+      - 個人のブラウザ
+    thoughts_feelings:
+      - 便利だが業務成果に効いている実感がない
+      - 配布数や利用率だけが増えていく
+    emotion_score: 0
+  - id: cjm:action:blocked-by-rules
+    name: 部門規制が曖昧で本業務に踏み込めない
+    phase: cjm:phase:trial
+    touchpoints:
+      - 社内規程
+      - 法務・情報セキュリティへの問い合わせ
+    thoughts_feelings:
+      - 守秘・監査・差別リスクの線引きが曖昧で本業務に使えない
+      - 一律ルールだけでは部門固有の規制に足りない
+    emotion_score: -2
+  - id: cjm:action:focus-usecases
+    name: ユースケースを絞ってワークフローを再設計する
+    phase: cjm:phase:embed
+    touchpoints:
+      - 業務フロー図
+      - enablement チームの伴走
+    thoughts_feelings:
+      - 効く業務を少数に絞ると深く効く
+      - 全部に配って全部やるより、選んで深くやる
+    emotion_score: 1
+  - id: cjm:action:work-within-guardrails
+    name: 部門別ガードレールの内側で使う
+    phase: cjm:phase:embed
+    touchpoints:
+      - 部門別ガードレール
+      - 人手レビューの手順
+    thoughts_feelings:
+      - 人手レビューや入力制限が明確で安心して本業務に使える
+      - 部門の規制リスクに合った統制になっている
+    emotion_score: 1
+  - id: cjm:action:confirm-value
+    name: value 指標で成果を確認する
+    phase: cjm:phase:value
+    touchpoints:
+      - value ダッシュボード
+      - 業務時間・品質の実測
+    thoughts_feelings:
+      - EBIT 寄与や業務時間削減で効いているのが見える
+      - 配布数を成果と取り違えずに済む
+    emotion_score: 2
+  - id: cjm:action:redefine-role
+    name: 職務を AI 前提で再定義する
+    phase: cjm:phase:redefine
+    touchpoints:
+      - 職務記述書
+      - 評価制度
+    thoughts_feelings:
+      - 誰がどの業務を AI 前提で持つかが明文化された
+      - agent boss / orchestrator のような差配役ができた
+    emotion_score: 1
+---
+kind: sbp
+version: '1.0'
+id: sbp:enterprise-reach-value-enablement
+lanes:
+  - id: sbp:lane:cjm
+    name: Customer Journey
+    kind: cjm
+    position:
+      x: -60
+      'y': 100
+    size:
+      width: 2060
+      height: 150
+  - id: sbp:lane:business-unit
+    name: 業務部門(現場)
+    kind: team
+    description: AI を実務に組み込む当事者。EM の「必要な行動」はこのレーンのタスクにぶら下がる。
+    position:
+      x: -60
+      'y': 320
+    size:
+      width: 2060
+      height: 220
+  - id: sbp:lane:control
+    name: 統制設計(法務 / 情報セキュリティ / IT)
+    kind: team
+    description: 部門別ガードレールと必要条件の統制(データ保護・権限・監査)を設計する。統制は「使ってよい状態」までを作る。
+    position:
+      x: -60
+      'y': 570
+    size:
+      width: 2060
+      height: 200
+  - id: sbp:lane:enablement
+    name: enablement・推進
+    kind: team
+    description: 効くユースケースを絞って伴走し、職務再定義を設計する。配って終わりにせず「使って効く状態」を作る。
+    position:
+      x: -60
+      'y': 800
+    size:
+      width: 2060
+      height: 220
+  - id: sbp:lane:management
+    name: 経営・PMO
+    kind: team
+    description: reach と value を分けた計測軸を設計し、ベンダーロックインの出口を持つ。利用率の向上をゴールにしない。
+    position:
+      x: -60
+      'y': 1050
+    size:
+      width: 2060
+      height: 200
+tasks:
+  - id: sbp:task:redesign-workflow
+    lane: sbp:lane:business-unit
+    name: ワークフローを再設計して業務に組み込む
+    description: 統制は必要条件にすぎない。成果は業務そのものを作り直したか(ワークフロー再設計)で決まる。
+    source_id: cjm:action:focus-usecases
+    position:
+      x: 940
+      'y': 60
+  - id: sbp:task:measure-value
+    lane: sbp:lane:business-unit
+    name: value 指標で自業務の成果を測る
+    description: 配布率や利用率(reach)でなく、EBIT 寄与・業務時間削減・品質(value)で自業務の効き目を測る。
+    source_id: cjm:action:confirm-value
+    position:
+      x: 1400
+      'y': 60
+  - id: sbp:task:define-dept-guardrails
+    lane: sbp:lane:control
+    name: 部門別ガードレールを定義する
+    description: 人事・法務・経理・マーケで当てるべき統制が異なる。配布範囲が広いほど一律ルールは破綻する。
+    source_id: cjm:action:blocked-by-rules
+    position:
+      x: 600
+      'y': 60
+  - id: sbp:task:setup-controls
+    lane: sbp:lane:control
+    name: データ保護・権限・監査を必要条件として先に整える
+    description: SSO/SCIM/監査/レジデンシーは「使ってよい状態」を作る前提。ただし十分条件ではない。
+    source_id: cjm:action:licensed-unclear
+    position:
+      x: 40
+      'y': 60
+  - id: sbp:task:select-usecases
+    lane: sbp:lane:enablement
+    name: 効くユースケース(平均3.5)を選定し伴走する
+    description: 全部門に配って全部やるのでなく、効く業務を少数に絞って深くやる。先行企業は平均3.5に集中する。
+    source_id: cjm:action:focus-usecases
+    position:
+      x: 820
+      'y': 60
+  - id: sbp:task:coach-guardrail-use
+    lane: sbp:lane:enablement
+    name: 部門別ガードレールの使い方を伴走する
+    description: ガードレールを現場が迷わず使える手順に落とし、人手レビューの型を伴走で移転する。
+    source_id: cjm:action:work-within-guardrails
+    position:
+      x: 1160
+      'y': 60
+  - id: sbp:task:redefine-roles
+    lane: sbp:lane:enablement
+    name: 職務再定義と評価制度を設計する
+    description: 誰がどの業務を AI 前提で持つかを明文化し、人間と機械の組み合わせの成果を測る評価へ移す。
+    source_id: cjm:action:redefine-role
+    position:
+      x: 1720
+      'y': 60
+  - id: sbp:task:split-reach-value
+    lane: sbp:lane:management
+    name: reach 指標と value 指標を分けて設計する
+    description: ライセンス配布数・WAU は reach 指標にすぎない。EBIT 寄与・時間削減・品質を value として最初から別 KPI で測る。
+    source_id: cjm:action:generic-trial
+    position:
+      x: 320
+      'y': 60
+  - id: sbp:task:vendor-exit
+    lane: sbp:lane:management
+    name: ベンダーロックインの出口を設計する
+    description: 単一ベンダー標準化の便益と引き換えに、冗長性・移植性・契約見直し条項を設計に含める。
+    source_id: cjm:action:confirm-value
+    position:
+      x: 1500
+      'y': 60
+  - id: cjm:action:licensed-unclear
+    lane: sbp:lane:cjm
+    name: ライセンスは来たが使い道が分からない
+    readonly: true
+    position:
+      x: 40
+      'y': 50
+  - id: cjm:action:generic-trial
+    lane: sbp:lane:cjm
+    name: 汎用の使い方で個人効率化にとどまる
+    readonly: true
+    position:
+      x: 320
+      'y': 50
+  - id: cjm:action:blocked-by-rules
+    lane: sbp:lane:cjm
+    name: 部門規制が曖昧で本業務に踏み込めない
+    readonly: true
+    position:
+      x: 600
+      'y': 50
+  - id: cjm:action:focus-usecases
+    lane: sbp:lane:cjm
+    name: ユースケースを絞ってワークフローを再設計する
+    readonly: true
+    position:
+      x: 880
+      'y': 50
+  - id: cjm:action:work-within-guardrails
+    lane: sbp:lane:cjm
+    name: 部門別ガードレールの内側で使う
+    readonly: true
+    position:
+      x: 1160
+      'y': 50
+  - id: cjm:action:confirm-value
+    lane: sbp:lane:cjm
+    name: value 指標で成果を確認する
+    readonly: true
+    position:
+      x: 1440
+      'y': 50
+  - id: cjm:action:redefine-role
+    lane: sbp:lane:cjm
+    name: 職務を AI 前提で再定義する
+    readonly: true
+    position:
+      x: 1720
+      'y': 50
+connections:
+  - source: sbp:task:setup-controls
+    target: cjm:action:licensed-unclear
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:split-reach-value
+    target: cjm:action:generic-trial
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:define-dept-guardrails
+    target: cjm:action:blocked-by-rules
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:select-usecases
+    target: cjm:action:focus-usecases
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:redesign-workflow
+    target: cjm:action:focus-usecases
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:coach-guardrail-use
+    target: cjm:action:work-within-guardrails
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:measure-value
+    target: cjm:action:confirm-value
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:vendor-exit
+    target: cjm:action:confirm-value
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:redefine-roles
+    target: cjm:action:redefine-role
+    sourceHandle: top
+    targetHandle: bottom
+---
+kind: outcome
+version: '1.0'
+id: oc:enterprise-reach-value
+kgi:
+  id: oc:kgi
+  name: 全社に配布した AI を部門横断で成果(value)に化けさせる(配布≠成果を解消)
+primary_csf:
+  id: oc:csf
+  kgi_id: oc:kgi
+  source_id: sbp:task:split-reach-value
+  rationale: >-
+    配布数(reach)を成果と取り違えると、必要条件(ワークフロー再設計・職務再定義)への
+    投資が止まる。OpenAI の Samsung 全社展開の発表は「全社配布(reach)の条件が整った」
+    宣言であり、Samsung 固有の value 指標はゼロだった。value を reach と分けた独立 KPI
+    で測ることが、成果への投資を駆動する。
+primary_kpi:
+  id: oc:kpi
+  csf_id: oc:csf
+  name: value 実証率(重点ユースケースのうち業務成果を実証できた割合)
+  definition: >-
+    分子 = EBIT 寄与・業務時間削減・品質のいずれかを実証できた重点ユースケース数 /
+    分母 = 着手した重点ユースケース数。ライセンス配布率・WAU などの reach 指標とは
+    切り離して測る。単独では評価せず reach 指標(配布率)と緊張させて併読し、
+    四半期ごとに更新する。独立調査の収束数値(McKinsey 39% / BCG 26% など)は
+    指標定義が異なるため横比較しない(解説の参照表を見る)。
+  unit: '%'
+  target: 50
+---
+kind: em
+version: '1.0'
+id: em:enterprise-reach-value
+outcomes:
+  - id: em:outcome:value-realization
+    source_id: oc:kpi
+actions:
+  - id: em:act:split-reach-value
+    name: reach と value を別 KPI で設計する
+    description: >-
+      【計測の分離】ライセンス配布数・WAU は reach 指標にすぎない。EBIT 寄与・
+      業務時間削減・品質を value 指標として最初から別 KPI で測る。配布を成果と
+      取り違えると必要条件への投資が止まる。
+    source_id: sbp:task:split-reach-value
+  - id: em:act:focus-usecases
+    name: 効くユースケースを平均3.5に絞る
+    description: >-
+      【集中】全部門に配って全部やるのでなく、効く業務を選んで深くやる。
+      先行企業は平均3.5ユースケースに集中する(独立調査。詳細は解説参照)。
+    source_id: sbp:task:select-usecases
+  - id: em:act:redesign-workflow
+    name: ワークフローを再設計する(十分条件)
+    description: >-
+      【十分条件】統制は「使ってよい状態」を作る必要条件にすぎない。成果は
+      業務そのものを作り直したか(ワークフロー再設計)で決まる。
+    source_id: sbp:task:redesign-workflow
+  - id: em:act:setup-controls
+    name: 統制を必要条件として先に整える
+    description: >-
+      【必要条件】SSO/SCIM/監査/レジデンシーは「使ってよい状態」を作る前提。
+      ただし十分条件ではない(MIT の研究は成果不発の主因をワークフロー統合と
+      組織学習の欠如に置く。この 95% 系の数値は標本不一致・査読前で[要再検証]。
+      詳細と留保は解説参照)。
+    source_id: sbp:task:setup-controls
+  - id: em:act:guardrail-hr
+    name: 人事のガードレールを当てる
+    description: >-
+      【部門別統制・人事】リスク = 採用・評価での差別、適用法令。
+      統制例 = AI 出力の人手レビュー、選考での自動判定の制限。
+    source_id: sbp:task:define-dept-guardrails
+  - id: em:act:guardrail-legal
+    name: 法務のガードレールを当てる
+    description: >-
+      【部門別統制・法務】リスク = 守秘義務、引用の正確性。
+      統制例 = 顧客データの入力制限、出力の弁護士確認。
+    source_id: sbp:task:define-dept-guardrails
+  - id: em:act:guardrail-finance
+    name: 経理のガードレールを当てる
+    description: >-
+      【部門別統制・経理】リスク = 財務統制、監査証跡。
+      統制例 = 数値の根拠提示の義務化、承認フローの維持。
+    source_id: sbp:task:define-dept-guardrails
+  - id: em:act:guardrail-marketing
+    name: マーケのガードレールを当てる
+    description: >-
+      【部門別統制・マーケ】リスク = 著作権、ブランド毀損。
+      統制例 = 生成物の権利確認、公開前の人手チェック。
+    source_id: sbp:task:define-dept-guardrails
+  - id: em:act:redefine-role
+    name: 職務を AI 前提で再定義する
+    description: >-
+      【職務再定義】置換の単位はジョブよりタスク。誰がどの業務を AI 前提で持つかを
+      明文化し、agent boss / orchestrator のような差配役を設ける。過剰な置換は
+      品質低下・顧客離反を招くため段階的に進める。
+    source_id: sbp:task:redefine-roles
+  - id: em:act:vendor-exit
+    name: ベンダーロックインの出口を設計する
+    description: >-
+      【出口設計】単一ベンダー標準化の便益と引き換えに、冗長性・移植性・
+      契約条件の見直し条項を設計に含める。
+    source_id: sbp:task:vendor-exit
+skills:
+  - id: em:skill:kpi-design
+    name: reach/value を分離した KPI 設計
+    action_id: em:act:split-reach-value
+    learnings:
+      - title: McKinsey - The State of AI in 2025
+        url: https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai
+      - title: BCG - Where's the Value in AI?
+        url: https://www.bcg.com/publications/2024/wheres-value-in-ai
+  - id: em:skill:usecase-redesign
+    name: ユースケース選定とワークフロー再設計
+    action_id: em:act:redesign-workflow
+  - id: em:skill:controls-baseline
+    name: 統制ベースライン設計(SSO/SCIM/監査/レジデンシー)
+    action_id: em:act:setup-controls
+  - id: em:skill:guardrail-hr-design
+    name: 人事ガードレール設計(差別・適用法令の見極め)
+    action_id: em:act:guardrail-hr
+  - id: em:skill:guardrail-legal-design
+    name: 法務ガードレール設計(守秘・引用精度の見極め)
+    action_id: em:act:guardrail-legal
+  - id: em:skill:guardrail-finance-design
+    name: 経理ガードレール設計(財務統制・監査証跡の見極め)
+    action_id: em:act:guardrail-finance
+  - id: em:skill:guardrail-marketing-design
+    name: マーケガードレール設計(著作権・ブランド毀損の見極め)
+    action_id: em:act:guardrail-marketing
+  - id: em:skill:role-redesign
+    name: 職務再定義と評価制度の設計
+    action_id: em:act:redefine-role
+knowledge:
+  - id: em:knowledge:samsung-blog
+    name: Samsung 全社展開の一次発表(配布=reach の宣言、value 指標ゼロ)
+    action_id: em:act:split-reach-value
+    url: https://openai.com/index/samsung-electronics-chatgpt-codex-deployment/
+  - id: em:knowledge:mckinsey-state
+    name: 配布≠成果の収束(McKinsey State of AI 2025)
+    action_id: em:act:split-reach-value
+    url: https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai
+  - id: em:knowledge:bcg-value
+    name: スケーリングギャップ(BCG Where's the Value in AI?)
+    action_id: em:act:redesign-workflow
+    url: https://www.bcg.com/publications/2024/wheres-value-in-ai
+  - id: em:knowledge:bcg-radar
+    name: significant value 実現は約25%(BCG AI Radar 2025)
+    action_id: em:act:focus-usecases
+    url: https://www.bcg.com/publications/2025/closing-the-ai-impact-gap
