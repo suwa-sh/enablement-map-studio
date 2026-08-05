@@ -92,7 +92,7 @@ lanes:
       x: -60
       'y': 80
     size:
-      width: 2320
+      width: 3600
       height: 150
   - id: sbp:lane:management
     name: 経営
@@ -102,7 +102,7 @@ lanes:
       x: -60
       'y': 270
     size:
-      width: 2320
+      width: 3600
       height: 180
   - id: sbp:lane:governance
     name: AI統括機構（AICCを参考にした役割）
@@ -112,7 +112,7 @@ lanes:
       x: -60
       'y': 490
     size:
-      width: 2320
+      width: 3600
       height: 220
   - id: sbp:lane:frontline
     name: 現場
@@ -122,7 +122,7 @@ lanes:
       x: -60
       'y': 750
     size:
-      width: 2320
+      width: 3600
       height: 180
   - id: sbp:lane:process-owner
     name: 業務責任者
@@ -132,7 +132,7 @@ lanes:
       x: -60
       'y': 970
     size:
-      width: 2320
+      width: 3600
       height: 380
   - id: sbp:lane:measurement
     name: 計測担当
@@ -142,7 +142,7 @@ lanes:
       x: -60
       'y': 1390
     size:
-      width: 2320
+      width: 3600
       height: 220
 tasks:
   - id: sbp:task:select-process
@@ -151,7 +151,7 @@ tasks:
     description: 利用率ではなく、品質、顧客影響、工数のいずれかを測れる業務を選ぶ。
     source_id: cjm:action:select-process
     position:
-      x: 60
+      x: 120
       'y': 50
   - id: sbp:task:assign-owner
     lane: sbp:lane:governance
@@ -159,7 +159,7 @@ tasks:
     description: AI導入チームではなく、業務成果に責任を持つ役割を各プロセスへ割り当てる。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 660
+      x: 1010
       'y': 50
   - id: sbp:task:update-decision
     lane: sbp:lane:governance
@@ -167,7 +167,7 @@ tasks:
     description: 6項目がそろわない場合は成果を断定せず、責任者を指定して測定設計へ戻す。
     source_id: cjm:action:update-decision
     position:
-      x: 1980
+      x: 3200
       'y': 50
   - id: sbp:task:run-experiment
     lane: sbp:lane:frontline
@@ -175,7 +175,7 @@ tasks:
     description: AIが処理する範囲と、人間が判断を引き継ぐ条件を実務で確かめる。
     source_id: cjm:action:run-experiment
     position:
-      x: 360
+      x: 560
       'y': 50
   - id: sbp:task:design-human-handoff
     lane: sbp:lane:frontline
@@ -183,7 +183,7 @@ tasks:
     description: AIが解決できない場合と顧客が希望する場合の移管先と記録方法を定める。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 660
+      x: 1420
       'y': 50
   - id: sbp:task:redesign-five-processes
     lane: sbp:lane:process-owner
@@ -191,7 +191,7 @@ tasks:
     description: 顧客対応、ネットワーク運用、音声サービス、社内業務、B2Bの各責任者が、人間とAIの役割分担を再設計する。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 920
+      x: 1420
       'y': 20
   - id: sbp:task:redesign-customer-support
     lane: sbp:lane:process-owner
@@ -199,7 +199,7 @@ tasks:
     description: 顧客対応責任者がFrag Magentaと人間の分担を設計する。自律解決率56%は会社報告値であり、分母の範囲と内部の測定経路は公開されていない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 420
+      x: 900
       'y': 140
   - id: sbp:task:redesign-network-operations
     lane: sbp:lane:process-owner
@@ -207,7 +207,7 @@ tasks:
     description: ネットワーク運用責任者が容量最適化の分担を設計する。1日最大1,500件のmicro-eventsを特定するという二次情報はあるが、判断用の指標定義と測定経路が不足する。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 680
+      x: 1160
       'y': 140
   - id: sbp:task:redesign-voice-service
     lane: sbp:lane:process-owner
@@ -215,7 +215,7 @@ tasks:
     description: 音声サービス責任者がvoicebotの提供範囲を設計する。2025年度実績の説明では6月に提供開始したとあるが、年の明記と業務成果値はない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 940
+      x: 1420
       'y': 140
   - id: sbp:task:redesign-internal-work
     lane: sbp:lane:process-owner
@@ -223,7 +223,7 @@ tasks:
     description: 各業務部門の責任者がAskTを組み込む業務を設計する。導入の事実と利用状況は業務成果として扱わない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 550
+      x: 1030
       'y': 250
   - id: sbp:task:redesign-b2b
     lane: sbp:lane:process-owner
@@ -231,7 +231,7 @@ tasks:
     description: B2B事業責任者がAIサービスを顧客業務へ組み込む範囲を設計する。サービス提供の事実だけでは顧客成果を判断できない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 810
+      x: 1290
       'y': 250
   - id: sbp:task:define-metric
     lane: sbp:lane:measurement
@@ -239,7 +239,7 @@ tasks:
     description: 利用率と業務成果を分け、対象期間と分母を含む指標定義を作る。
     source_id: cjm:action:measure-outcome
     position:
-      x: 1220
+      x: 1840
       'y': 50
   - id: sbp:task:confirm-measurement-route
     lane: sbp:lane:measurement
@@ -247,7 +247,7 @@ tasks:
     description: 成果値のデータ源、取得方法、確認頻度を記録して再計測できる状態にする。
     source_id: cjm:action:measure-outcome
     position:
-      x: 1460
+      x: 2280
       'y': 50
   - id: sbp:task:evaluate-evidence
     lane: sbp:lane:measurement
@@ -255,49 +255,49 @@ tasks:
     description: 情報源、独立検証、AIへの帰属を分類し、中核根拠と補助根拠と判断に使わない値を分ける。
     source_id: cjm:action:evaluate-evidence
     position:
-      x: 1740
+      x: 2720
       'y': 50
   - id: cjm:action:select-process
     lane: sbp:lane:cjm
     name: 利用率ではなく業務成果を測れる対象を選ぶ
     readonly: true
     position:
-      x: 60
+      x: 80
       'y': 50
   - id: cjm:action:run-experiment
     lane: sbp:lane:cjm
     name: 現場実験でAIと人間の役割を確かめる
     readonly: true
     position:
-      x: 360
+      x: 540
       'y': 50
   - id: cjm:action:redesign-operating-model
     lane: sbp:lane:cjm
     name: 業務責任者が人間とAIの分担を再設計する
     readonly: true
     position:
-      x: 660
+      x: 960
       'y': 50
   - id: cjm:action:measure-outcome
     lane: sbp:lane:cjm
     name: 指標定義と測定経路を確定する
     readonly: true
     position:
-      x: 1220
+      x: 1840
       'y': 50
   - id: cjm:action:evaluate-evidence
     lane: sbp:lane:cjm
     name: 情報源と独立検証とAIへの帰属を評価する
     readonly: true
     position:
-      x: 1740
+      x: 2680
       'y': 50
   - id: cjm:action:update-decision
     lane: sbp:lane:cjm
     name: 継続と拡大と見直しを根拠付きで決める
     readonly: true
     position:
-      x: 1980
+      x: 3160
       'y': 50
 connections:
   - source: sbp:task:select-process
