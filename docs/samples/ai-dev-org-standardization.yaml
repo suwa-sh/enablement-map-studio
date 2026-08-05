@@ -101,7 +101,7 @@ lanes:
       x: -60
       'y': 100
     size:
-      width: 2060
+      width: 3600
       height: 150
   - id: sbp:lane:dev-team
     name: 開発チーム(現場)
@@ -111,7 +111,7 @@ lanes:
       x: -60
       'y': 320
     size:
-      width: 2060
+      width: 3600
       height: 260
   - id: sbp:lane:enabling-team
     name: 推進チーム(enabling team)
@@ -121,8 +121,8 @@ lanes:
       x: -60
       'y': 610
     size:
-      width: 2060
-      height: 200
+      width: 3600
+      height: 260
   - id: sbp:lane:champions
     name: Champions・現場リーダー
     kind: team
@@ -131,7 +131,7 @@ lanes:
       x: -60
       'y': 840
     size:
-      width: 2060
+      width: 3600
       height: 170
   - id: sbp:lane:management
     name: 経営・EM
@@ -141,8 +141,8 @@ lanes:
       x: -60
       'y': 1040
     size:
-      width: 2060
-      height: 170
+      width: 3600
+      height: 260
 tasks:
   - id: sbp:task:write-spec
     lane: sbp:lane:dev-team
@@ -150,7 +150,7 @@ tasks:
     description: 業務意図をユビキタス言語と Given/When/Then で spec 化し、AI に実装を生成させる。
     source_id: cjm:action:follow-golden-path
     position:
-      x: 880
+      x: 1500
       'y': 60
   - id: sbp:task:test-first
     lane: sbp:lane:dev-team
@@ -158,7 +158,7 @@ tasks:
     description: AI が実装を生成するときこそ、先にテストで期待挙動を spec する。
     source_id: cjm:action:follow-golden-path
     position:
-      x: 880
+      x: 1492
       'y': 160
   - id: sbp:task:review-ai-output
     lane: sbp:lane:dev-team
@@ -166,7 +166,7 @@ tasks:
     description: 評価・デバッグ・保守できないコードを受け入れない。「AI が書いた」は言い訳にならない。
     source_id: cjm:action:daily-use
     position:
-      x: 1440
+      x: 2290
       'y': 60
   - id: sbp:task:build-tvp
     lane: sbp:lane:enabling-team
@@ -174,7 +174,7 @@ tasks:
     description: wiki・spec テンプレ・推奨フローの「最も薄い型」から始め、痛点に応じて厚くする。必要以上に厚くしない。
     source_id: cjm:action:follow-golden-path
     position:
-      x: 600
+      x: 1260
       'y': 60
   - id: sbp:task:embed-guardrails
     lane: sbp:lane:enabling-team
@@ -182,15 +182,15 @@ tasks:
     description: 標準を人手の承認関所(gate)でなく自動チェック(guardrail)にする。関所にすると現場は迂回する。
     source_id: cjm:action:daily-use
     position:
-      x: 1180
-      'y': 60
+      x: 2286
+      'y': 150
   - id: sbp:task:promote-local-improvements
     lane: sbp:lane:enabling-team
     name: ローカル改善を標準へ昇格レビューする
     description: golden path からの逸脱を例外でなく実験として記録し、定期レビューで標準候補へ昇格させる。
     source_id: cjm:action:feedback-improvement
     position:
-      x: 1720
+      x: 2790
       'y': 60
   - id: sbp:task:hear-barriers
     lane: sbp:lane:champions
@@ -198,7 +198,7 @@ tasks:
     description: 心理・品質・時間・プロセスの複合障壁を特定する。スキル不足と決めつけない。
     source_id: cjm:action:wait-and-see
     position:
-      x: 40
+      x: 120
       'y': 50
   - id: sbp:task:pairing-retro
     lane: sbp:lane:champions
@@ -206,7 +206,7 @@ tasks:
     description: 協働はスキルであり、知識と練習を要する。訓練の場を制度化しないと個人差は埋まらない。
     source_id: cjm:action:learn-by-pairing
     position:
-      x: 1160
+      x: 1730
       'y': 50
   - id: sbp:task:design-metrics
     lane: sbp:lane:management
@@ -214,7 +214,7 @@ tasks:
     description: 活動量でなく工程組み込み度で測る。生産性は単一指標では測れない(SPACE)。
     source_id: cjm:action:try-personally
     position:
-      x: 320
+      x: 560
       'y': 50
   - id: sbp:task:tension-dashboard
     lane: sbp:lane:management
@@ -222,96 +222,108 @@ tasks:
     description: AI 活用度を DORA 安定性・品質指標と併読し、「速いが壊れている」状態を見逃さない。
     source_id: cjm:action:daily-use
     position:
-      x: 1440
-      'y': 50
+      x: 2264
+      'y': 150
   - id: cjm:action:wait-and-see
     lane: sbp:lane:cjm
     name: 様子見する
     readonly: true
     position:
-      x: 40
+      x: 146
       'y': 50
   - id: cjm:action:try-personally
     lane: sbp:lane:cjm
     name: 個人で試す
     readonly: true
     position:
-      x: 320
+      x: 632
       'y': 50
   - id: cjm:action:postpone-trial
     lane: sbp:lane:cjm
     name: 試行を後回しにする
     readonly: true
     position:
-      x: 600
+      x: 970
       'y': 50
   - id: cjm:action:follow-golden-path
     lane: sbp:lane:cjm
     name: golden path に沿って業務に組み込む
     readonly: true
     position:
-      x: 880
+      x: 1259
       'y': 50
   - id: cjm:action:learn-by-pairing
     lane: sbp:lane:cjm
     name: ペアリングとレトロで型を体得する
     readonly: true
     position:
-      x: 1160
+      x: 1779
       'y': 50
   - id: cjm:action:daily-use
     lane: sbp:lane:cjm
     name: 日常の開発で使いこなす
     readonly: true
     position:
-      x: 1440
+      x: 2341
       'y': 50
   - id: cjm:action:feedback-improvement
     lane: sbp:lane:cjm
     name: ローカル改善を還流する
     readonly: true
     position:
-      x: 1720
+      x: 2840
       'y': 50
 connections:
   - source: sbp:task:hear-barriers
-    target: cjm:action:wait-and-see
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:design-metrics
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:design-metrics
-    target: cjm:action:try-personally
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:build-tvp
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:build-tvp
-    target: cjm:action:follow-golden-path
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:write-spec
-    target: cjm:action:follow-golden-path
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:pairing-retro
+    sourceHandle: right
+    targetHandle: left
+  - source: sbp:task:pairing-retro
+    target: sbp:task:review-ai-output
+    sourceHandle: right
+    targetHandle: left
+  - source: sbp:task:review-ai-output
+    target: sbp:task:promote-local-improvements
+    sourceHandle: right
+    targetHandle: left
+  - source: cjm:action:wait-and-see
+    target: sbp:task:hear-barriers
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:try-personally
+    target: sbp:task:design-metrics
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:follow-golden-path
+    target: sbp:task:build-tvp
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:learn-by-pairing
+    target: sbp:task:pairing-retro
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:daily-use
+    target: sbp:task:review-ai-output
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:feedback-improvement
+    target: sbp:task:promote-local-improvements
+    sourceHandle: bottom
+    targetHandle: top
   - source: sbp:task:test-first
     target: sbp:task:write-spec
     sourceHandle: top
     targetHandle: bottom
-  - source: sbp:task:review-ai-output
-    target: cjm:action:daily-use
-    sourceHandle: top
-    targetHandle: bottom
   - source: sbp:task:embed-guardrails
     target: sbp:task:review-ai-output
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:pairing-retro
-    target: cjm:action:learn-by-pairing
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:promote-local-improvements
-    target: cjm:action:feedback-improvement
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:tension-dashboard
-    target: cjm:action:daily-use
     sourceHandle: top
     targetHandle: bottom
 ---

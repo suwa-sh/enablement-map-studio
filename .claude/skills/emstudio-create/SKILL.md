@@ -11,6 +11,7 @@ argument-hint: "<入力情報（ヒアリングメモ、業務フロー資料、
 ## 共有リソース
 
 - DSL仕様リファレンス: `../emstudio-core/references/dsl-spec.md`
+- 公開サンプルのSBPレイアウト規約: `../emstudio-core/references/sample-layout.md`
 
 ## 出力先
 
@@ -22,6 +23,8 @@ argument-hint: "<入力情報（ヒアリングメモ、業務フロー資料、
 ### Step 1: DSL仕様の読み込み
 
 `../emstudio-core/references/dsl-spec.md` を読み込み、DSLの型定義と参照関係を把握する。
+
+共有または説明に使う公開サンプルを作成する場合は、`../emstudio-core/references/sample-layout.md`も読み込む。
 
 ### Step 2: 入力情報の収集
 
@@ -51,7 +54,8 @@ argument-hint: "<入力情報（ヒアリングメモ、業務フロー資料、
 3. CJMレーンにreadonlyタスクを配置: **CJMアクションのIDをそのままタスクIDに使用**し、`readonly: true` を設定（`source_id` は不要）
 4. 各チームのタスクを作成し、対応するCJMアクションへの `source_id` を設定（紐づけ）
 5. CJMレーンreadonlyタスクと各チームタスク間の `connections` を設定（`source: cjm:action:{uuid}` → `target: sbp:task:{uuid}`）
-6. `position` と `size` は省略可能（エディタで調整可能）
+6. 個人作業用のDSLでは、`position`と`size`を省略可能（エディタで調整可能）
+7. 公開サンプルでは、SBPレイアウト規約に従って`position`と`size`を設定
 
 ### Step 5: Outcome DSLの生成
 
@@ -80,6 +84,8 @@ argument-hint: "<入力情報（ヒアリングメモ、業務フロー資料、
 4. **emotion_score**: -2 ~ 2 の範囲内であること
 5. **lane.kind**: `cjm`, `human`, `team`, `system` のいずれかであること
 
+公開サンプルでは、Enablement Map Studioで実際に表示し、SBPレイアウト規約の画面確認項目を検証する。
+
 ### Step 9: 結果の提示
 
 - 生成したYAMLファイルのパスを報告
@@ -90,7 +96,8 @@ argument-hint: "<入力情報（ヒアリングメモ、業務フロー資料、
 
 ## 注意事項
 
-- position/sizeフィールドは省略しても、エディタ上で自動配置・手動調整が可能
+- 個人作業用のDSLでは、position/sizeフィールドを省略しても、エディタ上で自動配置・手動調整が可能
+- 公開サンプルではposition/sizeフィールドを設定し、`../emstudio-core/references/sample-layout.md`の基準を満たすまで画面で調整する
 - SBPのCJMレーン用readonlyタスクは `id: cjm:action:{uuid}`（CJMアクションのIDをそのまま使用）+ `readonly: true` で作成する。`source_id` は付けない
 - SBPの通常タスク（human/team/systemレーン）に `source_id: cjm:action:{uuid}` を設定してCJMアクションと紐づける
 - connectionsでは `cjm:action:{uuid}` をsource/targetに指定できる（CJMレーンreadonlyタスクへの接続）

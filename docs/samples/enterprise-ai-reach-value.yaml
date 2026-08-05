@@ -103,7 +103,7 @@ lanes:
       x: -60
       'y': 100
     size:
-      width: 2060
+      width: 3600
       height: 150
   - id: sbp:lane:business-unit
     name: 業務部門(現場)
@@ -113,7 +113,7 @@ lanes:
       x: -60
       'y': 320
     size:
-      width: 2060
+      width: 3600
       height: 220
   - id: sbp:lane:control
     name: 統制設計(法務 / 情報セキュリティ / IT)
@@ -123,7 +123,7 @@ lanes:
       x: -60
       'y': 570
     size:
-      width: 2060
+      width: 3600
       height: 200
   - id: sbp:lane:enablement
     name: enablement・推進
@@ -133,7 +133,7 @@ lanes:
       x: -60
       'y': 800
     size:
-      width: 2060
+      width: 3600
       height: 220
   - id: sbp:lane:management
     name: 経営・PMO
@@ -143,8 +143,8 @@ lanes:
       x: -60
       'y': 1050
     size:
-      width: 2060
-      height: 200
+      width: 3600
+      height: 220
 tasks:
   - id: sbp:task:redesign-workflow
     lane: sbp:lane:business-unit
@@ -152,15 +152,15 @@ tasks:
     description: 統制は必要条件にすぎない。成果は業務そのものを作り直したか(ワークフロー再設計)で決まる。
     source_id: cjm:action:focus-usecases
     position:
-      x: 940
-      'y': 60
+      x: 1980
+      'y': 150
   - id: sbp:task:measure-value
     lane: sbp:lane:business-unit
     name: value 指標で自業務の成果を測る
     description: 配布率や利用率(reach)でなく、EBIT 寄与・業務時間削減・品質(value)で自業務の効き目を測る。
     source_id: cjm:action:confirm-value
     position:
-      x: 1400
+      x: 2704
       'y': 60
   - id: sbp:task:define-dept-guardrails
     lane: sbp:lane:control
@@ -168,7 +168,7 @@ tasks:
     description: 人事・法務・経理・マーケで当てるべき統制が異なる。配布範囲が広いほど一律ルールは破綻する。
     source_id: cjm:action:blocked-by-rules
     position:
-      x: 600
+      x: 1210
       'y': 60
   - id: sbp:task:setup-controls
     lane: sbp:lane:control
@@ -176,7 +176,7 @@ tasks:
     description: SSO/SCIM/監査/レジデンシーは「使ってよい状態」を作る前提。ただし十分条件ではない。
     source_id: cjm:action:licensed-unclear
     position:
-      x: 40
+      x: 100
       'y': 60
   - id: sbp:task:select-usecases
     lane: sbp:lane:enablement
@@ -184,7 +184,7 @@ tasks:
     description: 全部門に配って全部やるのでなく、効く業務を少数に絞って深くやる。先行企業は平均3.5に集中する。
     source_id: cjm:action:focus-usecases
     position:
-      x: 820
+      x: 1662
       'y': 60
   - id: sbp:task:coach-guardrail-use
     lane: sbp:lane:enablement
@@ -192,7 +192,7 @@ tasks:
     description: ガードレールを現場が迷わず使える手順に落とし、人手レビューの型を伴走で移転する。
     source_id: cjm:action:work-within-guardrails
     position:
-      x: 1160
+      x: 2196
       'y': 60
   - id: sbp:task:redefine-roles
     lane: sbp:lane:enablement
@@ -200,7 +200,7 @@ tasks:
     description: 誰がどの業務を AI 前提で持つかを明文化し、人間と機械の組み合わせの成果を測る評価へ移す。
     source_id: cjm:action:redefine-role
     position:
-      x: 1720
+      x: 3165
       'y': 60
   - id: sbp:task:split-reach-value
     lane: sbp:lane:management
@@ -208,7 +208,7 @@ tasks:
     description: ライセンス配布数・WAU は reach 指標にすぎない。EBIT 寄与・時間削減・品質を value として最初から別 KPI で測る。
     source_id: cjm:action:generic-trial
     position:
-      x: 320
+      x: 692
       'y': 60
   - id: sbp:task:vendor-exit
     lane: sbp:lane:management
@@ -216,94 +216,110 @@ tasks:
     description: 単一ベンダー標準化の便益と引き換えに、冗長性・移植性・契約見直し条項を設計に含める。
     source_id: cjm:action:confirm-value
     position:
-      x: 1500
-      'y': 60
+      x: 2704
+      'y': 150
   - id: cjm:action:licensed-unclear
     lane: sbp:lane:cjm
     name: ライセンスは来たが使い道が分からない
     readonly: true
     position:
-      x: 40
+      x: 143
       'y': 50
   - id: cjm:action:generic-trial
     lane: sbp:lane:cjm
     name: 汎用の使い方で個人効率化にとどまる
     readonly: true
     position:
-      x: 320
+      x: 704
       'y': 50
   - id: cjm:action:blocked-by-rules
     lane: sbp:lane:cjm
     name: 部門規制が曖昧で本業務に踏み込めない
     readonly: true
     position:
-      x: 600
+      x: 1182
       'y': 50
   - id: cjm:action:focus-usecases
     lane: sbp:lane:cjm
     name: ユースケースを絞ってワークフローを再設計する
     readonly: true
     position:
-      x: 880
+      x: 1649
       'y': 50
   - id: cjm:action:work-within-guardrails
     lane: sbp:lane:cjm
     name: 部門別ガードレールの内側で使う
     readonly: true
     position:
-      x: 1160
+      x: 2217
       'y': 50
   - id: cjm:action:confirm-value
     lane: sbp:lane:cjm
     name: value 指標で成果を確認する
     readonly: true
     position:
-      x: 1440
+      x: 2718
       'y': 50
   - id: cjm:action:redefine-role
     lane: sbp:lane:cjm
     name: 職務を AI 前提で再定義する
     readonly: true
     position:
-      x: 1720
+      x: 3183
       'y': 50
 connections:
   - source: sbp:task:setup-controls
-    target: cjm:action:licensed-unclear
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:split-reach-value
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:split-reach-value
-    target: cjm:action:generic-trial
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:define-dept-guardrails
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:define-dept-guardrails
-    target: cjm:action:blocked-by-rules
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:select-usecases
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:select-usecases
-    target: cjm:action:focus-usecases
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:redesign-workflow
-    target: cjm:action:focus-usecases
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:coach-guardrail-use
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:coach-guardrail-use
-    target: cjm:action:work-within-guardrails
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:measure-value
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:measure-value
-    target: cjm:action:confirm-value
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:vendor-exit
-    target: cjm:action:confirm-value
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:redefine-roles
-    target: cjm:action:redefine-role
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:redefine-roles
+    sourceHandle: right
+    targetHandle: left
+  - source: cjm:action:licensed-unclear
+    target: sbp:task:setup-controls
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:generic-trial
+    target: sbp:task:split-reach-value
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:blocked-by-rules
+    target: sbp:task:define-dept-guardrails
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:focus-usecases
+    target: sbp:task:select-usecases
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:work-within-guardrails
+    target: sbp:task:coach-guardrail-use
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:confirm-value
+    target: sbp:task:measure-value
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:redefine-role
+    target: sbp:task:redefine-roles
+    sourceHandle: bottom
+    targetHandle: top
 ---
 kind: outcome
 version: '1.0'
