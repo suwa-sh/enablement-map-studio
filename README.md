@@ -125,6 +125,7 @@ Enablement Map Studioは、File System Access APIを使用してローカルフ�
 |---|---|
 | [AI駆動開発 組織標準化](./docs/samples/ai-dev-org-standardization.md) | AI ツール配布後の個人差を組織標準で埋める導入設計。golden path・guardrail・罠の回避を 1 枚のマップに |
 | [全社AI導入 reach→value ギャップ](./docs/samples/enterprise-ai-reach-value.md) | 「配布した(reach)」と「効いている(value)」の距離を診断する導入設計。二軸 KPI・部門別ガードレール・ベンダー出口を 1 枚のマップに |
+| [AI導入 運営モデル再設計](./docs/samples/ai-operating-model-redesign.md) | AI導入の責任配置と証拠品質を診断する運営モデル再設計。責任者・指標定義・測定経路・情報源・帰属・独立検証の充足判定と5業務レイヤー比較を1枚のマップに |
 
 ## チームで利用する場合
 

@@ -6,6 +6,7 @@
 |---|---|---|---|
 | AI駆動開発 組織標準化 | AI ツールを配布したが個人差が開いて困っている開発組織のマネージャー | [ai-dev-org-standardization.yaml](./ai-dev-org-standardization.yaml) | [解説](./ai-dev-org-standardization.md) |
 | 全社AI導入 reach→value ギャップ | AI を全社配布したが業務成果に効いているか確かめられない導入設計者・PM | [enterprise-ai-reach-value.yaml](./enterprise-ai-reach-value.yaml) | [解説](./enterprise-ai-reach-value.md) |
+| AI導入 運営モデル再設計 | 配布後の業務再設計責任と成果の証拠品質を確認したいAI導入責任者・PM | [ai-operating-model-redesign.yaml](./ai-operating-model-redesign.yaml) | [解説](./ai-operating-model-redesign.md) |
 
 ## サンプルの開き方
 

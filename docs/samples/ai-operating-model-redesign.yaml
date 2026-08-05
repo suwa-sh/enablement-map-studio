@@ -1,0 +1,489 @@
+kind: cjm
+version: '1.0'
+id: cjm:ai-operating-model-redesign
+persona:
+  name: AI導入責任者
+  description: >-
+    AIの利用率ではなく、誰がどの業務を作り替え、どの業務成果をどの根拠で評価するかを確認する責任者。
+    Deutsche Telekomの公開情報を例に、責任配置と証拠の不足を自組織用に編集する。
+phases:
+  - id: cjm:phase:select
+    name: 対象業務を選ぶ
+  - id: cjm:phase:experiment
+    name: 現場で試す
+  - id: cjm:phase:redesign
+    name: 業務を作り替える
+  - id: cjm:phase:measure
+    name: 業務成果を測る
+  - id: cjm:phase:evaluate
+    name: 根拠を評価する
+  - id: cjm:phase:decide
+    name: 判断を更新する
+actions:
+  - id: cjm:action:select-process
+    name: 利用率ではなく業務成果を測れる対象を選ぶ
+    phase: cjm:phase:select
+    touchpoints:
+      - AI投資審査
+      - 業務プロセス一覧
+    thoughts_feelings:
+      - ツールの配布数だけでは投資継続を判断できない
+      - 対象業務と期待する成果を先に固定したい
+    emotion_score: -1
+  - id: cjm:action:run-experiment
+    name: 現場実験でAIと人間の役割を確かめる
+    phase: cjm:phase:experiment
+    touchpoints:
+      - 実験記録
+      - 現場ヒアリング
+    thoughts_feelings:
+      - 実務で使える範囲と人間へ戻す条件が見えてきた
+      - 成功例だけでなく失敗と移管も記録したい
+    emotion_score: 0
+  - id: cjm:action:redesign-operating-model
+    name: 業務責任者が人間とAIの分担を再設計する
+    phase: cjm:phase:redesign
+    touchpoints:
+      - 業務フロー
+      - 責任分担表
+    thoughts_feelings:
+      - 導入担当ではなく業務責任者が再設計を引き受けた
+      - 5つの業務レイヤーを同じ観点で比較できる
+    emotion_score: 1
+  - id: cjm:action:measure-outcome
+    name: 指標定義と測定経路を確定する
+    phase: cjm:phase:measure
+    touchpoints:
+      - 指標定義書
+      - 測定ログ
+    thoughts_feelings:
+      - 利用率と業務成果を混同せずに測れる
+      - 分母と対象期間がなければ成果値を採用できない
+    emotion_score: 0
+  - id: cjm:action:evaluate-evidence
+    name: 情報源と独立検証とAIへの帰属を評価する
+    phase: cjm:phase:evaluate
+    touchpoints:
+      - 一次資料
+      - 証拠評価表
+    thoughts_feelings:
+      - 会社発表と第三者検証を分けて読める
+      - 根拠が不足する値を成果判断から外せる
+    emotion_score: -1
+  - id: cjm:action:update-decision
+    name: 継続と拡大と見直しを根拠付きで決める
+    phase: cjm:phase:decide
+    touchpoints:
+      - 投資判断会議
+      - 次期測定計画
+    thoughts_feelings:
+      - 誰が何を追加計測するかまで決められる
+      - 証拠不足を成功扱いせず次の行動へ戻せる
+    emotion_score: 1
+---
+kind: sbp
+version: '1.0'
+id: sbp:ai-operating-model-redesign
+lanes:
+  - id: sbp:lane:cjm
+    name: AI導入責任者の判断
+    kind: cjm
+    position:
+      x: -60
+      'y': 80
+    size:
+      width: 2320
+      height: 150
+  - id: sbp:lane:management
+    name: 経営
+    kind: team
+    description: 評価対象の業務プロセスを選び、投資判断の基準を定める。
+    position:
+      x: -60
+      'y': 270
+    size:
+      width: 2320
+      height: 180
+  - id: sbp:lane:governance
+    name: AI統括機構（AICCを参考にした役割）
+    kind: team
+    description: DTのAICCが担うAI専門性の集約と技術支援を参考に、責任割当と判断更新を支援する。本サンプルの分掌はDTの正式な分掌ではない。
+    position:
+      x: -60
+      'y': 490
+    size:
+      width: 2320
+      height: 220
+  - id: sbp:lane:frontline
+    name: 現場
+    kind: human
+    description: 実務でAIを試し、失敗条件と人間への移管条件を記録する。
+    position:
+      x: -60
+      'y': 750
+    size:
+      width: 2320
+      height: 180
+  - id: sbp:lane:process-owner
+    name: 業務責任者
+    kind: team
+    description: 5つの業務レイヤーごとに人間とAIの役割を再設計する。
+    position:
+      x: -60
+      'y': 970
+    size:
+      width: 2320
+      height: 280
+  - id: sbp:lane:measurement
+    name: 計測担当
+    kind: team
+    description: 指標定義と測定経路を確定し、成果値の証拠品質を評価する。
+    position:
+      x: -60
+      'y': 1290
+    size:
+      width: 2320
+      height: 220
+tasks:
+  - id: sbp:task:select-process
+    lane: sbp:lane:management
+    name: 評価対象の業務プロセスを選ぶ
+    description: 利用率ではなく、品質、顧客影響、工数のいずれかを測れる業務を選ぶ。
+    source_id: cjm:action:select-process
+    position:
+      x: 60
+      'y': 50
+  - id: sbp:task:assign-owner
+    lane: sbp:lane:governance
+    name: 再設計責任者を割り当てる
+    description: AI導入チームではなく、業務成果に責任を持つ役割を各プロセスへ割り当てる。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 580
+      'y': 50
+  - id: sbp:task:update-decision
+    lane: sbp:lane:governance
+    name: 継続と拡大と見直しを決める
+    description: 6項目がそろわない場合は成果を断定せず、責任者を指定して測定設計へ戻す。
+    source_id: cjm:action:update-decision
+    position:
+      x: 1940
+      'y': 50
+  - id: sbp:task:run-experiment
+    lane: sbp:lane:frontline
+    name: 現場実験と失敗条件を記録する
+    description: AIが処理する範囲と、人間が判断を引き継ぐ条件を実務で確かめる。
+    source_id: cjm:action:run-experiment
+    position:
+      x: 360
+      'y': 50
+  - id: sbp:task:design-human-handoff
+    lane: sbp:lane:frontline
+    name: 人間への移管を設計する
+    description: AIが解決できない場合と顧客が希望する場合の移管先と記録方法を定める。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 720
+      'y': 50
+  - id: sbp:task:redesign-customer-support
+    lane: sbp:lane:process-owner
+    name: 顧客対応を再設計する
+    description: 顧客対応責任者がFrag Magentaと人間の分担を設計する。自律解決率56%は会社報告値であり、分母の範囲と内部の測定経路は公開されていない。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 500
+      'y': 50
+  - id: sbp:task:redesign-network-operations
+    lane: sbp:lane:process-owner
+    name: ネットワーク運用を再設計する
+    description: ネットワーク運用責任者が容量最適化の分担を設計する。1日最大1,500件のmicro-eventsを特定するという二次情報はあるが、判断用の指標定義と測定経路が不足する。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 780
+      'y': 50
+  - id: sbp:task:redesign-voice-service
+    lane: sbp:lane:process-owner
+    name: 音声サービスを再設計する
+    description: 音声サービス責任者がvoicebotの提供範囲を設計する。2025年度実績の説明では6月に提供開始したとあるが、年の明記と業務成果値はない。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 1060
+      'y': 50
+  - id: sbp:task:redesign-internal-work
+    lane: sbp:lane:process-owner
+    name: 社内業務を再設計する
+    description: 各業務部門の責任者がAskTを組み込む業務を設計する。導入の事実と利用状況は業務成果として扱わない。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 640
+      'y': 160
+  - id: sbp:task:redesign-b2b
+    lane: sbp:lane:process-owner
+    name: B2Bサービスを再設計する
+    description: B2B事業責任者がAIサービスを顧客業務へ組み込む範囲を設計する。サービス提供の事実だけでは顧客成果を判断できない。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 920
+      'y': 160
+  - id: sbp:task:define-metric
+    lane: sbp:lane:measurement
+    name: 指標名と単位と分母を定義する
+    description: 利用率と業務成果を分け、対象期間と分母を含む指標定義を作る。
+    source_id: cjm:action:measure-outcome
+    position:
+      x: 1180
+      'y': 50
+  - id: sbp:task:confirm-measurement-route
+    lane: sbp:lane:measurement
+    name: データ源と取得頻度を確認する
+    description: 成果値のデータ源、取得方法、確認頻度を記録して再計測できる状態にする。
+    source_id: cjm:action:measure-outcome
+    position:
+      x: 1460
+      'y': 50
+  - id: sbp:task:evaluate-evidence
+    lane: sbp:lane:measurement
+    name: 成果値の証拠品質を評価する
+    description: 情報源、独立検証、AIへの帰属を分類し、中核根拠と補助根拠と判断に使わない値を分ける。
+    source_id: cjm:action:evaluate-evidence
+    position:
+      x: 1740
+      'y': 50
+  - id: cjm:action:select-process
+    lane: sbp:lane:cjm
+    name: 利用率ではなく業務成果を測れる対象を選ぶ
+    readonly: true
+    position:
+      x: 60
+      'y': 50
+  - id: cjm:action:run-experiment
+    lane: sbp:lane:cjm
+    name: 現場実験でAIと人間の役割を確かめる
+    readonly: true
+    position:
+      x: 420
+      'y': 50
+  - id: cjm:action:redesign-operating-model
+    lane: sbp:lane:cjm
+    name: 業務責任者が人間とAIの分担を再設計する
+    readonly: true
+    position:
+      x: 780
+      'y': 50
+  - id: cjm:action:measure-outcome
+    lane: sbp:lane:cjm
+    name: 指標定義と測定経路を確定する
+    readonly: true
+    position:
+      x: 1220
+      'y': 50
+  - id: cjm:action:evaluate-evidence
+    lane: sbp:lane:cjm
+    name: 情報源と独立検証とAIへの帰属を評価する
+    readonly: true
+    position:
+      x: 1620
+      'y': 50
+  - id: cjm:action:update-decision
+    lane: sbp:lane:cjm
+    name: 継続と拡大と見直しを根拠付きで決める
+    readonly: true
+    position:
+      x: 1980
+      'y': 50
+connections:
+  - source: sbp:task:select-process
+    target: cjm:action:select-process
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:run-experiment
+    target: cjm:action:run-experiment
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:assign-owner
+    target: cjm:action:redesign-operating-model
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:design-human-handoff
+    target: cjm:action:redesign-operating-model
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:redesign-customer-support
+    target: cjm:action:redesign-operating-model
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:redesign-network-operations
+    target: cjm:action:redesign-operating-model
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:redesign-voice-service
+    target: cjm:action:redesign-operating-model
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:redesign-internal-work
+    target: cjm:action:redesign-operating-model
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:redesign-b2b
+    target: cjm:action:redesign-operating-model
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:define-metric
+    target: cjm:action:measure-outcome
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:confirm-measurement-route
+    target: cjm:action:measure-outcome
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:evaluate-evidence
+    target: cjm:action:evaluate-evidence
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:update-decision
+    target: cjm:action:update-decision
+    sourceHandle: top
+    targetHandle: bottom
+  - source: sbp:task:evaluate-evidence
+    target: sbp:task:update-decision
+    sourceHandle: right
+    targetHandle: left
+  - source: sbp:task:update-decision
+    target: sbp:task:define-metric
+    sourceHandle: left
+    targetHandle: right
+---
+kind: outcome
+version: '1.0'
+id: oc:ai-operating-model-redesign
+kgi:
+  id: oc:kgi:decision-ready-ai-redesign
+  name: AI導入を責任配置と検証可能な業務成果に基づいて判断できる
+primary_csf:
+  id: oc:csf:evidence-ready-process
+  kgi_id: oc:kgi:decision-ready-ai-redesign
+  source_id: sbp:task:evaluate-evidence
+  rationale: >-
+    AIの利用率だけでは投資継続を判断できない。
+    業務責任者が人間とAIの役割を再設計し、指標定義と測定経路を持ち、情報源と独立検証とAIへの帰属を説明できることが必要である。
+primary_kpi:
+  id: oc:kpi:decision-ready-process-rate
+  csf_id: oc:csf:evidence-ready-process
+  name: 判断可能な再設計プロセス率
+  definition: >-
+    分子は、責任者、指標定義、測定経路、情報源、AIへの帰属、独立検証の6項目を満たす評価対象プロセス数とする。
+    分母は、評価対象に選んだプロセス数とする。
+    各プロセスでは採否にかかわらず主根拠を1件指定し、その責任者とメタデータに対して6項目を判定する。
+    主根拠はAI運用を最も直接的に測る値を選び、該当する値がない場合は公開情報で確認できる導入事実を選ぶ。
+    主根拠が存在しない場合は未指定と記録し、責任者以外の5項目を未充足とする。
+    採否は成果を断定できるかの判定に使う。
+  unit: '%'
+  target: 100
+---
+kind: em
+version: '1.0'
+id: em:ai-operating-model-redesign
+outcomes:
+  - id: em:outcome:decision-ready-process-rate
+    source_id: oc:kpi:decision-ready-process-rate
+actions:
+  - id: em:act:select-process
+    name: 業務成果を測れる対象を選ぶ
+    description: 利用率ではなく、品質、顧客影響、工数のいずれかを測れる業務プロセスを選ぶ。
+    source_id: sbp:task:select-process
+  - id: em:act:assign-owner
+    name: 再設計責任者を割り当てる
+    description: AI導入担当ではなく、業務成果に責任を持つ役割を明記する。
+    source_id: sbp:task:assign-owner
+  - id: em:act:run-experiment
+    name: 現場実験で失敗条件を記録する
+    description: AIが処理する範囲と、人間へ移管する条件を実務で記録する。
+    source_id: sbp:task:run-experiment
+  - id: em:act:design-human-handoff
+    name: 人間への移管を設計する
+    description: AIが処理を終えられない条件と、人間が判断を引き継ぐ条件を定める。
+    source_id: sbp:task:design-human-handoff
+  - id: em:act:define-metric
+    name: 指標名と単位と分母を定義する
+    description: 指標名、単位、対象期間、分母を定義して利用率と業務成果を分ける。
+    source_id: sbp:task:define-metric
+  - id: em:act:confirm-measurement-route
+    name: データ源と取得頻度を確認する
+    description: データ源、取得方法、確認頻度を記録して再計測できる状態にする。
+    source_id: sbp:task:confirm-measurement-route
+  - id: em:act:classify-evidence
+    name: 成果値の証拠品質を分類する
+    description: '情報源、独立検証、AIへの帰属を確認する。CSAT 25%向上は初期調査で参照したHelloDigital記事で確認できないため判断に使わない。【情報源: 出典未特定】【独立検証: 不明】【AIへの帰属: 因果帰属を分離できない】'
+    source_id: sbp:task:evaluate-evidence
+  - id: em:act:update-decision
+    name: 判断と次の測定行動を更新する
+    description: 根拠が不足する場合は成果を断定せず、責任者を指定して測定設計へ戻す。
+    source_id: sbp:task:update-decision
+  - id: em:act:redesign-customer-support
+    name: 顧客対応を再設計する
+    description: '顧客対応責任者がFrag Magentaと人間の分担を設計する。自律解決率56%は分母の範囲が未確認のため判断に使わない。【情報源: 会社一次資料】【独立検証: なし】【AIへの帰属: AI運用を直接計測】'
+    source_id: sbp:task:redesign-customer-support
+  - id: em:act:redesign-network-operations
+    name: ネットワーク運用を再設計する
+    description: 'ネットワーク運用責任者を置く。1日最大1,500件のmicro-events特定は、指標定義と測定経路が未確認のため判断に使わない。【情報源: 二次情報】【独立検証: 不明】【AIへの帰属: AI運用を直接計測】'
+    source_id: sbp:task:redesign-network-operations
+  - id: em:act:redesign-voice-service
+    name: 音声サービスを再設計する
+    description: '音声サービス責任者を置く。2025年度実績の説明では6月にvoicebotを提供開始したとあるが、年の明記と業務成果値はない。【情報源: 会社一次資料】【独立検証: なし】【AIへの帰属: 対象外】'
+    source_id: sbp:task:redesign-voice-service
+  - id: em:act:redesign-internal-work
+    name: 社内業務を再設計する
+    description: '各業務部門の責任者を置く。AskTの導入は会社一次資料で確認できるが、業務成果値は未指定である。【情報源: 会社一次資料】【独立検証: なし】【AIへの帰属: 対象外】'
+    source_id: sbp:task:redesign-internal-work
+  - id: em:act:redesign-b2b
+    name: B2Bサービスを再設計する
+    description: 'B2B事業責任者を置く。顧客業務の成果は未指定である。【情報源: 該当値なし】【独立検証: 該当値なし】【AIへの帰属: 対象外】'
+    source_id: sbp:task:redesign-b2b
+skills:
+  - id: em:skill:process-portfolio
+    name: 業務成果から評価対象を選ぶ
+    action_id: em:act:select-process
+    learnings:
+      - title: Deutsche Telekom Annual Report 2024 - Data & AI（対象年度2024年、2025年公開）
+        url: https://report.telekom.com/annual-report-2024/management-report/group-strategy/data-ai.html
+  - id: em:skill:experiment-design
+    name: 現場実験で失敗条件と移管条件を記録する
+    action_id: em:act:run-experiment
+  - id: em:skill:human-ai-work-design
+    name: 人間とAIの役割分担を設計する
+    action_id: em:act:design-human-handoff
+  - id: em:skill:metric-design
+    name: 分母と測定経路を含む指標を設計する
+    action_id: em:act:define-metric
+  - id: em:skill:evidence-assessment
+    name: 情報源と独立検証とAIへの帰属を評価する
+    action_id: em:act:classify-evidence
+knowledge:
+  - id: em:knowledge:dt-first-call-resolution
+    name: 'DT Annual Report 2025（対象年度2025年、2026年公開）: first-call resolution 76.0%（2024年74.1%、前年差+1.9ポイント、母集団の範囲が未確認のため判断に使わない）【情報源: 会社一次資料】【独立検証: なし】【AIへの帰属: 因果帰属を分離できない】'
+    action_id: em:act:redesign-customer-support
+    url: https://report.telekom.com/annual-report-2025/management-report/group-strategy/efficiencies.html
+  - id: em:knowledge:dt-frag-magenta
+    name: 'DT CEO speech（2025年度決算記者会見、2026年2月26日）: Frag Magenta自律解決率56%（2025年に約700万回チャットしたと記載されるが、all inquiriesが同じ母集団かは記載なし、判断に使わない）【情報源: 会社一次資料】【独立検証: なし】【AIへの帰属: AI運用を直接計測】'
+    action_id: em:act:redesign-customer-support
+    url: https://www.telekom.com/resource/blob/1102188/067b31b699ccbbd48d29997a8877c3f4/dl-speech-hoettges-ar-2025-data.pdf
+  - id: em:knowledge:stanford-call-duration
+    name: 'Stanford GSB case summary 2025: 平均通話時間35%短縮（母集団と算出方法が未確認のため判断に使わない）【情報源: 二次情報】【独立検証: 不明】【AIへの帰属: 因果帰属を分離できない】'
+    action_id: em:act:redesign-customer-support
+    url: https://www.gsb.stanford.edu/faculty-research/case-studies/deutsche-telekom-2025-dancing-elephant-age-ai
+  - id: em:knowledge:stanford-network-micro-events
+    name: 'Stanford GSB case summary 2025: 1日最大1,500件のmicro-eventsを特定（指標定義と測定経路が未確認のため判断に使わない）【情報源: 二次情報】【独立検証: 不明】【AIへの帰属: AI運用を直接計測】'
+    action_id: em:act:redesign-network-operations
+    url: https://www.gsb.stanford.edu/faculty-research/case-studies/deutsche-telekom-2025-dancing-elephant-age-ai
+  - id: em:knowledge:dt-voicebot-launch
+    name: 'DT CEO speech（2025年度決算記者会見、2026年2月26日）: 2025年度実績の説明では6月にvoicebotを提供開始（年の明記と業務成果値がないため判断に使わない）【情報源: 会社一次資料】【独立検証: なし】【AIへの帰属: 対象外】'
+    action_id: em:act:redesign-voice-service
+    url: https://www.telekom.com/resource/blob/1102188/067b31b699ccbbd48d29997a8877c3f4/dl-speech-hoettges-ar-2025-data.pdf
+  - id: em:knowledge:dt-askt-launch
+    name: 'DT Annual Report 2024（対象年度2024年、2025年公開）: AskTを導入（業務成果値ではないため判断に使わない）【情報源: 会社一次資料】【独立検証: なし】【AIへの帰属: 対象外】'
+    action_id: em:act:redesign-internal-work
+    url: https://report.telekom.com/annual-report-2024/management-report/group-strategy/data-ai.html
+  - id: em:knowledge:hellodigital-csat-check
+    name: 'HelloDigital: CSAT 25%向上を記事内で確認できないため判断に使わない【情報源: 出典未特定】【独立検証: 不明】【AIへの帰属: 因果帰属を分離できない】'
+    action_id: em:act:classify-evidence
+    url: https://hellodigital.com/article/the-future-of-customer-service-how-ai-redefined-customer-experience-at-telekom
