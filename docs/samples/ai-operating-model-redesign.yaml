@@ -159,7 +159,7 @@ tasks:
     description: AI導入チームではなく、業務成果に責任を持つ役割を各プロセスへ割り当てる。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 580
+      x: 780
       'y': 50
   - id: sbp:task:update-decision
     lane: sbp:lane:governance
@@ -167,7 +167,7 @@ tasks:
     description: 6項目がそろわない場合は成果を断定せず、責任者を指定して測定設計へ戻す。
     source_id: cjm:action:update-decision
     position:
-      x: 1940
+      x: 1980
       'y': 50
   - id: sbp:task:run-experiment
     lane: sbp:lane:frontline
@@ -175,7 +175,7 @@ tasks:
     description: AIが処理する範囲と、人間が判断を引き継ぐ条件を実務で確かめる。
     source_id: cjm:action:run-experiment
     position:
-      x: 360
+      x: 420
       'y': 50
   - id: sbp:task:design-human-handoff
     lane: sbp:lane:frontline
@@ -183,7 +183,7 @@ tasks:
     description: AIが解決できない場合と顧客が希望する場合の移管先と記録方法を定める。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 720
+      x: 780
       'y': 50
   - id: sbp:task:redesign-customer-support
     lane: sbp:lane:process-owner
@@ -191,7 +191,7 @@ tasks:
     description: 顧客対応責任者がFrag Magentaと人間の分担を設計する。自律解決率56%は会社報告値であり、分母の範囲と内部の測定経路は公開されていない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 500
+      x: 490
       'y': 50
   - id: sbp:task:redesign-network-operations
     lane: sbp:lane:process-owner
@@ -199,7 +199,7 @@ tasks:
     description: ネットワーク運用責任者が容量最適化の分担を設計する。1日最大1,500件のmicro-eventsを特定するという二次情報はあるが、判断用の指標定義と測定経路が不足する。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 780
+      x: 750
       'y': 50
   - id: sbp:task:redesign-voice-service
     lane: sbp:lane:process-owner
@@ -207,7 +207,7 @@ tasks:
     description: 音声サービス責任者がvoicebotの提供範囲を設計する。2025年度実績の説明では6月に提供開始したとあるが、年の明記と業務成果値はない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 1060
+      x: 1010
       'y': 50
   - id: sbp:task:redesign-internal-work
     lane: sbp:lane:process-owner
@@ -215,7 +215,7 @@ tasks:
     description: 各業務部門の責任者がAskTを組み込む業務を設計する。導入の事実と利用状況は業務成果として扱わない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 640
+      x: 620
       'y': 160
   - id: sbp:task:redesign-b2b
     lane: sbp:lane:process-owner
@@ -223,7 +223,7 @@ tasks:
     description: B2B事業責任者がAIサービスを顧客業務へ組み込む範囲を設計する。サービス提供の事実だけでは顧客成果を判断できない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 920
+      x: 880
       'y': 160
   - id: sbp:task:define-metric
     lane: sbp:lane:measurement
@@ -231,7 +231,7 @@ tasks:
     description: 利用率と業務成果を分け、対象期間と分母を含む指標定義を作る。
     source_id: cjm:action:measure-outcome
     position:
-      x: 1180
+      x: 1220
       'y': 50
   - id: sbp:task:confirm-measurement-route
     lane: sbp:lane:measurement
@@ -247,7 +247,7 @@ tasks:
     description: 情報源、独立検証、AIへの帰属を分類し、中核根拠と補助根拠と判断に使わない値を分ける。
     source_id: cjm:action:evaluate-evidence
     position:
-      x: 1740
+      x: 1620
       'y': 50
   - id: cjm:action:select-process
     lane: sbp:lane:cjm
@@ -304,35 +304,7 @@ connections:
     target: cjm:action:redesign-operating-model
     sourceHandle: top
     targetHandle: bottom
-  - source: sbp:task:design-human-handoff
-    target: cjm:action:redesign-operating-model
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:redesign-customer-support
-    target: cjm:action:redesign-operating-model
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:redesign-network-operations
-    target: cjm:action:redesign-operating-model
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:redesign-voice-service
-    target: cjm:action:redesign-operating-model
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:redesign-internal-work
-    target: cjm:action:redesign-operating-model
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:redesign-b2b
-    target: cjm:action:redesign-operating-model
-    sourceHandle: top
-    targetHandle: bottom
   - source: sbp:task:define-metric
-    target: cjm:action:measure-outcome
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:confirm-measurement-route
     target: cjm:action:measure-outcome
     sourceHandle: top
     targetHandle: bottom
@@ -344,14 +316,6 @@ connections:
     target: cjm:action:update-decision
     sourceHandle: top
     targetHandle: bottom
-  - source: sbp:task:evaluate-evidence
-    target: sbp:task:update-decision
-    sourceHandle: right
-    targetHandle: left
-  - source: sbp:task:update-decision
-    target: sbp:task:define-metric
-    sourceHandle: left
-    targetHandle: right
 ---
 kind: outcome
 version: '1.0'
