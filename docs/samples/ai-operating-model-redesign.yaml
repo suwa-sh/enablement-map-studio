@@ -133,14 +133,14 @@ lanes:
       'y': 970
     size:
       width: 2320
-      height: 280
+      height: 380
   - id: sbp:lane:measurement
     name: 計測担当
     kind: team
     description: 指標定義と測定経路を確定し、成果値の証拠品質を評価する。
     position:
       x: -60
-      'y': 1290
+      'y': 1390
     size:
       width: 2320
       height: 220
@@ -159,7 +159,7 @@ tasks:
     description: AI導入チームではなく、業務成果に責任を持つ役割を各プロセスへ割り当てる。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 780
+      x: 660
       'y': 50
   - id: sbp:task:update-decision
     lane: sbp:lane:governance
@@ -175,7 +175,7 @@ tasks:
     description: AIが処理する範囲と、人間が判断を引き継ぐ条件を実務で確かめる。
     source_id: cjm:action:run-experiment
     position:
-      x: 420
+      x: 360
       'y': 50
   - id: sbp:task:design-human-handoff
     lane: sbp:lane:frontline
@@ -183,48 +183,56 @@ tasks:
     description: AIが解決できない場合と顧客が希望する場合の移管先と記録方法を定める。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 780
+      x: 660
       'y': 50
+  - id: sbp:task:redesign-five-processes
+    lane: sbp:lane:process-owner
+    name: 5業務を並行して再設計する
+    description: 顧客対応、ネットワーク運用、音声サービス、社内業務、B2Bの各責任者が、人間とAIの役割分担を再設計する。
+    source_id: cjm:action:redesign-operating-model
+    position:
+      x: 920
+      'y': 20
   - id: sbp:task:redesign-customer-support
     lane: sbp:lane:process-owner
     name: 顧客対応を再設計する
     description: 顧客対応責任者がFrag Magentaと人間の分担を設計する。自律解決率56%は会社報告値であり、分母の範囲と内部の測定経路は公開されていない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 490
-      'y': 50
+      x: 420
+      'y': 140
   - id: sbp:task:redesign-network-operations
     lane: sbp:lane:process-owner
     name: ネットワーク運用を再設計する
     description: ネットワーク運用責任者が容量最適化の分担を設計する。1日最大1,500件のmicro-eventsを特定するという二次情報はあるが、判断用の指標定義と測定経路が不足する。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 750
-      'y': 50
+      x: 680
+      'y': 140
   - id: sbp:task:redesign-voice-service
     lane: sbp:lane:process-owner
     name: 音声サービスを再設計する
     description: 音声サービス責任者がvoicebotの提供範囲を設計する。2025年度実績の説明では6月に提供開始したとあるが、年の明記と業務成果値はない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 1010
-      'y': 50
+      x: 940
+      'y': 140
   - id: sbp:task:redesign-internal-work
     lane: sbp:lane:process-owner
     name: 社内業務を再設計する
     description: 各業務部門の責任者がAskTを組み込む業務を設計する。導入の事実と利用状況は業務成果として扱わない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 620
-      'y': 160
+      x: 550
+      'y': 250
   - id: sbp:task:redesign-b2b
     lane: sbp:lane:process-owner
     name: B2Bサービスを再設計する
     description: B2B事業責任者がAIサービスを顧客業務へ組み込む範囲を設計する。サービス提供の事実だけでは顧客成果を判断できない。
     source_id: cjm:action:redesign-operating-model
     position:
-      x: 880
-      'y': 160
+      x: 810
+      'y': 250
   - id: sbp:task:define-metric
     lane: sbp:lane:measurement
     name: 指標名と単位と分母を定義する
@@ -247,7 +255,7 @@ tasks:
     description: 情報源、独立検証、AIへの帰属を分類し、中核根拠と補助根拠と判断に使わない値を分ける。
     source_id: cjm:action:evaluate-evidence
     position:
-      x: 1620
+      x: 1740
       'y': 50
   - id: cjm:action:select-process
     lane: sbp:lane:cjm
@@ -293,29 +301,33 @@ tasks:
       'y': 50
 connections:
   - source: sbp:task:select-process
-    target: cjm:action:select-process
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:run-experiment
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:run-experiment
-    target: cjm:action:run-experiment
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:assign-owner
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:assign-owner
-    target: cjm:action:redesign-operating-model
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:redesign-five-processes
+    sourceHandle: right
+    targetHandle: left
+  - source: sbp:task:redesign-five-processes
+    target: sbp:task:define-metric
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:define-metric
-    target: cjm:action:measure-outcome
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:confirm-measurement-route
+    sourceHandle: right
+    targetHandle: left
+  - source: sbp:task:confirm-measurement-route
+    target: sbp:task:evaluate-evidence
+    sourceHandle: right
+    targetHandle: left
   - source: sbp:task:evaluate-evidence
-    target: cjm:action:evaluate-evidence
-    sourceHandle: top
-    targetHandle: bottom
-  - source: sbp:task:update-decision
-    target: cjm:action:update-decision
-    sourceHandle: top
-    targetHandle: bottom
+    target: sbp:task:update-decision
+    sourceHandle: right
+    targetHandle: left
 ---
 kind: outcome
 version: '1.0'
@@ -367,6 +379,10 @@ actions:
     name: 人間への移管を設計する
     description: AIが処理を終えられない条件と、人間が判断を引き継ぐ条件を定める。
     source_id: sbp:task:design-human-handoff
+  - id: em:act:coordinate-process-redesign
+    name: 5業務の並行再設計を統括する
+    description: 顧客対応、ネットワーク運用、音声サービス、社内業務、B2Bの責任者と再設計状況を確認する。
+    source_id: sbp:task:redesign-five-processes
   - id: em:act:define-metric
     name: 指標名と単位と分母を定義する
     description: 指標名、単位、対象期間、分母を定義して利用率と業務成果を分ける。
