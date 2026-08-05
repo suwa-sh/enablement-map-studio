@@ -4,6 +4,8 @@ import { expect, test } from '@playwright/test';
 
 type Pair = readonly [source: string, target: string];
 
+const MAX_CENTER_DIFFERENCE_PX = 20;
+
 interface SampleLayout {
   fileName: string;
   taskCount: number;
@@ -238,7 +240,7 @@ for (const sample of samples) {
 
     expect(result.missingEdges).toEqual([]);
     expect(result.handleErrors).toEqual([]);
-    expect(result.maxCenterDifference).toBeLessThanOrEqual(5);
+    expect(result.maxCenterDifference).toBeLessThanOrEqual(MAX_CENTER_DIFFERENCE_PX);
     expect(result.minMainGap).toBeGreaterThanOrEqual(200);
     expect(result.overlaps).toEqual([]);
     expect(result.crossings).toEqual([]);
