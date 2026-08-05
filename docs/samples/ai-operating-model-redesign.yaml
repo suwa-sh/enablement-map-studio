@@ -269,14 +269,14 @@ tasks:
     name: 現場実験でAIと人間の役割を確かめる
     readonly: true
     position:
-      x: 420
+      x: 360
       'y': 50
   - id: cjm:action:redesign-operating-model
     lane: sbp:lane:cjm
     name: 業務責任者が人間とAIの分担を再設計する
     readonly: true
     position:
-      x: 780
+      x: 660
       'y': 50
   - id: cjm:action:measure-outcome
     lane: sbp:lane:cjm
@@ -290,7 +290,7 @@ tasks:
     name: 情報源と独立検証とAIへの帰属を評価する
     readonly: true
     position:
-      x: 1620
+      x: 1740
       'y': 50
   - id: cjm:action:update-decision
     lane: sbp:lane:cjm
@@ -328,6 +328,30 @@ connections:
     target: sbp:task:update-decision
     sourceHandle: right
     targetHandle: left
+  - source: cjm:action:select-process
+    target: sbp:task:select-process
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:run-experiment
+    target: sbp:task:run-experiment
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:redesign-operating-model
+    target: sbp:task:assign-owner
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:measure-outcome
+    target: sbp:task:define-metric
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:evaluate-evidence
+    target: sbp:task:evaluate-evidence
+    sourceHandle: bottom
+    targetHandle: top
+  - source: cjm:action:update-decision
+    target: sbp:task:update-decision
+    sourceHandle: bottom
+    targetHandle: top
 ---
 kind: outcome
 version: '1.0'
